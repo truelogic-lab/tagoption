@@ -16,6 +16,7 @@ import { useAutoTrade } from "../../components/app/trade/useAutoTrade";
 import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
+import { celebrateWin, celebrateLoss } from "../../lib/celebrate";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -87,6 +88,13 @@ export default function Trade() {
     if (seenClosedIds.current.has(latest.id)) return;
     seenClosedIds.current.add(latest.id);
     setLastResult({ result: latest.result, key: latest.id });
+
+    // Fire a celebration only on the trade screen
+    if (latest.result === "won") {
+      celebrateWin({ amount: latest.payout ?? 0 });
+    } else {
+      celebrateLoss({ amount: latest.stake ?? 0 });
+    }
   }, [store.closed]);
 
   useEffect(() => {

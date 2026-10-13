@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import MethodList from "../../components/app/wallet/MethodList";
 import AmountForm from "../../components/app/wallet/AmountForm";
+import { celebrateDeposit, celebrateWithdraw } from "../../lib/celebrate";
 
 export default function Withdraw() {
   const { store } = useOutletContext();
@@ -14,6 +15,7 @@ export default function Withdraw() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 400));
     await store.withdraw({ amount: value, method: methodLabel, details });
+    celebrateWithdraw({ amount: value, method: methodLabel });
     setLoading(false);
     navigate("/positions");
   };

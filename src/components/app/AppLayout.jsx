@@ -7,10 +7,12 @@ import WalletModal from "./modals/WalletModal";
 import InsufficientBalance from "./modals/InsufficientBalance";
 import EntryScanner from "./modals/EntryScanner";
 import NotificationsPanel from "./NotificationsPanel";
+import CelebrationToast from "./CelebrationToast";
 import { useAppStore } from "./useAppStore";
 import { useNotifications } from "./useNotifications";
 import { getSession } from "../../lib/auth";
 import { useTheme } from "../../lib/useTheme";
+import { celebrateDeposit, celebrateWithdraw } from "../../lib/celebrate";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -58,11 +60,13 @@ export default function AppLayout() {
   const handleWalletDeposit = async ({ amount, method, details }) => {
     await store.deposit({ amount, method, details });
     await notif.refresh();
+    celebrateDeposit({ amount, method });
     setWallet(null);
   };
   const handleWalletWithdraw = async ({ amount, method, details }) => {
     await store.withdraw({ amount, method, details });
     await notif.refresh();
+    celebrateWithdraw({ amount, method });
     setWallet(null);
   };
 
@@ -119,6 +123,7 @@ export default function AppLayout() {
         onMarkRead={notif.markRead}
         onClear={notif.clear}
       />
+      <CelebrationToast />
     </div>
   );
 }
