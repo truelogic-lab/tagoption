@@ -16,6 +16,7 @@ export default function Chart({
   onZoomOut,
   canZoomIn = true,
   canZoomOut = true,
+  hideHeader = false,
 }) {
   const { pathD, areaD, lastX, lastY } = useMemo(() => {
     const min = Math.min(...series);
@@ -46,20 +47,22 @@ export default function Chart({
 
   return (
     <div className="chart">
-      <div className="chart__head">
-        <button className="chart__market" type="button">
-          <span className="chart__market-label">{market?.name ?? "Vol 10 (1s)"}</span>
-          <span className="chart__market-price">
-            {price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            <em className={up ? "" : "is-neg"}>
-              {up ? "+" : ""}{change.toFixed(2)}%
-            </em>
-          </span>
-          <LuChevronDown className="chart__market-caret" />
-        </button>
+      {!hideHeader && (
+        <div className="chart__head">
+          <button className="chart__market" type="button">
+            <span className="chart__market-label">{market?.name ?? "Vol 10 (1s)"}</span>
+            <span className="chart__market-price">
+              {price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <em className={up ? "" : "is-neg"}>
+                {up ? "+" : ""}{change.toFixed(2)}%
+              </em>
+            </span>
+            <LuChevronDown className="chart__market-caret" />
+          </button>
 
-        <button className="chart__sound" aria-label="Sound"><LuVolume2 /></button>
-      </div>
+          <button className="chart__sound" aria-label="Sound"><LuVolume2 /></button>
+        </div>
+      )}
 
       <div className="chart__canvas">
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="none">

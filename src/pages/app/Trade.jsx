@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { LuBot, LuX } from "react-icons/lu";
 import CategoryTabs from "../../components/app/trade/CategoryTabs";
 import Chart from "../../components/app/trade/Chart";
+import MarketSelect from "../../components/app/trade/MarketSelect";
 import DigitStrip from "../../components/app/trade/DigitStrip";
 import ModeToggle from "../../components/app/trade/ModeToggle";
 import StakePanel from "../../components/app/trade/StakePanel";
@@ -29,12 +30,21 @@ const ZOOM_STEP = 1.4;
 export default function Trade() {
   const { store, onPlaceTrade, botResult, clearBotResult } = useOutletContext();
   const { markets, loading: marketsLoading } = useMarkets();
-  const market = markets.find((m) => m.active) ?? markets[0];
+
+  // Active market — user-selected, defaults to first active one
+  const [activeId, setActiveId] = useState(null);
+  const activeMarket = markets.find((m) => m.id === activeId)
+    ?? markets.find((m) => m.active)
+    ?? markets[0];
+
+  useEffect(() => {
+    if (!activeId && activeMarket) setActiveId(activeMarket.id);
+  }, [activeMarket, activeId]);
 
   const [windowSize, setWindowSize] = useState(80);
   const { price, change, series, lastDigit } = useLiveMarket({
-    marketId: market?.id ?? "R_10",
-    basePrice: market?.base ?? 9532.87,
+    marketId: activeMarket?.id ?? "R_10",
+    basePrice: activeMarket?.base ?? 9532.87,
     windowSize,
   });
 
@@ -70,7 +80,6 @@ export default function Trade() {
   const zoomIn = () => { if (canZoomIn) setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
 
-  // Flash the digit strip whenever a new trade settles (from any source)
   useEffect(() => {
     const latest = store.closed[0];
     if (!latest) return;
@@ -86,7 +95,7 @@ export default function Trade() {
     setMode("auto");
     setAutoCount(preset.count);
     setStake(preset.stake);
-    // Leave target/stop at current user values — don't override from preset
+    if (botResult.market?.id) setActiveId(botResult.market.id);
     setBotBanner({
       market: botResult.market,
       signal: botResult.signal,
@@ -103,8 +112,13 @@ export default function Trade() {
   };
 
   const handleManualPlace = (contract) => {
-    if (!market) return;
-    store.placeTrade({ contract, stake, market: market.name, marketId: market.id });
+    if (!activeMarket) return;
+    store.placeTrade({
+      contract,
+      stake,
+      market: activeMarket.name,
+      marketId: activeMarket.id,
+    });
   };
 
   const handleAutoStart = () => {
@@ -113,11 +127,11 @@ export default function Trade() {
       stake,
       targetProfit: target,
       stopLoss: stop,
-      market: botBanner?.market?.name ?? market?.name ?? "Volatility 10",
+      market: botBanner?.market?.name ?? activeMarket?.name ?? "Volatility 10",
     });
   };
 
-  if (marketsLoading || !market) {
+  if (marketsLoading || !activeMarket) {
     return <div className="trade trade--loading">Loading market…</div>;
   }
 
@@ -125,16 +139,28 @@ export default function Trade() {
     <div className="trade">
       <CategoryTabs value={category} onChange={setCategory} />
 
-      <Chart
-        market={market}
-        price={price}
-        change={change}
-        series={series}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        canZoomIn={canZoomIn}
-        canZoomOut={canZoomOut}
-      />
+      <div className="trade__chart-wrap">
+        <Chart
+          market={activeMarket}
+          price={price}
+          change={change}
+          series={series}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          hideHeader
+        />
+        <div className="trade__market-select-wrap">
+          <MarketSelect
+            markets={markets.map((m) =>
+              m.id === activeMarket.id ? { ...m, price, change } : m
+            )}
+            current={{ ...activeMarket, price, change }}
+            onChange={(m) => setActiveId(m.id)}
+          />
+        </div>
+      </div>
 
       <DigitStrip active={lastDigit} recentDigits={recentDigits} lastResult={lastResult} />
 
