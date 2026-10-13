@@ -16,10 +16,10 @@ import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
 
 const BOT_PRESETS = {
-  all:       { count: 10, stake: 5, target: 25, stop: 20 },
-  evenodd:   { count: 10, stake: 5, target: 25, stop: 20 },
-  matches:   { count: 8,  stake: 5, target: 20, stop: 15 },
-  overunder: { count: 12, stake: 3, target: 30, stop: 20 },
+  all:       { count: 10, stake: 5 },
+  evenodd:   { count: 10, stake: 5 },
+  matches:   { count: 8,  stake: 5 },
+  overunder: { count: 12, stake: 3 },
 };
 
 const ZOOM_MIN = 20;
@@ -47,8 +47,8 @@ export default function Trade() {
   const [category, setCategory] = useState("evenodd");
   const [mode, setMode] = useState("manual");
   const [stake, setStake] = useState(10);
-  const [target, setTarget] = useState(200);
-  const [stop, setStop] = useState(999);
+  const [target, setTarget] = useState(0);
+  const [stop, setStop] = useState(0);
   const [multiplier, setMultiplier] = useState(2);
   const [autoCount, setAutoCount] = useState(5);
   const [botBanner, setBotBanner] = useState(null);
@@ -86,8 +86,7 @@ export default function Trade() {
     setMode("auto");
     setAutoCount(preset.count);
     setStake(preset.stake);
-    setTarget(preset.target);
-    setStop(preset.stop);
+    // Leave target/stop at current user values — don't override from preset
     setBotBanner({
       market: botResult.market,
       signal: botResult.signal,

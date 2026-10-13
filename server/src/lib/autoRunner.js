@@ -289,8 +289,18 @@ async function runLoop({ sql, userId, runId }) {
       `;
       const next = updated[0];
 
-      if (targetCents > 0 && next.pnl_cents >= targetCents) break;
-      if (stopCents > 0 && next.pnl_cents <= -stopCents) break;
+      // Target / stop only trigger after the first settle, and only if
+      // there are still trades remaining. Prevents a single oversized win
+      // from ending the run immediately.
+      const remaining = next.count - next.done;
+      if (remaining > 0 && targetCents > 0 && next.pnl_cents >= targetCents) {
+        await sql`update auto_runs set running = false, ended_at = now() where user_id = ${userId}`;
+        break;
+      }
+      if (remaining > 0 && stopCents > 0 && next.pnl_cents <= -stopCents) {
+        await sql`update auto_runs set running = false, ended_at = now() where user_id = ${userId}`;
+        break;
+      }
 
       await sleep(INTERTRADE_MS);
     }

@@ -105,11 +105,11 @@ export default function AutoPanel({
         </div>
         <div className="auto__summary-row">
           <span>Target profit</span>
-          <strong>${targetProfit}</strong>
+          <strong>{targetProfit > 0 ? `$${targetProfit}` : "No limit"}</strong>
         </div>
         <div className="auto__summary-row">
           <span>Stop loss</span>
-          <strong>${stopLoss}</strong>
+          <strong>{stopLoss > 0 ? `$${stopLoss}` : "No limit"}</strong>
         </div>
       </div>
 
