@@ -156,6 +156,7 @@ export default async function tradeRoutes(fastify) {
         body: result === "won"
           ? `+$${out.payout.toFixed(2)} profit credited.`
           : `-$${out.stake.toFixed(2)} stake lost.`,
+        reference: `trade:${out.id}`,
       });
 
       return out;

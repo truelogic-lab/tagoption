@@ -57,3 +57,9 @@ create table if not exists notifications (
 
 create index if not exists notif_user_at_idx on notifications(user_id, at desc);
 create index if not exists notif_user_unread_idx on notifications(user_id) where read = false;
+
+-- Prevent duplicate trade notifications
+alter table notifications add column if not exists reference text;
+create unique index if not exists notif_dedupe_idx
+  on notifications(user_id, reference)
+  where reference is not null;

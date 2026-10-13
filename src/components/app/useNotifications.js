@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isLive, notificationsApi } from "../../lib/api";
 
-/**
- * Notifications — server-authoritative when the API is live.
- * Falls back to localStorage only when running offline (dev without a backend).
- */
-
 const KEY_PREFIX = "tagoption.notifications.";
-const POLL_MS = 20000;
+const POLL_MS = 15000;
 
 function sessionEmail() {
   try {
@@ -35,36 +30,35 @@ export function useNotifications() {
   const [items, setItems] = useState(() => readLocal(key));
   const pollRef = useRef(null);
 
-  // Keep local mirror for the offline case
   useEffect(() => {
     if (!isLive()) writeLocal(key, items);
-  }, [key, items, items.length]);
+  }, [key, items]);
 
   const refresh = useCallback(async () => {
     if (!isLive()) return;
     try {
       const list = await notificationsApi.list();
       setItems(Array.isArray(list) ? list : []);
-    } catch {
-      // silent
-    }
+    } catch {}
   }, []);
 
-  // Initial fetch + light polling
   useEffect(() => {
     if (!isLive()) return;
     refresh();
     pollRef.current = setInterval(refresh, POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refresh]);
 
   const unreadCount = items.filter((n) => !n.read).length;
 
   const push = useCallback(async (n) => {
-    // Server pushes happen automatically on the backend — this is only for
-    // local-only mode. When live, calling push just refreshes.
     if (isLive()) {
       await refresh();
       return;
@@ -74,7 +68,6 @@ export function useNotifications() {
   }, [refresh]);
 
   const markAllRead = useCallback(async () => {
-    // Optimistic
     setItems((list) => list.map((n) => (n.read ? n : { ...n, read: true })));
     if (isLive()) {
       try { await notificationsApi.markAllRead(); } catch { refresh(); }

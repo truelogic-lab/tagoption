@@ -3,6 +3,8 @@
  * Runs every 30s. Any trade open for > 60s is force-settled so escrow
  * doesn't get stuck. Result uses the same 95.2% win chance.
  */
+import { pushNotification } from "./notify.js";
+
 const STALE_MS = 60_000;
 const WIN_CHANCE = 0.952;
 
@@ -69,6 +71,17 @@ export function startReaper(sql) {
               ${trade.id}
             )
           `;
+        });
+
+        // Deduped notification — safe if the reaper runs twice
+        await pushNotification(sql, {
+          userId: trade.user_id,
+          type: "trade",
+          title: won ? "Trade won" : "Trade lost",
+          body: won
+            ? `+$${(profitCents / 100).toFixed(2)} profit credited.`
+            : `-$${(stakeCents / 100).toFixed(2)} stake lost.`,
+          reference: `trade:${trade.id}`,
         });
       }
     } catch (e) {

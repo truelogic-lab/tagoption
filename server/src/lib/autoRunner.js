@@ -310,6 +310,7 @@ async function runLoop({ sql, userId, runId }) {
           type: "trade",
           title: `Auto trade finished (${final.wins}W / ${final.losses}L)`,
           body: `${final.pnl_cents >= 0 ? "+" : ""}$${(final.pnl_cents / 100).toFixed(2)} net`,
+          reference: `autorun:${runId}`,
         });
       } catch {}
     }

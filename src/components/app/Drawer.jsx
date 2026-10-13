@@ -13,7 +13,17 @@ export default function Drawer({ open, onClose, user, darkTheme, onToggleDark })
   if (!open) return null;
 
   const go = (path) => { onClose(); navigate(path); };
-  const logout = () => { clearSession(); onClose(); navigate("/"); };
+  const logout = () => {
+    clearSession();
+    // Purge per-user local caches so the next account starts fresh
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("tagoption.notifications.") || k.startsWith("tagoption.store."))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {}
+    onClose();
+    navigate("/");
+  };
 
   return (
     <div className="drawer" onClick={onClose}>
