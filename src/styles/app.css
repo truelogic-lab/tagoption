@@ -1693,3 +1693,109 @@
   border: 1px solid var(--border);
 }
 .notif__clear:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ---------- Positions page additions ---------- */
+
+.positions__filters {
+  position: relative;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+
+.positions__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.positions__filter:hover { color: var(--text); border-color: var(--border-2); }
+.positions__filter.is-open { color: var(--blue); border-color: var(--blue); }
+.positions__filter svg { font-size: 13px; }
+
+.positions__filter-caret {
+  font-size: 12px !important;
+  transition: transform .2s;
+}
+.positions__filter-caret.is-open { transform: rotate(180deg); }
+
+.positions__filter-menu {
+  position: absolute;
+  top: 46px;
+  right: 16px;
+  z-index: 5;
+  min-width: 140px;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.positions__filter-option {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--text-2);
+}
+.positions__filter-option:hover { color: var(--text); background: var(--hover-bg); }
+.positions__filter-option.is-active { color: var(--blue); background: rgba(37,99,235,.08); }
+
+.positions__summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.positions__summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+}
+.positions__summary-item strong {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.positions__summary-item strong.is-pos { color: var(--green); }
+.positions__summary-item strong.is-neg { color: var(--danger); }
+.positions__summary-item span {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* Auto / Manual badge next to market name */
+.position__badge-icon,
+.history__badge-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.history__stake {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+  text-align: right;
+}
