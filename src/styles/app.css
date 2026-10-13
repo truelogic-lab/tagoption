@@ -2546,3 +2546,167 @@
   .toast,
   .toast__progress { animation: none; }
 }
+
+/* =============================================================
+   Even/Odd trade ticket
+   ============================================================= */
+
+.ticket {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 16px 16px;
+}
+
+.ticket__btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-radius: var(--r-md);
+  color: #fff;
+  text-align: left;
+  overflow: hidden;
+  transition: transform .12s ease, box-shadow .18s ease, filter .15s ease;
+  isolation: isolate;
+}
+
+.ticket__btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.ticket__btn:not(:disabled):active {
+  transform: scale(.98);
+}
+
+/* Colored gradient base + subtle sheen */
+.ticket__btn--even {
+  background:
+    linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  box-shadow:
+    0 6px 20px rgba(34, 197, 94, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+.ticket__btn--odd {
+  background:
+    linear-gradient(180deg, #ff2d55 0%, #e11d48 100%);
+  box-shadow:
+    0 6px 20px rgba(255, 45, 85, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+/* Diagonal sheen overlay */
+.ticket__btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, .18) 0%,
+      rgba(255, 255, 255, 0) 45%,
+      rgba(0, 0, 0, .08) 100%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Pressed flash */
+.ticket__btn.is-pressed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, .25);
+  animation: ticketFlash .9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ticketFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Top row: icon · name · pct */
+.ticket__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket__icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .22);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.ticket__name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+}
+
+.ticket__pct {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 50px;
+  background: rgba(0, 0, 0, .2);
+  letter-spacing: .3px;
+}
+
+/* Return block */
+.ticket__return {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, .15);
+}
+
+.ticket__return-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: .75;
+}
+
+.ticket__return-value {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.3px;
+}
+
+/* Profit line under */
+.ticket__profit {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: .9;
+}
+
+/* Phone polish — tighten on small screens */
+@media (max-width: 520px) {
+  .ticket { gap: 8px; margin: 0 14px 14px; }
+  .ticket__btn { padding: 12px 12px 10px; gap: 8px; }
+  .ticket__name { font-size: 15px; }
+  .ticket__pct { font-size: 10.5px; padding: 2px 6px; }
+  .ticket__return { padding: 7px 9px; }
+  .ticket__return-value { font-size: 16px; }
+  .ticket__profit { font-size: 10.5px; }
+  .ticket__icon { width: 26px; height: 26px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket__btn { transition: none; }
+  .ticket__btn.is-pressed::after { animation: none; opacity: 0; }
+}
