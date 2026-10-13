@@ -21,3 +21,5 @@ npm-debug.log*
 # os
 .DS_Store
 .vercel
+server/.env.bak
+**/.env.bak
