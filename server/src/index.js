@@ -7,11 +7,14 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import walletRoutes from "./routes/wallet.js";
 import tradeRoutes from "./routes/trades.js";
+import marketRoutes from "./routes/markets.js";
 import notificationRoutes from "./routes/notifications.js";
 import accountRoutes from "./routes/account.js";
-import marketRoutes from "./routes/markets.js";
 import { requireAuth } from "./middleware/auth.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
+import { startReaper } from "./lib/reaper.js";
+import { resumeOrphans } from "./lib/autoRunner.js";
+import { sql } from "./db/index.js";
 
 dotenv.config();
 
@@ -20,9 +23,7 @@ if (process.env.NODE_ENV !== "production") {
   try {
     await import("pino-pretty");
     transport = { target: "pino-pretty" };
-  } catch {
-    transport = undefined;
-  }
+  } catch {}
 }
 
 const app = Fastify({
@@ -47,10 +48,16 @@ await app.register(tradeRoutes);
 await app.register(notificationRoutes);
 await app.register(accountRoutes);
 
-// Start the simulated tick feed
 startTicker();
+startReaper(sql);
 
-// Clean up on shutdown
+// Resume or force-finish any orphaned auto runs from a previous boot
+try {
+  await resumeOrphans(sql);
+} catch (e) {
+  console.error("[resume] failed:", e.message);
+}
+
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, async () => {
     stopTicker();

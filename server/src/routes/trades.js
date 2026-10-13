@@ -221,11 +221,12 @@ export default async function tradeRoutes(fastify) {
   });
 
   fastify.post("/trades/auto/stop", async (req) => {
-    const ok = stopAuto(req.userId);
+    const ok = await stopAuto(sql, req.userId);
     return { stopped: ok };
   });
 
   fastify.get("/trades/auto/status", async (req) => {
-    return getRun(req.userId) ?? { running: false, progress: null };
+    const run = await getRun(sql, req.userId);
+    return run ?? { running: false, progress: null };
   });
 }

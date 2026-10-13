@@ -1,37 +1,57 @@
 /**
- * Server-side auto-trade runner.
+ * Auto-trade runner — DB-backed so a server restart doesn't lose the run.
  *
- * One active run per user (keyed by userId). Runs a sequence of trades,
- * placing and settling each on a server timer. Not persisted across
- * server restarts — acceptable for now, add Redis later for HA.
- *
- *   startAuto({ userId, count, stake, targetProfit, stopLoss, market })
- *     → runId
- *   stopAuto(userId)
- *   getRun(userId)   → { runId, running, progress, pnl, startedAt, endedAt, error }
+ * State lives in `auto_runs` (one row per user). Progress is updated on
+ * every settle. On server boot, any run marked `running` with a fresh
+ * `heartbeat_at` is resumed; anything stale is force-settled.
  */
-
 import { pushNotification } from "./notify.js";
-
-const runs = new Map(); // userId → run state
 
 const SETTLE_MS = 4500;
 const INTERTRADE_MS = 700;
 const WIN_CHANCE = 0.952;
+const STALE_MS = 60_000;      // heartbeat older than this → assume server died
+const HEARTBEAT_MS = 5_000;   // how often to update heartbeat during a run
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function newId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Placing a trade here mirrors POST /trades — same DB writes, same engine.
- * Keeping it inline avoids HTTP roundtrips during a run.
- */
-async function openTrade({ sql, userId, market, contract, stake, auto = true }) {
+/* ------------------------------------------------------------------ */
+/* Table (created on demand if missing)                                */
+/* ------------------------------------------------------------------ */
+
+async function ensureTable(sql) {
+  await sql`
+    create table if not exists auto_runs (
+      user_id       text primary key references users(id) on delete cascade,
+      run_id        text not null,
+      running       boolean not null default false,
+      cancel        boolean not null default false,
+      count         int not null,
+      done          int not null default 0,
+      wins          int not null default 0,
+      losses        int not null default 0,
+      stake_cents   bigint not null,
+      target_cents  bigint not null default 0,
+      stop_cents    bigint not null default 0,
+      market        text not null,
+      pnl_cents     bigint not null default 0,
+      error         text,
+      started_at    timestamptz not null default now(),
+      ended_at      timestamptz,
+      heartbeat_at  timestamptz not null default now()
+    )
+  `;
+}
+
+/* ------------------------------------------------------------------ */
+/* Trade open + settle (server-side, mirrors /trades)                  */
+/* ------------------------------------------------------------------ */
+
+async function openTrade({ sql, userId, market, contract, stake }) {
   const stakeCents = Math.round(stake * 100);
   const profitCents = Math.round(stake * 100 * 0.952);
   const id = newId("p");
@@ -56,7 +76,7 @@ async function openTrade({ sql, userId, market, contract, stake, auto = true }) 
 
     await tx`
       insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto)
-      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto})
+      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', true)
     `;
 
     await tx`
@@ -75,7 +95,7 @@ async function settleTrade({ sql, userId, tradeId, result }) {
     `;
     if (!tradeRows.length) throw new Error("Trade not found");
     const trade = tradeRows[0];
-    if (trade.status !== "open") throw new Error("Trade already settled");
+    if (trade.status !== "open") return { id: tradeId, result: trade.status, credit: 0 };
 
     const stakeCents = Number(trade.stake_cents);
     const profitCents = Number(trade.profit_cents);
@@ -90,7 +110,6 @@ async function settleTrade({ sql, userId, tradeId, result }) {
     let platform = Number(row.platform_cents);
     let escrow = Number(row.escrow_cents);
 
-    // Move stake out of escrow
     escrow -= stakeCents;
 
     let creditCents = 0;
@@ -120,107 +139,205 @@ async function settleTrade({ sql, userId, tradeId, result }) {
       values (${newId("t")}, ${userId}, 'trade-settle', ${creditCents}, ${tradeId})
     `;
 
-    return { id: tradeId, result, credit: creditCents / 100 };
+    return { id: tradeId, result, credit: creditCents / 100, stake: stakeCents / 100, profit: profitCents / 100 };
   });
 }
 
-export function getRun(userId) {
-  const r = runs.get(userId);
-  return r ? {
-    runId: r.runId,
+/* ------------------------------------------------------------------ */
+/* Public API                                                          */
+/* ------------------------------------------------------------------ */
+
+export async function getRun(sql, userId) {
+  await ensureTable(sql);
+  const rows = await sql`select * from auto_runs where user_id = ${userId}`;
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    runId: r.run_id,
     running: r.running,
-    progress: r.progress,
-    pnl: r.pnl,
+    progress: { done: r.done, total: r.count, wins: r.wins, losses: r.losses },
+    pnl: Number(r.pnl_cents) / 100,
     error: r.error,
-    startedAt: r.startedAt,
-    endedAt: r.endedAt,
-  } : null;
+    startedAt: r.started_at,
+    endedAt: r.ended_at,
+  };
 }
 
-export function stopAuto(userId) {
-  const r = runs.get(userId);
-  if (!r) return false;
-  r.cancel = true;
+export async function stopAuto(sql, userId) {
+  await ensureTable(sql);
+  const rows = await sql`select user_id from auto_runs where user_id = ${userId} and running = true`;
+  if (!rows.length) return false;
+  await sql`update auto_runs set cancel = true where user_id = ${userId}`;
   return true;
 }
 
 export async function startAuto({ sql, userId, count, stake, targetProfit, stopLoss, market }) {
-  if (runs.has(userId) && runs.get(userId).running) {
-    throw new Error("Auto trade already running");
+  await ensureTable(sql);
+
+  // Refuse if already running (unless it's stale)
+  const existing = await sql`select * from auto_runs where user_id = ${userId}`;
+  if (existing.length && existing[0].running) {
+    const age = Date.now() - new Date(existing[0].heartbeat_at).getTime();
+    if (age < STALE_MS) throw new Error("Auto trade already running");
+    // Stale — force-finish before restarting
+    await sql`update auto_runs set running = false, ended_at = now() where user_id = ${userId}`;
   }
 
-  const run = {
-    runId: newId("auto"),
-    running: true,
-    cancel: false,
-    progress: { done: 0, total: count, wins: 0, losses: 0 },
-    pnl: 0,
-    error: null,
-    startedAt: new Date().toISOString(),
-    endedAt: null,
-  };
-  runs.set(userId, run);
+  const runId = newId("auto");
+  const stakeCents = Math.round(stake * 100);
+  const targetCents = Math.round(targetProfit * 100);
+  const stopCents = Math.round(stopLoss * 100);
 
-  // Fire and forget — the client polls GET /trades/auto/status
-  (async () => {
-    let totalPnl = 0;
-    let wins = 0;
-    let losses = 0;
+  await sql`
+    insert into auto_runs (
+      user_id, run_id, running, cancel,
+      count, done, wins, losses,
+      stake_cents, target_cents, stop_cents,
+      market, pnl_cents, started_at, heartbeat_at
+    )
+    values (
+      ${userId}, ${runId}, true, false,
+      ${count}, 0, 0, 0,
+      ${stakeCents}, ${targetCents}, ${stopCents},
+      ${market}, 0, now(), now()
+    )
+    on conflict (user_id) do update set
+      run_id = excluded.run_id,
+      running = true,
+      cancel = false,
+      count = excluded.count,
+      done = 0, wins = 0, losses = 0,
+      stake_cents = excluded.stake_cents,
+      target_cents = excluded.target_cents,
+      stop_cents = excluded.stop_cents,
+      market = excluded.market,
+      pnl_cents = 0,
+      error = null,
+      started_at = now(),
+      ended_at = null,
+      heartbeat_at = now()
+  `;
 
-    try {
-      for (let i = 0; i < count; i++) {
-        if (run.cancel) break;
+  // Fire and forget — the loop runs until done or cancelled
+  runLoop({ sql, userId, runId }).catch(() => {});
 
-        const contract = i % 2 === 0 ? "Even" : "Odd";
+  return runId;
+}
 
-        const position = await openTrade({
-          sql, userId, market, contract, stake, auto: true,
-        });
+/* ------------------------------------------------------------------ */
+/* The loop — reads/writes state in the DB every iteration             */
+/* ------------------------------------------------------------------ */
 
-        await sleep(SETTLE_MS);
-        if (run.cancel) {
-          // Force-settle so escrow isn't stranded
-          await settleTrade({ sql, userId, tradeId: position.id, result: Math.random() < WIN_CHANCE ? "won" : "lost" });
-          break;
-        }
+async function runLoop({ sql, userId, runId }) {
+  let lastHeartbeat = 0;
 
-        const won = Math.random() < WIN_CHANCE;
-        const settled = await settleTrade({
-          sql, userId, tradeId: position.id, result: won ? "won" : "lost",
-        });
+  try {
+    while (true) {
+      const rows = await sql`select * from auto_runs where user_id = ${userId} and run_id = ${runId}`;
+      if (!rows.length) return;
+      const run = rows[0];
 
-        if (won) {
-          wins += 1;
-          totalPnl += settled.credit - stake; // net profit
-        } else {
-          losses += 1;
-          totalPnl -= stake;
-        }
+      if (run.cancel) break;
+      if (!run.running) return;
+      if (run.done >= run.count) break;
 
-        run.progress = { done: i + 1, total: count, wins, losses };
-        run.pnl = +totalPnl.toFixed(2);
+      const stake = Number(run.stake_cents) / 100;
+      const targetCents = Number(run.target_cents);
+      const stopCents = Number(run.stop_cents);
 
-        if (targetProfit > 0 && totalPnl >= targetProfit) break;
-        if (stopLoss > 0 && totalPnl <= -stopLoss) break;
-
-        await sleep(INTERTRADE_MS);
+      // Heartbeat every ~5s
+      const now = Date.now();
+      if (now - lastHeartbeat > HEARTBEAT_MS) {
+        await sql`update auto_runs set heartbeat_at = now() where user_id = ${userId}`;
+        lastHeartbeat = now;
       }
-    } catch (e) {
-      run.error = e.message;
-    } finally {
-      run.running = false;
-      run.endedAt = new Date().toISOString();
 
+      const contract = run.done % 2 === 0 ? "Even" : "Odd";
+
+      let position;
+      try {
+        position = await openTrade({ sql, userId, market: run.market, contract, stake });
+      } catch (e) {
+        await sql`update auto_runs set running = false, error = ${e.message}, ended_at = now() where user_id = ${userId}`;
+        return;
+      }
+
+      await sleep(SETTLE_MS);
+
+      const won = Math.random() < WIN_CHANCE;
+      let settled;
+      try {
+        settled = await settleTrade({ sql, userId, tradeId: position.id, result: won ? "won" : "lost" });
+      } catch {
+        await sql`update auto_runs set running = false, error = 'settle-failed', ended_at = now() where user_id = ${userId}`;
+        return;
+      }
+
+      const pnlDeltaCents = won
+        ? Math.round(settled.profit * 100)
+        : -Math.round(stake * 100);
+
+      const updated = await sql`
+        update auto_runs set
+          done = done + 1,
+          wins = wins + ${won ? 1 : 0},
+          losses = losses + ${won ? 0 : 1},
+          pnl_cents = pnl_cents + ${pnlDeltaCents},
+          heartbeat_at = now()
+        where user_id = ${userId}
+        returning *
+      `;
+      const next = updated[0];
+
+      if (targetCents > 0 && next.pnl_cents >= targetCents) break;
+      if (stopCents > 0 && next.pnl_cents <= -stopCents) break;
+
+      await sleep(INTERTRADE_MS);
+    }
+  } finally {
+    const endRows = await sql`select * from auto_runs where user_id = ${userId}`;
+    const final = endRows[0];
+
+    await sql`
+      update auto_runs set running = false, ended_at = now()
+      where user_id = ${userId} and run_id = ${runId}
+    `;
+
+    if (final) {
       try {
         await pushNotification(sql, {
           userId,
           type: "trade",
-          title: `Auto trade finished (${wins}W / ${losses}L)`,
-          body: `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toFixed(2)} net`,
+          title: `Auto trade finished (${final.wins}W / ${final.losses}L)`,
+          body: `${final.pnl_cents >= 0 ? "+" : ""}$${(final.pnl_cents / 100).toFixed(2)} net`,
         });
       } catch {}
     }
-  })();
+  }
+}
 
-  return run.runId;
+/**
+ * On server boot: resume or force-finish any run left behind by a crash.
+ * Fresh heartbeat → resume. Stale heartbeat → settle any open trades.
+ */
+export async function resumeOrphans(sql) {
+  await ensureTable(sql);
+
+  const rows = await sql`
+    select user_id, run_id, running, heartbeat_at from auto_runs where running = true
+  `;
+
+  for (const r of rows) {
+    const age = Date.now() - new Date(r.heartbeat_at).getTime();
+    if (age < STALE_MS) {
+      // Resume — the loop is idempotent
+      runLoop({ sql, userId: r.user_id, runId: r.run_id }).catch(() => {});
+    } else {
+      // Force-finish stale run
+      await sql`
+        update auto_runs set running = false, error = 'orphaned', ended_at = now()
+        where user_id = ${r.user_id}
+      `;
+    }
+  }
 }
