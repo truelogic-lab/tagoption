@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { sql } from "../db/index.js";
 import { pushNotification } from "../lib/notify.js";
+import { getUsdKesRate, usdToKes } from "../lib/fx/index.js";
 import {
   submitOrder,
   getTransactionStatus,
@@ -9,11 +10,10 @@ import {
 } from "../lib/payments/pesapal.js";
 
 const deposit = z.object({
-  amount: z.number().positive().max(500000),
-  method: z.string().min(1),           // "M-Pesa", "Card", "USDT (TRC20)"
+  amount: z.number().positive().max(500000),   // USD
+  method: z.string().min(1),
   phone: z.string().optional(),
   email: z.string().email().optional(),
-  currency: z.string().optional(),
 });
 
 function newId(prefix) {
@@ -23,38 +23,46 @@ function newId(prefix) {
 export default async function paymentsRoutes(fastify) {
   fastify.addHook("preHandler", fastify.requireAuth);
 
-  /* ---------- start a deposit ---------- */
-
   fastify.post("/payments/deposit", async (req, reply) => {
     const parse = deposit.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: "Invalid input" });
-    const { amount, method, phone, email, currency } = parse.data;
+    const { amount: usdAmount, method, phone, email } = parse.data;
 
     const user = await sql`select email from users where id = ${req.userId}`;
     const userEmail = email || user[0]?.email;
 
-    // Pre-create the transaction as pending with a reference we control
+    // Get live FX rate and compute the KES charge
+    const { rate } = await getUsdKesRate();
+    const kesAmount = usdToKes(usdAmount, rate);
+
+    // Pre-create transaction as pending — store USD amount + KES amount + rate
     const ref = newId("t");
     await sql`
-      insert into transactions (id, user_id, type, amount_cents, method, reference, status)
-      values (${ref}, ${req.userId}, 'deposit', ${Math.round(amount * 100)}, ${method}, ${null}, 'pending')
+      insert into transactions (
+        id, user_id, type, amount_cents, method, reference, status
+      )
+      values (
+        ${ref}, ${req.userId}, 'deposit',
+        ${Math.round(usdAmount * 100)},
+        ${method}, ${null}, 'pending'
+      )
     `;
 
     let order;
     try {
       order = await submitOrder({
-        amount,
-        currency: currency || "KES",
+        amount: kesAmount,          // what Pesapal charges
+        currency: "KES",
         reference: ref,
         email: userEmail,
         phone,
+        description: `Deposit $${usdAmount.toFixed(2)} USD`,
       });
     } catch (e) {
       await sql`update transactions set status = 'failed' where id = ${ref}`;
-      return reply.code(502).send({ error: e.message || "Pesapal rejected the request" });
+      return reply.code(502).send({ error: e.message || "Payment could not be started" });
     }
 
-    // Attach the tracking id to the tx so the webhook can find it
     await sql`
       update transactions
       set reference = ${order.order_tracking_id}
@@ -65,11 +73,12 @@ export default async function paymentsRoutes(fastify) {
       id: ref,
       orderTrackingId: order.order_tracking_id,
       redirectUrl: order.redirect_url,
+      usd: usdAmount,
+      kes: kesAmount,
+      rate,
       status: "pending",
     };
   });
-
-  /* ---------- client polls for status after redirect ---------- */
 
   fastify.get("/payments/status/:orderTrackingId", async (req, reply) => {
     const { orderTrackingId } = req.params;
@@ -89,7 +98,6 @@ export default async function paymentsRoutes(fastify) {
       return { status: "failed", amount: Number(tx.amount_cents) / 100 };
     }
 
-    // Ask Pesapal the real status
     let remote;
     try {
       remote = await getTransactionStatus(orderTrackingId);
@@ -98,7 +106,12 @@ export default async function paymentsRoutes(fastify) {
     }
 
     if (isCompleted(remote.payment_status_description)) {
-      await creditDeposit({ userId: req.userId, txId: tx.id, amount: Number(tx.amount_cents) / 100, method: tx.method });
+      await creditDeposit({
+        userId: req.userId,
+        txId: tx.id,
+        amountUsd: Number(tx.amount_cents) / 100,
+        method: tx.method,
+      });
       return { status: "completed", amount: Number(tx.amount_cents) / 100 };
     }
     if (isFailed(remote.payment_status_description)) {
@@ -108,26 +121,20 @@ export default async function paymentsRoutes(fastify) {
     return { status: "pending", amount: Number(tx.amount_cents) / 100 };
   });
 
-  /* ---------- Pesapal webhook (IPN) ---------- */
-
-  // NOTE: not authenticated by requireAuth — Pesapal hits this directly
   fastify.register(async (ipn) => {
     ipn.post("/payments/ipn", async (req, reply) => {
-      // Pesapal's IPN body has orderTrackingId + orderMerchantReference
       const body = req.body || {};
       const trackingId = body.OrderTrackingId || body.orderTrackingId;
       const merchantRef = body.OrderMerchantReference || body.orderMerchantReference;
 
       if (!trackingId) {
-        reply.code(200).send({ status: 200 });  // ack, nothing to do
+        reply.code(200).send({ status: 200 });
         return;
       }
 
       try {
-        // Fetch authoritative status
         const remote = await getTransactionStatus(trackingId);
 
-        // Locate our tx — prefer merchant ref, fall back to tracking id
         const rows = merchantRef
           ? await sql`select * from transactions where id = ${merchantRef} limit 1`
           : await sql`select * from transactions where reference = ${trackingId} limit 1`;
@@ -139,7 +146,7 @@ export default async function paymentsRoutes(fastify) {
             await creditDeposit({
               userId: tx.user_id,
               txId: tx.id,
-              amount: Number(tx.amount_cents) / 100,
+              amountUsd: Number(tx.amount_cents) / 100,
               method: tx.method,
             });
           } else if (tx.status !== "completed" && isFailed(remote.payment_status_description)) {
@@ -149,19 +156,14 @@ export default async function paymentsRoutes(fastify) {
 
         reply.code(200).send({ status: 200 });
       } catch (e) {
-        fastify.log.error("[pesapal ipn] " + e.message);
-        // Ack anyway so Pesapal doesn't retry forever; the status endpoint
-        // will still pick up the true state on the next client poll
+        fastify.log.error("[ipn] " + e.message);
         reply.code(200).send({ status: 200 });
       }
     });
   });
 
-  /* ---------- internal: credit a deposit idempotently ---------- */
-
-  async function creditDeposit({ userId, txId, amount, method }) {
+  async function creditDeposit({ userId, txId, amountUsd, method }) {
     await sql.begin(async (tx) => {
-      // Guard: only credit if still pending
       const rows = await tx`
         select status from transactions where id = ${txId} for update
       `;
@@ -169,7 +171,7 @@ export default async function paymentsRoutes(fastify) {
 
       await tx`
         update balances
-        set balance_cents = balance_cents + ${Math.round(amount * 100)}, updated_at = now()
+        set balance_cents = balance_cents + ${Math.round(amountUsd * 100)}, updated_at = now()
         where user_id = ${userId}
       `;
 
@@ -181,7 +183,7 @@ export default async function paymentsRoutes(fastify) {
         userId,
         type: "deposit",
         title: "Deposit received",
-        body: `$${amount.toFixed(2)} via ${method || "Pesapal"}`,
+        body: `$${amountUsd.toFixed(2)} via ${method || "Payment"}`,
         reference: `deposit:${txId}`,
       });
     });

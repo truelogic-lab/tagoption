@@ -159,7 +159,7 @@ export default function Deposit() {
           {loading
             ? "Preparing…"
             : showKes
-              ? <>Pay ${amountNum.toFixed(2)} (KSh {kesAmount.toLocaleString()}) <LuExternalLink /></>
+              ? <>Pay KSh {kesAmount.toLocaleString()} (${amountNum.toFixed(2)}) <LuExternalLink /></>
               : <>Continue <LuExternalLink /></>}
         </button>
 

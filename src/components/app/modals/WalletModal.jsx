@@ -205,11 +205,11 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
             {showKes && (
               <div className="fx-preview">
                 <div className="fx-preview__row">
-                  <span>You pay</span>
+                  <span>You'll be charged</span>
                   <strong>KSh {kesAmount.toLocaleString()}</strong>
                 </div>
                 <div className="fx-preview__meta">
-                  at 1 USD = {rate.toFixed(2)} KES
+                  Wallet credit: ${amountNum.toFixed(2)} · Rate: 1 USD = {rate.toFixed(2)} KES
                 </div>
               </div>
             )}
@@ -249,7 +249,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               {loading
                 ? "Preparing…"
                 : showKes
-                  ? `Pay $${amountNum.toFixed(2)} (KSh ${kesAmount.toLocaleString()})`
+                  ? `Pay KSh ${kesAmount.toLocaleString()} ($${amountNum.toFixed(2)})`
                   : `Deposit $${amount || 0}`}
             </button>
 
