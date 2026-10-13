@@ -1,31 +1,28 @@
 /**
- * Binary trade settlement — server-side, integer cents internally.
- * Same math as the client engine. This file is the source of truth;
- * the client can calculate previews but only the server mutates balances.
+ * Trade engine — ledger math for user / platform / escrow accounts.
+ *
+ * Payout multiplier and win rate are NOT defined here.
+ * They come from settlement.js, the single source of truth.
  */
 
-export const PAYOUT_MULT = 0.952;
+import {
+  PAYOUT_MULT,
+  profitOf as settlementProfit,
+  toCents,
+  fromCents,
+} from "./settlement.js";
 
-function toCents(amount) {
-  if (!Number.isFinite(amount)) throw new Error("Invalid monetary amount");
-  return Math.round(amount * 100);
-}
-
-function fromCents(cents) {
-  return cents / 100;
-}
-
-function profitCents(stakeCents) {
-  return Math.round(stakeCents * PAYOUT_MULT);
-}
+/* Re-export so any old import from this module keeps working. */
+export { PAYOUT_MULT };
 
 export function profitOf(stake) {
-  return fromCents(profitCents(toCents(stake)));
+  return settlementProfit(stake);
 }
 
 export function creditOnWin(stake) {
   const stakeCents = toCents(stake);
-  return fromCents(stakeCents + profitCents(stakeCents));
+  const profitCents = toCents(settlementProfit(stake));
+  return fromCents(stakeCents + profitCents);
 }
 
 export function open({ userBalance, escrowBalance, stake }) {
@@ -34,10 +31,19 @@ export function open({ userBalance, escrowBalance, stake }) {
   const s = toCents(stake);
   if (s <= 0) throw new Error("Stake must be positive");
   if (u < s) throw new Error("Insufficient balance");
-  return { userBalance: fromCents(u - s), escrowBalance: fromCents(e + s) };
+  return {
+    userBalance: fromCents(u - s),
+    escrowBalance: fromCents(e + s),
+  };
 }
 
-export function settle({ userBalance, platformBalance, escrowBalance, stake, result }) {
+export function settle({
+  userBalance,
+  platformBalance,
+  escrowBalance,
+  stake,
+  result,
+}) {
   const u = toCents(userBalance);
   const p = toCents(platformBalance);
   const e = toCents(escrowBalance);
@@ -47,7 +53,7 @@ export function settle({ userBalance, platformBalance, escrowBalance, stake, res
   if (e < s) throw new Error("Insufficient escrow balance");
   if (result !== "won" && result !== "lost") throw new Error("Invalid result");
 
-  const profit = profitCents(s);
+  const profit = toCents(settlementProfit(stake));
   const won = result === "won";
 
   let user = u;

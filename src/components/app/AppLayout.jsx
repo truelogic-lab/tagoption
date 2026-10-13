@@ -12,6 +12,7 @@ import { useAppStore } from "./useAppStore";
 import { useNotifications } from "./useNotifications";
 import { getSession } from "../../lib/auth";
 import { useTheme } from "../../lib/useTheme";
+import { usePayoutMultiplier } from "../../lib/usePayoutMultiplier";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export default function AppLayout() {
   const { balance, positions } = store;
   const { isDark, toggle: toggleTheme } = useTheme();
   const notif = useNotifications();
+  usePayoutMultiplier();
 
   useEffect(() => { store.resumeStale(8000); }, []); // eslint-disable-line
 
