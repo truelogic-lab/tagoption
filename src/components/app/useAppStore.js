@@ -200,7 +200,6 @@ export function useAppStore() {
     if (isLive()) {
       await walletApi.deposit({ amount, method });
       await refresh();
-      notify({ type: "deposit", title: "Deposit received", body: `$${amount.toFixed(2)} via ${method}` });
       return;
     }
     const at = new Date().toISOString();
@@ -215,7 +214,6 @@ export function useAppStore() {
     if (isLive()) {
       await walletApi.withdraw({ amount, method });
       await refresh();
-      notify({ type: "withdraw", title: "Withdrawal requested", body: `$${amount.toFixed(2)} to ${method}` });
       return;
     }
     const at = new Date().toISOString();
