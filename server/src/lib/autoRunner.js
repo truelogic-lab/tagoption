@@ -6,10 +6,11 @@
  * `heartbeat_at` is resumed; anything stale is force-settled.
  */
 import { pushNotification } from "./notify.js";
+import { rollOutcome, profitOf as settlementProfit, WIN_RATE, PAYOUT_MULT } from "./settlement.js";
 
 const SETTLE_MS = 4500;
 const INTERTRADE_MS = 700;
-const WIN_CHANCE = 0.952;
+
 const STALE_MS = 60_000;      // heartbeat older than this → assume server died
 const HEARTBEAT_MS = 5_000;   // how often to update heartbeat during a run
 
@@ -53,7 +54,7 @@ async function ensureTable(sql) {
 
 async function openTrade({ sql, userId, market, contract, stake }) {
   const stakeCents = Math.round(stake * 100);
-  const profitCents = Math.round(stake * 100 * 0.952);
+  const profitCents = Math.round(settlementProfit(stake) * 100);
   const id = newId("p");
 
   await sql.begin(async (tx) => {
@@ -75,8 +76,8 @@ async function openTrade({ sql, userId, market, contract, stake }) {
     `;
 
     await tx`
-      insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto)
-      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', true)
+      insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto, win_rate_applied, payout_mult_applied)
+      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', true, ${WIN_RATE}, ${PAYOUT_MULT})
     `;
 
     await tx`
@@ -264,7 +265,7 @@ async function runLoop({ sql, userId, runId }) {
 
       await sleep(SETTLE_MS);
 
-      const won = Math.random() < WIN_CHANCE;
+      const won = rollOutcome() === "won";
       let settled;
       try {
         settled = await settleTrade({ sql, userId, tradeId: position.id, result: won ? "won" : "lost" });

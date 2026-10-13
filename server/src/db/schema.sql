@@ -63,3 +63,6 @@ alter table notifications add column if not exists reference text;
 create unique index if not exists notif_dedupe_idx
   on notifications(user_id, reference)
   where reference is not null;
+
+alter table trades add column if not exists win_rate_applied numeric(5,4);
+alter table trades add column if not exists payout_mult_applied numeric(5,4);

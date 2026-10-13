@@ -5,8 +5,9 @@
  */
 import { pushNotification } from "./notify.js";
 
+import { rollOutcome } from "./settlement.js";
+
 const STALE_MS = 6_000;
-const WIN_CHANCE = 0.952;
 
 export function startReaper(sql) {
   const tick = async () => {
@@ -19,8 +20,8 @@ export function startReaper(sql) {
       `;
 
       for (const trade of stale) {
-        const won = Math.random() < WIN_CHANCE;
-        const result = won ? "won" : "lost";
+        const result = rollOutcome();
+        const won = result === "won";
         const stakeCents = Number(trade.stake_cents);
         const profitCents = Number(trade.profit_cents);
 

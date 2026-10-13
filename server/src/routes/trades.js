@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { sql } from "../db/index.js";
 import { open, settle, profitOf } from "../lib/tradeEngine.js";
+import { profitOf as settlementProfit, WIN_RATE, PAYOUT_MULT } from "../lib/settlement.js";
 import { startAuto, stopAuto, getRun } from "../lib/autoRunner.js";
 import { pushNotification } from "../lib/notify.js";
 
@@ -39,7 +40,7 @@ export default async function tradeRoutes(fastify) {
     const { marketName, contract, stake, auto = false } = parse.data;
 
     const stakeCents = Math.round(stake * 100);
-    const profitCents = Math.round(stake * 100 * 0.952);
+    const profitCents = Math.round(settlementProfit(stake) * 100);
 
     const id = newId("p");
 
@@ -68,8 +69,8 @@ export default async function tradeRoutes(fastify) {
         `;
 
         await tx`
-          insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto)
-          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto})
+          insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto, win_rate_applied, payout_mult_applied)
+          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto}, ${WIN_RATE}, ${PAYOUT_MULT})
         `;
 
         await tx`
