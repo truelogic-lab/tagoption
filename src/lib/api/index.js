@@ -5,3 +5,4 @@ export { accountApi } from "./account";
 export { walletApi } from "./wallet";
 export { tradeApi } from "./trade";
 export { notificationsApi } from "./notifications";
+export { paymentsApi } from "./payments";

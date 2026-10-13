@@ -350,3 +350,44 @@
   border-color: rgba(239,68,68,.3);
   color: var(--danger);
 }
+
+.wallet-form__note {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-3);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Payment callback */
+.callback {
+  min-height: 70vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+}
+.callback__icon {
+  width: 72px; height: 72px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+.callback__icon--ok   { background: rgba(34,197,94,.15);  color: var(--green); }
+.callback__icon--err  { background: rgba(239,68,68,.15);  color: var(--danger); }
+.callback__icon--wait { background: rgba(37,99,235,.15);  color: var(--blue); }
+.callback__title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+.callback__sub   { font-size: 13px; color: var(--text-2); max-width: 320px; line-height: 1.6; }
+.callback__amount {
+  padding: 14px 24px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  margin-top: 8px;
+}
+.callback__amount span { font-size: 11px; color: var(--text-3); letter-spacing: .6px; text-transform: uppercase; }
+.callback__amount strong { font-size: 22px; font-weight: 800; }
+.callback__btn { margin-top: 16px; padding: 12px 22px; }

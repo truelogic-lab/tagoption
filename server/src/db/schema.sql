@@ -66,3 +66,6 @@ create unique index if not exists notif_dedupe_idx
 
 alter table trades add column if not exists win_rate_applied numeric(5,4);
 alter table trades add column if not exists payout_mult_applied numeric(5,4);
+
+alter table transactions add column if not exists status text not null default 'completed';
+create index if not exists tx_reference_idx on transactions(reference);

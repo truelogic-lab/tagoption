@@ -10,6 +10,7 @@ import tradeRoutes from "./routes/trades.js";
 import marketRoutes from "./routes/markets.js";
 import notificationRoutes from "./routes/notifications.js";
 import accountRoutes from "./routes/account.js";
+import paymentsRoutes from "./routes/payments.js";
 import { requireAuth } from "./middleware/auth.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
 import { startReaper } from "./lib/reaper.js";
@@ -47,6 +48,7 @@ await app.register(walletRoutes);
 await app.register(tradeRoutes);
 await app.register(notificationRoutes);
 await app.register(accountRoutes);
+await app.register(paymentsRoutes);
 
 startTicker();
 startReaper(sql);
