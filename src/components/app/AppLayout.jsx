@@ -93,6 +93,7 @@ export default function AppLayout() {
         mode={wallet || "deposit"}
         balance={balance}
         onClose={() => setWallet(null)}
+        onCompleted={() => store.refresh()}
       />
       <InsufficientBalance
         open={insufficient}

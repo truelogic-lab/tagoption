@@ -2608,3 +2608,50 @@
   0%   { filter: brightness(1.35); }
   100% { filter: brightness(1); }
 }
+
+/* =============================================================
+   Wallet — waiting + done states
+   ============================================================= */
+
+.wallet-waiting {
+  padding: 24px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.wallet-waiting__spin {
+  font-size: 36px;
+  color: var(--blue);
+  animation: walletSpin 1.2s linear infinite;
+}
+@keyframes walletSpin {
+  to { transform: rotate(360deg); }
+}
+
+.wallet-waiting__icon {
+  font-size: 40px;
+}
+.wallet-waiting__icon--ok  { color: var(--green); }
+.wallet-waiting__icon--err { color: var(--danger); }
+
+.wallet-waiting__title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+}
+
+.wallet-waiting__text {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.wallet-waiting__check {
+  margin-top: 12px;
+  padding: 11px 22px;
+  font-size: 13.5px;
+}
