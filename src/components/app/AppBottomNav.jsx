@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LuChartLine, LuClock, LuSparkles } from "react-icons/lu";
+import { LuChartLine, LuClock, LuZap } from "react-icons/lu";
 
 export default function AppBottomNav({ onAi, positionCount = 0 }) {
   return (
@@ -14,7 +14,7 @@ export default function AppBottomNav({ onAi, positionCount = 0 }) {
       </NavLink>
 
       <button className="bottomnav__btn bottomnav__btn--ai" onClick={onAi}>
-        <span className="bottomnav__ai-badge"><LuSparkles /></span>
+        <span className="bottomnav__ai-badge"><LuZap /></span>
         <span>AI</span>
       </button>
 
