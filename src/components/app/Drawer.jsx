@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LuX, LuChartLine, LuSettings, LuCircleArrowDown, LuCircleArrowUp,
+  LuX, LuSettings, LuCircleArrowDown, LuCircleArrowUp,
   LuClock, LuGift, LuMoon, LuCircleHelp, LuShieldCheck, LuMessageCircle,
   LuLogOut, LuChevronRight,
 } from "react-icons/lu";
@@ -47,9 +47,6 @@ export default function Drawer({ open, onClose, user, darkTheme, onToggleDark })
         </div>
 
         <nav className="drawer__nav">
-          <button className="drawer__row" onClick={() => go("/")}>
-            <LuChartLine /> TagOption.com
-          </button>
           <button className="drawer__row" onClick={() => go("/account")}>
             <span><LuSettings /> Account settings</span>
             <LuChevronRight className="drawer__row-caret" />
