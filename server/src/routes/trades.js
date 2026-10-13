@@ -230,4 +230,18 @@ export default async function tradeRoutes(fastify) {
     const run = await getRun(sql, req.userId);
     return run ?? { running: false, progress: null };
   });
+
+  fastify.get("/trades/auto/debug", async (req) => {
+    const run = await sql`select * from auto_runs where user_id = ${req.userId}`;
+    const recentTrades = await sql`
+      select id, status, auto, opened_at, closed_at
+      from trades where user_id = ${req.userId}
+      order by opened_at desc limit 5
+    `;
+    const bal = await sql`select * from balances where user_id = ${req.userId}`;
+    return { run: run[0] ?? null, recentTrades, balance: bal[0] ?? null };
+  });
+
 }
+
+// TEMP DEBUG — remove once auto is stable
