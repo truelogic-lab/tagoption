@@ -26,7 +26,7 @@ export default function Deposit() {
     e.preventDefault();
     setError("");
     const value = Number(amount);
-    if (!value || value < 10) { setError("Minimum is $10"); return; }
+    if (!value || value < 1) { setError("Minimum is $1"); return; }
     if (method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
       setError("Enter a valid phone number"); return;
     }
@@ -108,7 +108,7 @@ export default function Deposit() {
           <div className="wallet-form__input">
             <span className="wallet-form__cur">$</span>
             <input
-              type="number" inputMode="decimal" min={10} step="0.01"
+              type="number" inputMode="decimal" min={1} step="0.01"
               placeholder="10.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -157,15 +157,14 @@ export default function Deposit() {
 
         <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
           {loading
-            ? "Redirecting to Pesapal…"
+            ? "Preparing…"
             : showKes
               ? <>Pay ${amountNum.toFixed(2)} (KSh {kesAmount.toLocaleString()}) <LuExternalLink /></>
               : <>Continue <LuExternalLink /></>}
         </button>
 
         <p className="wallet-form__note">
-          You'll be redirected to Pesapal's secure payment page to complete the transaction.
-          Your balance updates automatically once payment is confirmed.
+          Complete the payment in the secure window. Your balance updates automatically once confirmed.
         </p>
       </form>
     </div>

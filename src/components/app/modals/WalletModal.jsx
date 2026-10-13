@@ -1,21 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight,
-  LuTriangleAlert, LuCircleCheck, LuLoaderCircle, LuExternalLink,
+  LuTriangleAlert, LuCircleCheck, LuLoaderCircle,
 } from "react-icons/lu";
 import { paymentsApi } from "../../../lib/api";
 import { celebrateDeposit } from "../../../lib/celebrate";
 import { useFx } from "../../../lib/useFx";
 
+const MIN_USD = 1;
+
 const METHODS = [
-  { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",   tone: "blue",  icon: "phone", iframeOk: true  },
-  { id: "Card",         label: "Card",         desc: "Visa, Mastercard",       tone: "blue",  icon: "card",  iframeOk: false },
-  { id: "USDT (TRC20)", label: "USDT (TRC20)", desc: "Cryptocurrency",         tone: "green", icon: "usdt",  iframeOk: true  },
+  { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",   tone: "blue",  icon: "phone" },
+  { id: "Card",         label: "Card",         desc: "Visa, Mastercard",       tone: "blue",  icon: "card"  },
+  { id: "USDT (TRC20)", label: "USDT (TRC20)", desc: "Cryptocurrency",         tone: "green", icon: "usdt"  },
 ];
 
 export default function WalletModal({ open, mode, balance, onClose, onCompleted }) {
   const isDeposit = mode === "deposit";
-  const [step, setStep] = useState("method"); // method | amount | iframe | waiting | done
+  const [step, setStep] = useState("method"); // method | amount | paying | done
   const [method, setMethod] = useState(null);
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,9 +47,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
     }
   }, [open, mode]);
 
-  useEffect(() => {
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, []);
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
   if (!open) return null;
 
@@ -56,7 +56,11 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
     onClose();
   };
 
-  const pick = (m) => { setMethod(m); setStep("amount"); setError(""); };
+  const pick = (m) => {
+    setMethod(m);
+    setStep("amount");
+    setError("");
+  };
 
   const startPolling = (id) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -68,7 +72,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
           clearInterval(pollRef.current);
           pollRef.current = null;
           setStep("done");
-          celebrateDeposit({ amount: s.amount ?? 0, method: method?.label ?? "Pesapal" });
+          celebrateDeposit({ amount: s.amount ?? 0, method: method?.label ?? "" });
           onCompleted?.();
         } else if (s.status === "failed") {
           clearInterval(pollRef.current);
@@ -79,64 +83,57 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
     }, 3000);
   };
 
+  const amountNum = Number(amount) || 0;
+  const kesAmount = toKes(amountNum);
+  const showKes = amountNum >= MIN_USD;
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const value = Number(amount);
-    if (!value || value < 10) { setError("Minimum deposit is $10"); return; }
-    if (!isDeposit && value > balance) { setError("Amount exceeds your balance"); return; }
+    if (!amountNum || amountNum < MIN_USD) {
+      setError(`Minimum deposit is $${MIN_USD}`);
+      return;
+    }
+    if (!isDeposit && amountNum > balance) {
+      setError("Amount exceeds your balance");
+      return;
+    }
     if (isDeposit && method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
-      setError("Enter a valid M-Pesa phone number"); return;
+      setError("Enter a valid phone number");
+      return;
     }
 
     setLoading(true);
     try {
       const res = await paymentsApi.startDeposit({
-        amount: value,
+        amount: amountNum,
         method: method.label,
         phone: phone || undefined,
         email: email || undefined,
       });
-      if (!res?.redirectUrl) throw new Error("Pesapal did not return a redirect URL");
+      if (!res?.redirectUrl) throw new Error("Payment could not be started. Try again.");
 
       setTrackingId(res.orderTrackingId);
       setRedirectUrl(res.redirectUrl);
-
-      if (isDeposit && method.iframeOk) {
-        // Embedded iframe — user stays on our site
-        setStep("iframe");
-      } else {
-        // Open Pesapal in a new window (cards often break iframed)
-        const w = window.open(res.redirectUrl, "pesapal", "width=480,height=740");
-        if (!w) {
-          // Popup blocked — fall back to full-page redirect
-          window.location.href = res.redirectUrl;
-          return;
-        }
-        setStep("waiting");
-      }
-
+      setStep("paying");
       startPolling(res.orderTrackingId);
     } catch (e) {
       setError(e.message || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
 
-  /* ----------------------------------------------------------------- */
-
-  const amountNum = Number(amount) || 0;
-  const kesAmount = toKes(amountNum);
-  const showKes = amountNum >= 1;
+  /* ------------------------- */
 
   return (
-    <div className="modal" onClick={step === "iframe" ? undefined : close}>
+    <div className="modal" onClick={step === "paying" ? undefined : close}>
       <div
-        className={`modal__panel ${step === "iframe" ? "modal__panel--fullscreen" : ""}`}
+        className={`modal__panel ${step === "paying" ? "modal__panel--fullscreen" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {step !== "iframe" && (
+        {step !== "paying" && (
           <div className="modal__head">
             {step === "amount" ? (
               <button className="modal__back" onClick={() => setStep("method")} aria-label="Back">
@@ -148,7 +145,6 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
           </div>
         )}
 
-        {/* --- method picker --- */}
         {step === "method" && (
           <>
             <p className="modal__lead">Balance: <strong>${balance.toFixed(2)}</strong></p>
@@ -177,7 +173,6 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
           </>
         )}
 
-        {/* --- amount entry --- */}
         {step === "amount" && method && (
           <form className="wallet-form" onSubmit={submit}>
             <div className="wallet-form__chosen">
@@ -188,7 +183,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               </span>
               <div>
                 <strong>{method.label}</strong>
-                <em>via Pesapal</em>
+                <em>{method.desc}</em>
               </div>
             </div>
 
@@ -197,11 +192,15 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               <div className="wallet-form__input">
                 <span className="wallet-form__cur">$</span>
                 <input
-                  type="number" inputMode="decimal" step="0.01" min={10}
-                  placeholder="10.00"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={MIN_USD}
+                  placeholder="1.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  autoFocus required
+                  autoFocus
+                  required
                 />
               </div>
             </label>
@@ -220,9 +219,11 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
 
             {method.id === "M-Pesa" && (
               <label className="wallet-form__field">
-                <span>M-Pesa phone number</span>
+                <span>Phone number</span>
                 <input
-                  type="tel" inputMode="tel" autoComplete="tel"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   placeholder="2547XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -235,7 +236,9 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
             <label className="wallet-form__field">
               <span>Email (receipt)</span>
               <input
-                type="email" inputMode="email" autoComplete="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -243,39 +246,40 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               />
             </label>
 
-            {error && <div className="auth__error"><LuTriangleAlert /> {error}</div>}
+            {error && (
+              <div className="auth__error">
+                <LuTriangleAlert /> {error}
+              </div>
+            )}
 
             <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
               {loading
-                ? "Opening Pesapal…"
+                ? "Preparing…"
                 : showKes
                   ? `Pay $${amountNum.toFixed(2)} (KSh ${kesAmount.toLocaleString()})`
                   : `Deposit $${amount || 0}`}
             </button>
-
-            <p className="wallet-form__note">
-              {method.iframeOk
-                ? "You'll complete the payment right here without leaving the app."
-                : "Card payments open in a secure window because banks require it."}
-            </p>
           </form>
         )}
 
-        {/* --- embedded iframe --- */}
-        {step === "iframe" && redirectUrl && (
+        {step === "paying" && redirectUrl && (
           <div className="wallet-iframe">
             <div className="wallet-iframe__bar">
               <div className="wallet-iframe__secure">
                 <span className="wallet-iframe__dot" />
-                Secure payment · Pesapal
+                Secure payment
               </div>
-              <button className="wallet-iframe__close" onClick={() => setStep("waiting")}>
-                Minimize
+              <button
+                type="button"
+                className="wallet-iframe__close"
+                onClick={() => setStep("amount")}
+              >
+                Back
               </button>
             </div>
 
             <iframe
-              title="Pesapal payment"
+              title="Payment"
               src={redirectUrl}
               className="wallet-iframe__frame"
               allow="payment"
@@ -288,26 +292,6 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
           </div>
         )}
 
-        {/* --- external waiting (cards / popup-blocked) --- */}
-        {step === "waiting" && (
-          <div className="wallet-waiting">
-            <LuLoaderCircle className="wallet-waiting__spin" />
-            <h4 className="wallet-waiting__title">Waiting for confirmation</h4>
-            <p className="wallet-waiting__text">
-              Complete the payment in the Pesapal window. Your balance will
-              update here automatically.
-            </p>
-            <button
-              type="button"
-              className="btn btn-ghost wallet-waiting__check"
-              onClick={() => trackingId && startPolling(trackingId)}
-            >
-              Check status now
-            </button>
-          </div>
-        )}
-
-        {/* --- final --- */}
         {step === "done" && (
           <div className="wallet-waiting">
             {status === "completed" ? (
