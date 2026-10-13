@@ -72,7 +72,6 @@ export default function Trade() {
   const payout = +(stake + profit).toFixed(2);
 
   const auto = useAutoTrade({
-    balance: store.balance,
     onTick: () => store.refreshInFlight(),
     onFinish: () => store.refresh(),
   });
@@ -199,7 +198,7 @@ export default function Trade() {
           <StakePanel value={stake} onChange={setStake} />
           <StakeChips value={stake} onChange={setStake} />
           <SettingsRow target={target} stop={stop} multiplier={multiplier} onChange={onSetting} />
-          <TradeButtons stake={stake} payout={payout} onPlace={handleManualPlace} />
+          <TradeButtons stake={stake} payout={payout} onPlace={handleManualPlace} autoRunning={auto.running} />
         </>
       ) : (
         <AutoPanel

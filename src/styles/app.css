@@ -3023,3 +3023,28 @@
 @keyframes autoSpin {
   to { transform: rotate(360deg); }
 }
+
+/* Even/Odd buttons while auto is running */
+.actions--busy {
+  grid-template-columns: 1fr;
+}
+
+.actions__busy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.actions__spin {
+  font-size: 15px;
+  color: var(--blue);
+  animation: autoSpin 0.9s linear infinite;
+}

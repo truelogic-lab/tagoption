@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tradeApi } from "../../../lib/api";
 
-const POLL_MS = 800;
+/**
+ * Client wrapper around the server auto-run.
+ *
+ * Server settles every ~1.4s, so we poll every 600ms — fast enough that the
+ * UI reads as live, without hammering the API. Polling stops when the tab is
+ * hidden and resumes the moment it comes back.
+ */
+const POLL_MS = 600;
 
 export function useAutoTrade({ onTick, onFinish }) {
   const [running, setRunning] = useState(false);
@@ -21,6 +28,7 @@ export function useAutoTrade({ onTick, onFinish }) {
   };
 
   const poll = useCallback(async () => {
+    if (document.visibilityState !== "visible") return;
     try {
       const s = await tradeApi.autoStatus();
       if (!s) return;
@@ -38,7 +46,7 @@ export function useAutoTrade({ onTick, onFinish }) {
       }
       wasRunning.current = Boolean(s.running);
     } catch {
-      // silent — will retry on next tick
+      // silent retry next tick
     }
   }, [onTick, onFinish]);
 
@@ -67,7 +75,7 @@ export function useAutoTrade({ onTick, onFinish }) {
     try { await tradeApi.autoStop(); } catch {}
   }, []);
 
-  // Resume in-flight run on mount
+  // Resume an in-flight run on mount (survives refresh / navigation)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -89,13 +97,13 @@ export function useAutoTrade({ onTick, onFinish }) {
     };
   }, [poll]);
 
-  // Re-poll immediately when the tab becomes visible again
+  // Fast re-poll on tab focus
   useEffect(() => {
-    const onVisible = () => {
+    const onVis = () => {
       if (document.visibilityState === "visible" && wasRunning.current) poll();
     };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, [poll]);
 
   useEffect(() => () => stopPolling(), []);

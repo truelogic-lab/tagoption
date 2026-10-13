@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { LuRefreshCw } from "react-icons/lu";
 
-export default function TradeButtons({ stake, payout, onPlace, disabled }) {
+export default function TradeButtons({ stake, payout, onPlace, disabled, autoRunning }) {
   const [pressed, setPressed] = useState(null);
 
   useEffect(() => {
     if (!pressed) return;
     const id = setTimeout(() => setPressed(null), 900);
-    return () => clearTimeout(id);
-  }, [pressed]);
-
-  const handle = (contract) => {
-    if (disabled) return;
-    setPressed(contract);
-    onPlace(contract);
-  };
+    if (autoRunning) {
+    return (
+      <div className="actions actions--busy">
+        <div className="actions__busy">
+          <LuRefreshCw className="actions__spin" />
+          <span>Auto trade running…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="actions">
