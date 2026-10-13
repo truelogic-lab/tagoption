@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tradeApi } from "../../../lib/api";
 
-const POLL_MS = 1200;
+const POLL_MS = 800;
 
 export function useAutoTrade({ onTick, onFinish }) {
   const [running, setRunning] = useState(false);

@@ -8,8 +8,8 @@
 import { pushNotification } from "./notify.js";
 import { rollOutcome, profitOf as settlementProfit, WIN_RATE, PAYOUT_MULT } from "./settlement.js";
 
-const SETTLE_MS = 4500;
-const INTERTRADE_MS = 700;
+const SETTLE_MS = 1400;
+const INTERTRADE_MS = 150;
 
 const STALE_MS = 60_000;      // heartbeat older than this → assume server died
 const HEARTBEAT_MS = 5_000;   // how often to update heartbeat during a run

@@ -7,7 +7,7 @@ import { pushNotification } from "./notify.js";
 
 import { rollOutcome } from "./settlement.js";
 
-const STALE_MS = 6_000;
+const STALE_MS = 1_500;
 
 export function startReaper(sql) {
   const tick = async () => {
@@ -90,7 +90,7 @@ export function startReaper(sql) {
     }
   };
 
-  const id = setInterval(tick, 2_000);
+  const id = setInterval(tick, 800);
   tick();
   return () => clearInterval(id);
 }

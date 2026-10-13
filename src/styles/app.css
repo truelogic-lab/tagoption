@@ -3008,3 +3008,18 @@
   color: var(--danger);
   margin-bottom: 12px;
 }
+
+/* Auto panel — live spinning indicator while a run is active */
+.auto__progress-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.auto__spin {
+  font-size: 14px;
+  color: var(--blue);
+  animation: autoSpin 0.9s linear infinite;
+}
+@keyframes autoSpin {
+  to { transform: rotate(360deg); }
+}

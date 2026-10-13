@@ -1,66 +1,22 @@
-import React, { useEffect, useRef, useState } from "react";
-import { LuMinus, LuPlus, LuPlay, LuSquare } from "react-icons/lu";
+import React from "react";
+import { LuMinus, LuPlus, LuPlay, LuSquare, LuRefreshCw } from "react-icons/lu";
 
-function Stepper({ value, onChange, min = 1, max = Infinity, prefix = "", step = 1 }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    } else {
-      setDraft(String(value));
-    }
-  }, [editing, value]);
-
-  const commit = () => {
-    const n = Number(draft);
-    if (Number.isFinite(n) && n >= min && n <= max) onChange(n);
-    else setDraft(String(value));
-    setEditing(false);
-  };
-
+function Stepper({ value, onChange, min = 1, max = Infinity, prefix = "", step = 1, disabled }) {
   return (
     <div className="auto__stepper">
       <button
         className="auto__step"
         onClick={() => onChange(Math.max(min, value - step))}
+        disabled={disabled}
         aria-label="Decrease"
       >
         <LuMinus />
       </button>
-
-      <span
-        className={`auto__value ${editing ? "is-editing" : ""}`}
-        onClick={() => !editing && setEditing(true)}
-      >
-        {editing ? (
-          <input
-            ref={inputRef}
-            type="number"
-            inputMode="decimal"
-            value={draft}
-            min={min}
-            max={max === Infinity ? undefined : max}
-            step={step}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              if (e.key === "Escape") { setDraft(String(value)); setEditing(false); }
-            }}
-            className="auto__input"
-          />
-        ) : (
-          <>{prefix}{value}</>
-        )}
-      </span>
-
+      <span className="auto__value">{prefix}{value}</span>
       <button
         className="auto__step"
         onClick={() => onChange(Math.min(max, value + step))}
+        disabled={disabled}
         aria-label="Increase"
       >
         <LuPlus />
@@ -79,17 +35,18 @@ export default function AutoPanel({
 }) {
   const needed = stake * count;
   const insufficient = balance < needed;
+  const pct = progress?.total ? (progress.done / progress.total) * 100 : 0;
 
   return (
     <div className="auto">
       <div className="auto__row">
         <label className="auto__label">Number of trades</label>
-        <Stepper value={count} onChange={onCountChange} min={1} max={100} />
+        <Stepper value={count} onChange={onCountChange} min={1} max={500} disabled={running} />
       </div>
 
       <div className="auto__row">
         <label className="auto__label">Stake per trade</label>
-        <Stepper value={stake} onChange={onStakeChange} min={1} prefix="$" />
+        <Stepper value={stake} onChange={onStakeChange} min={1} prefix="$" disabled={running} />
       </div>
 
       <div className="auto__summary">
@@ -116,17 +73,19 @@ export default function AutoPanel({
       {running && (
         <div className="auto__progress">
           <div className="auto__progress-head">
-            <span>Trading {progress.done}/{progress.total}</span>
+            <span className="auto__progress-live">
+              <LuRefreshCw className="auto__spin" />
+              Trading {progress.done}/{progress.total}
+            </span>
             <span className={pnl >= 0 ? "auto__pnl-pos" : "auto__pnl-neg"}>
               {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
             </span>
           </div>
+
           <div className="auto__bar">
-            <div
-              className="auto__bar-fill"
-              style={{ width: `${(progress.done / progress.total) * 100}%` }}
-            />
+            <div className="auto__bar-fill" style={{ width: `${pct}%` }} />
           </div>
+
           <div className="auto__stats">
             <span>{progress.wins} won</span>
             <span>{progress.losses} lost</span>
