@@ -3,7 +3,7 @@ import { tradeApi } from "../../../lib/api";
 
 const POLL_MS = 1200;
 
-export function useAutoTrade({ balance, onTick, onFinish }) {
+export function useAutoTrade({ onTick, onFinish }) {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, wins: 0, losses: 0 });
   const [pnl, setPnl] = useState(0);
@@ -30,54 +30,44 @@ export function useAutoTrade({ balance, onTick, onFinish }) {
       if (typeof s.pnl === "number") setPnl(s.pnl);
       if (s.error) setError(s.error);
 
-      // Mirror server state into the store on every tick
       onTick?.();
 
-      // Run just finished
       if (wasRunning.current && !s.running) {
         onFinish?.();
         stopPolling();
       }
       wasRunning.current = Boolean(s.running);
     } catch {
-      // silent retry
+      // silent — will retry on next tick
     }
   }, [onTick, onFinish]);
 
-  const start = useCallback(
-    async ({ count, stake, targetProfit, stopLoss, market }) => {
-      setError(null);
-      try {
-        const res = await tradeApi.autoStart({
-          count, stake, targetProfit, stopLoss, market,
-        });
-        if (res?.status !== "running") {
-          throw new Error(res?.error || "Auto trade failed to start");
-        }
+  const start = useCallback(async ({ count, stake, targetProfit, stopLoss, market }) => {
+    setError(null);
+    try {
+      const res = await tradeApi.autoStart({ count, stake, targetProfit, stopLoss, market });
+      if (res?.status !== "running") throw new Error(res?.error || "Auto trade failed to start");
 
-        setRunId(res.runId);
-        setRunning(true);
-        setPnl(0);
-        setProgress({ done: 0, total: count, wins: 0, losses: 0 });
-        wasRunning.current = true;
+      setRunId(res.runId);
+      setRunning(true);
+      setPnl(0);
+      setProgress({ done: 0, total: count, wins: 0, losses: 0 });
+      wasRunning.current = true;
 
-        stopPolling();
-        pollRef.current = setInterval(poll, POLL_MS);
-        poll();
-      } catch (e) {
-        setError(e.message || "Failed to start auto trade");
-        setRunning(false);
-      }
-    },
-    [poll]
-  );
+      stopPolling();
+      pollRef.current = setInterval(poll, POLL_MS);
+      poll();
+    } catch (e) {
+      setError(e.message || "Failed to start auto trade");
+      setRunning(false);
+    }
+  }, [poll]);
 
   const stop = useCallback(async () => {
     try { await tradeApi.autoStop(); } catch {}
-    // The next poll picks up `running: false`
   }, []);
 
-  // Resume an in-flight run on mount (survives refresh)
+  // Resume in-flight run on mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -97,6 +87,15 @@ export function useAutoTrade({ balance, onTick, onFinish }) {
       cancelled = true;
       stopPolling();
     };
+  }, [poll]);
+
+  // Re-poll immediately when the tab becomes visible again
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && wasRunning.current) poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [poll]);
 
   useEffect(() => () => stopPolling(), []);
