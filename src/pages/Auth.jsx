@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  LuMail, LuLock, LuEye, LuEyeOff, LuUser, LuArrowRight,
+  LuMail, LuLock, LuEye, LuEyeOff, LuUser, LuArrowRight, LuTriangleAlert, LuCheck,
 } from "react-icons/lu";
 import { signIn, signUp } from "../lib/auth";
 
@@ -15,24 +15,60 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [touched, setTouched] = useState({});
 
   const isLogin = mode === "login";
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const switchMode = (m) => { setMode(m); setError(""); };
+  const blur = (k) => () => setTouched((t) => ({ ...t, [k]: true }));
+
+  const switchMode = (m) => {
+    setMode(m);
+    setError("");
+    setTouched({});
+  };
+
+  // Field-level validation
+  const errors = {
+    name:
+      !isLogin && touched.name && form.name.trim().length < 2
+        ? "Enter your full name"
+        : "",
+    email:
+      touched.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)
+        ? "Enter a valid email"
+        : "",
+    password:
+      touched.password && form.password.length < 6
+        ? "Minimum 6 characters"
+        : "",
+  };
+
+  const allValid =
+    (isLogin || form.name.trim().length >= 2) &&
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email) &&
+    form.password.length >= 6;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setTouched({ name: true, email: true, password: true });
+
+    if (!allValid) return;
+
     setLoading(true);
     try {
       if (isLogin) {
         await signIn({ email: form.email, password: form.password });
       } else {
-        await signUp({ name: form.name, email: form.email, password: form.password });
+        await signUp({
+          name: form.name.trim(),
+          email: form.email,
+          password: form.password,
+        });
       }
       navigate(from, { replace: true });
-    } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+    } catch (e) {
+      setError(e.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -48,12 +84,12 @@ export default function Auth() {
 
         <div className="auth__head">
           <h1 className="auth__title">
-            {isLogin ? "Welcome back." : "Create your account."}
+            {isLogin ? "Sign in" : "Create your account"}
           </h1>
           <p className="auth__subtitle">
             {isLogin
-              ? "Sign in to pick up where you left off."
-              : "Takes under a minute. No paperwork, no waiting."}
+              ? "Welcome back. Pick up where you left off."
+              : "Takes less than a minute. No paperwork, no waiting."}
           </p>
         </div>
 
@@ -74,50 +110,57 @@ export default function Auth() {
           </button>
         </div>
 
-        <form className="auth__form" onSubmit={handleSubmit}>
+        <form className="auth__form" onSubmit={handleSubmit} noValidate>
           {!isLogin && (
             <label className="auth__field">
               <span className="auth__label">Full name</span>
-              <div className="auth__input">
+              <div className={`auth__input ${errors.name ? "is-error" : ""}`}>
                 <LuUser className="auth__input-icon" />
                 <input
                   type="text"
-                  placeholder="Warren Musungu"
+                  placeholder="Jane Doe"
                   value={form.name}
                   onChange={update("name")}
-                  required
+                  onBlur={blur("name")}
                   autoComplete="name"
+                  autoFocus
                 />
               </div>
+              {errors.name && (
+                <span className="auth__field-error">{errors.name}</span>
+              )}
             </label>
           )}
 
           <label className="auth__field">
-            <span className="auth__label">Email address</span>
-            <div className="auth__input">
+            <span className="auth__label">Email</span>
+            <div className={`auth__input ${errors.email ? "is-error" : ""}`}>
               <LuMail className="auth__input-icon" />
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={update("email")}
-                required
+                onBlur={blur("email")}
                 autoComplete="email"
+                autoFocus={isLogin}
               />
             </div>
+            {errors.email && (
+              <span className="auth__field-error">{errors.email}</span>
+            )}
           </label>
 
           <label className="auth__field">
             <span className="auth__label">Password</span>
-            <div className="auth__input">
+            <div className={`auth__input ${errors.password ? "is-error" : ""}`}>
               <LuLock className="auth__input-icon" />
               <input
                 type={showPass ? "text" : "password"}
                 placeholder="At least 6 characters"
                 value={form.password}
                 onChange={update("password")}
-                required
-                minLength={6}
+                onBlur={blur("password")}
                 autoComplete={isLogin ? "current-password" : "new-password"}
               />
               <button
@@ -129,6 +172,9 @@ export default function Auth() {
                 {showPass ? <LuEyeOff /> : <LuEye />}
               </button>
             </div>
+            {errors.password && (
+              <span className="auth__field-error">{errors.password}</span>
+            )}
           </label>
 
           {isLogin && (
@@ -141,15 +187,29 @@ export default function Auth() {
             </div>
           )}
 
-          {error && <div className="auth__error">{error}</div>}
+          {error && (
+            <div className="auth__error">
+              <LuTriangleAlert />
+              <span>{error}</span>
+            </div>
+          )}
 
           <button
             type="submit"
             className="btn btn-primary auth__submit"
             disabled={loading}
           >
-            {loading ? "Please wait…" : isLogin ? "Sign In" : "Create Account"}
-            {!loading && <LuArrowRight />}
+            {loading ? (
+              <>
+                <span className="auth__spinner" />
+                Please wait…
+              </>
+            ) : (
+              <>
+                {isLogin ? "Sign In" : "Create Account"}
+                <LuArrowRight />
+              </>
+            )}
           </button>
 
           <p className="auth__foot">
@@ -173,20 +233,35 @@ export default function Auth() {
 
       <aside className="auth__aside">
         <div className="auth__aside-inner">
+          <span className="auth__aside-tag">Built for traders</span>
           <h2 className="auth__aside-title">
-            Trade volatility indices<br />
-            without the <span className="accent">learning curve</span>.
+            Trade volatility indices with clarity.
           </h2>
           <p className="auth__aside-text">
-            Fund with M-Pesa, USDT, or card. Place your first trade in under
-            five minutes. Withdraw whenever you want.
+            Real-time charts, fast execution, and payouts that land when they say
+            they will. Fund with M-Pesa, card, or crypto.
           </p>
 
-          <div className="auth__stats">
-            <div className="auth__stat"><strong>150+</strong><span>Markets</span></div>
-            <div className="auth__stat"><strong>24/7</strong><span>Trading hours</span></div>
-            <div className="auth__stat"><strong>$1</strong><span>Minimum trade</span></div>
-            <div className="auth__stat"><strong>99.9%</strong><span>Uptime</span></div>
+          <ul className="auth__perks">
+            <li><LuCheck /> Start from $1 per trade</li>
+            <li><LuCheck /> Deposits credited in seconds</li>
+            <li><LuCheck /> Live markets, 24/7</li>
+            <li><LuCheck /> Withdraw anytime</li>
+          </ul>
+
+          <div className="auth__aside-stats">
+            <div className="auth__aside-stat">
+              <strong>150+</strong>
+              <span>Markets</span>
+            </div>
+            <div className="auth__aside-stat">
+              <strong>24/7</strong>
+              <span>Hours</span>
+            </div>
+            <div className="auth__aside-stat">
+              <strong>99.9%</strong>
+              <span>Uptime</span>
+            </div>
           </div>
         </div>
       </aside>
