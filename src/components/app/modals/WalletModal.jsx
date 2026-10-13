@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight,
-  LuTriangleAlert, LuCircleCheck, LuLoaderCircle,
+  LuTriangleAlert, LuCircleCheck, LuLoaderCircle, LuExternalLink,
 } from "react-icons/lu";
 import { paymentsApi } from "../../../lib/api";
 import { celebrateDeposit } from "../../../lib/celebrate";
@@ -17,7 +17,7 @@ const METHODS = [
 
 export default function WalletModal({ open, mode, balance, onClose, onCompleted }) {
   const isDeposit = mode === "deposit";
-  const [step, setStep] = useState("method"); // method | amount | paying | done
+  const [step, setStep] = useState("method"); // method | amount | redirecting | waiting | done
   const [method, setMethod] = useState(null);
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
@@ -25,7 +25,6 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [trackingId, setTrackingId] = useState(null);
-  const [redirectUrl, setRedirectUrl] = useState(null);
   const [status, setStatus] = useState(null);
 
   const pollRef = useRef(null);
@@ -41,7 +40,6 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
       setError("");
       setLoading(false);
       setTrackingId(null);
-      setRedirectUrl(null);
       setStatus(null);
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     }
@@ -115,12 +113,20 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
       if (!res?.redirectUrl) throw new Error("Payment could not be started. Try again.");
 
       setTrackingId(res.orderTrackingId);
-      setRedirectUrl(res.redirectUrl);
-      setStep("paying");
-      startPolling(res.orderTrackingId);
+
+      // Save the pending deposit so the callback page knows what to check
+      sessionStorage.setItem("tagoption.pendingPayment", JSON.stringify({
+        trackingId: res.orderTrackingId,
+        amount: amountNum,
+        method: method.label,
+      }));
+
+      // Full-page redirect — no iframe. User leaves the app briefly,
+      // completes payment, and lands on /payments/callback which
+      // checks status and shows the result.
+      window.location.href = res.redirectUrl;
     } catch (e) {
       setError(e.message || "Something went wrong");
-    } finally {
       setLoading(false);
     }
   };
@@ -128,22 +134,17 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
   /* ------------------------- */
 
   return (
-    <div className="modal" onClick={step === "paying" ? undefined : close}>
-      <div
-        className={`modal__panel ${step === "paying" ? "modal__panel--fullscreen" : ""}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {step !== "paying" && (
-          <div className="modal__head">
-            {step === "amount" ? (
-              <button className="modal__back" onClick={() => setStep("method")} aria-label="Back">
-                <LuArrowLeft />
-              </button>
-            ) : <span className="modal__spacer" />}
-            <h3 className="modal__title">{isDeposit ? "Deposit Funds" : "Withdraw Funds"}</h3>
-            <button className="modal__close" onClick={close} aria-label="Close"><LuX /></button>
-          </div>
-        )}
+    <div className="modal" onClick={close}>
+      <div className="modal__panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal__head">
+          {step === "amount" ? (
+            <button className="modal__back" onClick={() => setStep("method")} aria-label="Back">
+              <LuArrowLeft />
+            </button>
+          ) : <span className="modal__spacer" />}
+          <h3 className="modal__title">{isDeposit ? "Deposit Funds" : "Withdraw Funds"}</h3>
+          <button className="modal__close" onClick={close} aria-label="Close"><LuX /></button>
+        </div>
 
         {step === "method" && (
           <>
@@ -192,15 +193,11 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               <div className="wallet-form__input">
                 <span className="wallet-form__cur">$</span>
                 <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min={MIN_USD}
+                  type="number" inputMode="decimal" step="0.01" min={MIN_USD}
                   placeholder="1.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  autoFocus
-                  required
+                  autoFocus required
                 />
               </div>
             </label>
@@ -221,9 +218,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               <label className="wallet-form__field">
                 <span>Phone number</span>
                 <input
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
+                  type="tel" inputMode="tel" autoComplete="tel"
                   placeholder="2547XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -236,9 +231,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
             <label className="wallet-form__field">
               <span>Email (receipt)</span>
               <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
+                type="email" inputMode="email" autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -259,36 +252,27 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
                   ? `Pay $${amountNum.toFixed(2)} (KSh ${kesAmount.toLocaleString()})`
                   : `Deposit $${amount || 0}`}
             </button>
+
+            <p className="wallet-form__note">
+              You'll be redirected to a secure payment page. Your balance updates automatically.
+            </p>
           </form>
         )}
 
-        {step === "paying" && redirectUrl && (
-          <div className="wallet-iframe">
-            <div className="wallet-iframe__bar">
-              <div className="wallet-iframe__secure">
-                <span className="wallet-iframe__dot" />
-                Secure payment
-              </div>
-              <button
-                type="button"
-                className="wallet-iframe__close"
-                onClick={() => setStep("amount")}
-              >
-                Back
-              </button>
-            </div>
-
-            <iframe
-              title="Payment"
-              src={redirectUrl}
-              className="wallet-iframe__frame"
-              allow="payment"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-
-            <div className="wallet-iframe__foot">
-              <p>Complete the payment above. Your balance updates automatically.</p>
-            </div>
+        {step === "waiting" && (
+          <div className="wallet-waiting">
+            <LuLoaderCircle className="wallet-waiting__spin" />
+            <h4 className="wallet-waiting__title">Waiting for confirmation</h4>
+            <p className="wallet-waiting__text">
+              Complete the payment. Your balance will update here automatically.
+            </p>
+            <button
+              type="button"
+              className="btn btn-ghost wallet-waiting__check"
+              onClick={() => trackingId && startPolling(trackingId)}
+            >
+              Check status now
+            </button>
           </div>
         )}
 
