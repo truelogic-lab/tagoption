@@ -57,18 +57,6 @@ export default function AppLayout() {
     navigate("/positions");
   };
 
-  const handleWalletDeposit = async ({ amount, method, details }) => {
-    await store.deposit({ amount, method, details });
-    await notif.refresh();
-    celebrateDeposit({ amount, method });
-    setWallet(null);
-  };
-  const handleWalletWithdraw = async ({ amount, method, details }) => {
-    await store.withdraw({ amount, method, details });
-    await notif.refresh();
-    celebrateWithdraw({ amount, method });
-    setWallet(null);
-  };
 
   const handleLoadBot = (result) => { setBotResult(result); navigate("/trade"); };
   const clearBotResult = () => setBotResult(null);
@@ -105,8 +93,6 @@ export default function AppLayout() {
         mode={wallet || "deposit"}
         balance={balance}
         onClose={() => setWallet(null)}
-        onDeposit={handleWalletDeposit}
-        onWithdraw={handleWalletWithdraw}
       />
       <InsufficientBalance
         open={insufficient}

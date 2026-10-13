@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
 import {
-  LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight, LuTriangleAlert,
+  LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight,
+  LuTriangleAlert, LuExternalLink,
 } from "react-icons/lu";
-import { METHODS } from "../wallet/methods";
+import { paymentsApi } from "../../../lib/api";
 
-export default function WalletModal({
-  open, mode, balance, onClose, onDeposit, onWithdraw,
-}) {
+const METHODS = [
+  { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",   tone: "blue",  icon: "phone" },
+  { id: "Card",         label: "Card",         desc: "Visa, Mastercard",       tone: "blue",  icon: "card" },
+  { id: "USDT (TRC20)", label: "USDT (TRC20)", desc: "Cryptocurrency",         tone: "green", icon: "usdt" },
+];
+
+export default function WalletModal({ open, mode, balance, onClose }) {
   const isDeposit = mode === "deposit";
   const [step, setStep] = useState("method");
   const [method, setMethod] = useState(null);
   const [amount, setAmount] = useState("");
-  const [details, setDetails] = useState({});
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,7 +27,8 @@ export default function WalletModal({
       setStep("method");
       setMethod(null);
       setAmount("");
-      setDetails({});
+      setPhone("");
+      setEmail("");
       setError("");
       setLoading(false);
     }
@@ -29,13 +36,10 @@ export default function WalletModal({
 
   if (!open) return null;
 
-  const close = () => { onClose(); };
+  const close = () => onClose();
 
   const pick = (m) => {
     setMethod(m);
-    const init = {};
-    m.fields.forEach((f) => { init[f.name] = ""; });
-    setDetails(init);
     setStep("amount");
     setError("");
   };
@@ -45,22 +49,29 @@ export default function WalletModal({
     setError("");
 
     const value = Number(amount);
-    if (!value || value < 1) { setError("Minimum is $1"); return; }
+    if (!value || value < 10) { setError("Minimum deposit is $10"); return; }
     if (!isDeposit && value > balance) { setError("Amount exceeds your balance"); return; }
-
-    for (const f of method.fields) {
-      if (!f.validate(details[f.name])) {
-        setError(f.error);
-        return;
-      }
+    if (isDeposit && method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
+      setError("Enter a valid M-Pesa phone number"); return;
     }
 
     setLoading(true);
     try {
-      const payload = { amount: value, method: method.label, details: { ...details } };
-      if (isDeposit) await onDeposit?.(payload);
-      else await onWithdraw?.(payload);
-      // Parent will close us
+      if (isDeposit) {
+        // Hand off to Pesapal — opens the hosted page in the same tab
+        const res = await paymentsApi.startDeposit({
+          amount: value,
+          method: method.label,
+          phone: phone || undefined,
+          email: email || undefined,
+        });
+        if (!res?.redirectUrl) throw new Error("Pesapal did not return a redirect URL");
+        window.location.href = res.redirectUrl;
+        return;
+      }
+
+      // Withdrawals are not yet wired to Pesapal B2C — leave a placeholder
+      throw new Error("Withdrawals are processed manually. Contact support.");
     } catch (e) {
       setError(e.message || "Something went wrong");
       setLoading(false);
@@ -120,42 +131,58 @@ export default function WalletModal({
               </span>
               <div>
                 <strong>{method.label}</strong>
-                <em>{method.detail}</em>
+                <em>{isDeposit ? "via Pesapal" : "Manual review"}</em>
               </div>
             </div>
 
-            {method.fields.map((f) => (
-              <label key={f.name} className="wallet-form__field">
-                <span>{f.label}</span>
-                <input
-                  type={f.type || "text"}
-                  inputMode={f.inputMode}
-                  autoComplete={f.autoComplete}
-                  placeholder={f.placeholder}
-                  maxLength={f.maxLength}
-                  value={details[f.name] || ""}
-                  onChange={(e) => setDetails((s) => ({ ...s, [f.name]: e.target.value }))}
-                  className="wallet-form__input-text"
-                />
-              </label>
-            ))}
-
             <label className="wallet-form__field">
-              <span>Amount</span>
+              <span>Amount (USD)</span>
               <div className="wallet-form__input">
                 <span className="wallet-form__cur">$</span>
                 <input
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  min={1}
-                  placeholder="0.00"
+                  min={10}
+                  placeholder="10.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   autoFocus
+                  required
                 />
               </div>
             </label>
+
+            {isDeposit && method.id === "M-Pesa" && (
+              <label className="wallet-form__field">
+                <span>M-Pesa phone number</span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="2547XXXXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="wallet-form__input-text"
+                  required
+                />
+              </label>
+            )}
+
+            {isDeposit && (
+              <label className="wallet-form__field">
+                <span>Email (receipt)</span>
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="wallet-form__input-text"
+                />
+              </label>
+            )}
 
             {error && (
               <div className="auth__error">
@@ -165,11 +192,18 @@ export default function WalletModal({
 
             <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
               {loading
-                ? "Processing…"
+                ? "Redirecting to Pesapal…"
                 : isDeposit
-                  ? `Deposit $${amount || 0}`
+                  ? <>Deposit ${amount || 0} <LuExternalLink /></>
                   : `Withdraw $${amount || 0}`}
             </button>
+
+            {isDeposit && (
+              <p className="wallet-form__note">
+                You'll be redirected to Pesapal to complete the payment securely.
+                Your balance updates automatically once confirmed.
+              </p>
+            )}
           </form>
         )}
       </div>
