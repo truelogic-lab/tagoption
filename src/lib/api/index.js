@@ -6,3 +6,4 @@ export { walletApi } from "./wallet";
 export { tradeApi } from "./trade";
 export { notificationsApi } from "./notifications";
 export { paymentsApi } from "./payments";
+export { fxApi } from "./fx";

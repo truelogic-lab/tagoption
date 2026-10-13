@@ -11,10 +11,12 @@ import marketRoutes from "./routes/markets.js";
 import notificationRoutes from "./routes/notifications.js";
 import accountRoutes from "./routes/account.js";
 import paymentsRoutes from "./routes/payments.js";
+import fxRoutes from "./routes/fx.js";
 import { requireAuth } from "./middleware/auth.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
 import { startReaper } from "./lib/reaper.js";
 import { resumeOrphans } from "./lib/autoRunner.js";
+import { warmFxCache } from "./lib/fx/index.js";
 import { sql } from "./db/index.js";
 
 dotenv.config();
@@ -49,9 +51,11 @@ await app.register(tradeRoutes);
 await app.register(notificationRoutes);
 await app.register(accountRoutes);
 await app.register(paymentsRoutes);
+await app.register(fxRoutes);
 
 startTicker();
 startReaper(sql);
+warmFxCache().catch(() => {});
 
 // Resume or force-finish any orphaned auto runs from a previous boot
 try {

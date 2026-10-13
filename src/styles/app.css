@@ -2733,3 +2733,44 @@
   color: var(--text-3);
   text-align: center;
 }
+
+/* =============================================================
+   FX preview — KES amount below the USD input
+   ============================================================= */
+
+.fx-preview {
+  margin-top: -6px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.20);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fx-preview__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fx-preview__row span {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.fx-preview__row strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.2px;
+}
+
+.fx-preview__meta {
+  font-size: 10.5px;
+  color: var(--text-3);
+  letter-spacing: .3px;
+}

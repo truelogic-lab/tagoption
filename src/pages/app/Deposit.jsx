@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { LuSmartphone, LuCreditCard, LuArrowUpRight, LuExternalLink } from "react-icons/lu";
 import { paymentsApi } from "../../lib/api";
 import { celebrateDeposit } from "../../lib/celebrate";
+import { useFx } from "../../lib/useFx";
 
 const METHODS = [
   { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",       icon: "phone",  tone: "blue" },
@@ -19,6 +20,7 @@ export default function Deposit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [redirectUrl, setRedirectUrl] = useState(null);
+  const { rate, toKes } = useFx();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -45,6 +47,10 @@ export default function Deposit() {
       setLoading(false);
     }
   };
+
+  const amountNum = Number(amount) || 0;
+  const kesAmount = toKes(amountNum);
+  const showKes = amountNum >= 1;
 
   if (!method) {
     return (
@@ -112,6 +118,16 @@ export default function Deposit() {
           </div>
         </label>
 
+        {showKes && (
+          <div className="fx-preview">
+            <div className="fx-preview__row">
+              <span>You pay</span>
+              <strong>KSh {kesAmount.toLocaleString()}</strong>
+            </div>
+            <div className="fx-preview__meta">at 1 USD = {rate.toFixed(2)} KES</div>
+          </div>
+        )}
+
         {method.id === "M-Pesa" && (
           <label className="wallet-form__field">
             <span>M-Pesa phone number</span>
@@ -142,7 +158,9 @@ export default function Deposit() {
         <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
           {loading
             ? "Redirecting to Pesapal…"
-            : <>Continue <LuExternalLink /></>}
+            : showKes
+              ? <>Pay ${amountNum.toFixed(2)} (KSh {kesAmount.toLocaleString()}) <LuExternalLink /></>
+              : <>Continue <LuExternalLink /></>}
         </button>
 
         <p className="wallet-form__note">

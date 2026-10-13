@@ -5,6 +5,7 @@ import {
 } from "react-icons/lu";
 import { paymentsApi } from "../../../lib/api";
 import { celebrateDeposit } from "../../../lib/celebrate";
+import { useFx } from "../../../lib/useFx";
 
 const METHODS = [
   { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",   tone: "blue",  icon: "phone", iframeOk: true  },
@@ -26,6 +27,7 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
   const [status, setStatus] = useState(null);
 
   const pollRef = useRef(null);
+  const { rate, toKes } = useFx();
 
   useEffect(() => {
     if (open) {
@@ -124,6 +126,10 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
 
   /* ----------------------------------------------------------------- */
 
+  const amountNum = Number(amount) || 0;
+  const kesAmount = toKes(amountNum);
+  const showKes = amountNum >= 1;
+
   return (
     <div className="modal" onClick={step === "iframe" ? undefined : close}>
       <div
@@ -200,6 +206,18 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
               </div>
             </label>
 
+            {showKes && (
+              <div className="fx-preview">
+                <div className="fx-preview__row">
+                  <span>You pay</span>
+                  <strong>KSh {kesAmount.toLocaleString()}</strong>
+                </div>
+                <div className="fx-preview__meta">
+                  at 1 USD = {rate.toFixed(2)} KES
+                </div>
+              </div>
+            )}
+
             {method.id === "M-Pesa" && (
               <label className="wallet-form__field">
                 <span>M-Pesa phone number</span>
@@ -228,7 +246,11 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
             {error && <div className="auth__error"><LuTriangleAlert /> {error}</div>}
 
             <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
-              {loading ? "Opening Pesapal…" : `Deposit $${amount || 0}`}
+              {loading
+                ? "Opening Pesapal…"
+                : showKes
+                  ? `Pay $${amountNum.toFixed(2)} (KSh ${kesAmount.toLocaleString()})`
+                  : `Deposit $${amount || 0}`}
             </button>
 
             <p className="wallet-form__note">
