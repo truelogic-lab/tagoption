@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ---------- Theme: dark (default) ---------- */
+:root,
+:root[data-theme="dark"] {
+  --bg: #0a0a0f;
+  --bg-2: #101018;
+  --card: #13131c;
+  --border: #22222e;
+  --border-2: #2e2e3d;
+
+  --text: #ffffff;
+  --text-2: #9a9aac;
+  --text-3: #5c5c6e;
+
+  --red: #ff2d55;
+  --red-2: #e11d48;
+  --blue: #2563eb;
+  --purple: #a855f7;
+  --green: #22c55e;
+  --yellow: #eab308;
+
+  --overlay: rgba(0,0,0,.6);
+  --header-blur: rgba(10,10,15,.85);
+}
+
+/* ---------- Theme: light ---------- */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-2: #f8f9fb;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --border-2: #d1d5db;
+
+  --text: #0f172a;
+  --text-2: #556070;
+  --text-3: #8a95a5;
+
+  --red: #e11d48;
+  --red-2: #be123c;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --green: #16a34a;
+  --yellow: #ca8a04;
+
+  --overlay: rgba(15,23,42,.35);
+  --header-blur: rgba(255,255,255,.85);
+}
+
+/* ---------- Shared ---------- */
+:root {
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --page-max: 1280px;
+  --page-pad: 24px;
+  --header-h: 68px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+img, svg { display: block; max-width: 100%; }
+ul { list-style: none; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+
+.container {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+.section-title {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+}
+.accent { color: var(--red); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+.btn-primary { background: var(--red); color: #fff; }
+.btn-primary:hover { background: var(--red-2); }
+.btn-ghost { border: 1px solid var(--border-2); color: var(--text); }
+.btn-ghost:hover { border-color: var(--red); color: var(--red); }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: #3b82f6; }
+
+/* Reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--reveal-y, 16px));
+  transition: opacity .6s ease, transform .6s ease;
+  will-change: opacity, transform;
+}
+.reveal.is-in { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- Extended theme tokens ---------- */
+:root,
+:root[data-theme="dark"] {
+  --hover-bg:    var(--hover-bg);
+  --hover-bg-2:  var(--hover-bg-2);
+  --skeleton:    var(--skeleton);
+  --grid-line:   rgba(148,163,184,.10);
+  --danger:      var(--danger);
+}
+:root[data-theme="light"] {
+  --hover-bg:    rgba(15,23,42,.05);
+  --hover-bg-2:  rgba(15,23,42,.03);
+  --skeleton:    rgba(15,23,42,.06);
+  --grid-line:   rgba(15,23,42,.08);
+  --danger:      #dc2626;
+}
+
+/* -------------------------------------------------------------
+   No text selection on UI chrome (prevents the Android
+   copy/paste popup on long-press / double-tap)
+   ------------------------------------------------------------- */
+button,
+[role="button"],
+.stake__value,
+.settings__row,
+.auto__value,
+.chips__chip,
+.tabs__tab,
+.mode__btn,
+.bottomnav__btn,
+.topbar__wallet,
+.topbar__icon,
+.drawer__row,
+.drawer__subrow,
+.digits,
+.digits__cell,
+.chart__market,
+.chart__zoom button,
+.positions__tab,
+.history-filters__chip,
+.account__trigger,
+.refer-card__copy,
+.card-link,
+.paylist__row,
+.reward-row,
+.nav-link,
+.header__nav-link,
+.header__login,
+.header__cta,
+.header__burger,
+.mobile__trigger,
+.mobile__sub a,
+.mobile__actions .btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection where it matters */
+input,
+textarea,
+[contenteditable],
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Keep the referral link selectable (users may want to copy manually) */
+.refer-card__code--link {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}

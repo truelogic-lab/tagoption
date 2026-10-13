@@ -1,0 +1,352 @@
+/* =============================================================
+   App pages — account, deposit, withdraw, history, refer
+   ============================================================= */
+
+/* Page wrapper */
+.page-form { padding: 20px 16px 40px; }
+.page-form__head { margin-bottom: 20px; }
+.page-form__title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.page-form__lead {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.page-form__back {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding: 6px 0;
+  margin-bottom: 10px;
+}
+.page-form__back:hover { color: var(--red); }
+
+/* ---------- Account settings ---------- */
+.account__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.account__section {
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.account__section.is-open { border-color: var(--border-2); }
+
+.account__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  text-align: left;
+}
+.account__icon {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--red);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.account__text { flex: 1; min-width: 0; }
+.account__text strong { display: block; font-size: 14px; font-weight: 700; }
+.account__text em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.account__caret {
+  color: var(--text-3);
+  font-size: 14px;
+  transition: transform .2s;
+}
+.account__caret.is-open { transform: rotate(90deg); }
+
+.account__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.account-form { padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.account-form__field { display: block; }
+.account-form__field > span {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.account-form__field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.account-form__field input:focus { border-color: var(--blue); }
+
+.account-form__submit {
+  align-self: flex-start;
+  padding: 11px 22px;
+  font-size: 13.5px;
+}
+
+.account-form__note {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.account-form__qr {
+  width: 140px; height: 140px;
+  margin: 0 auto 14px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--border-2);
+  background:
+    linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.04) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.04) 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 7px 7px;
+  background-color: var(--bg-2);
+}
+
+.account-form__status {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.account-form__status--ok {
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.3);
+  color: var(--green);
+}
+.account-form__msg {
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  background: rgba(37,99,235,.08);
+  border: 1px solid rgba(37,99,235,.3);
+  color: var(--blue);
+}
+
+/* ---------- Wallet form meta ---------- */
+.wallet-form__meta {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 4px;
+  font-size: 12.5px; color: var(--text-2);
+}
+.wallet-form__meta strong { color: var(--text); font-weight: 700; }
+
+/* ---------- History ---------- */
+.history { padding: 20px 16px 40px; }
+.history__head { margin-bottom: 16px; }
+
+.history-filters {
+  display: flex; gap: 6px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.history-filters::-webkit-scrollbar { display: none; }
+.history-filters__chip {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 50px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-2);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.history-filters__chip.is-active {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+/* Transaction row */
+.tx {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.tx__icon {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.tx__icon--deposit  { background: rgba(34,197,94,.15); color: var(--green); }
+.tx__icon--withdraw { background: rgba(239,68,68,.15); color: var(--danger); }
+.tx__body { flex: 1; min-width: 0; }
+.tx__body strong { display: block; font-size: 13.5px; font-weight: 600; }
+.tx__body span { display: block; font-size: 11.5px; color: var(--text-3); }
+.tx__amount { font-size: 14.5px; font-weight: 800; }
+.tx__amount--pos { color: var(--green); }
+.tx__amount--neg { color: var(--danger); }
+
+/* ---------- Refer ---------- */
+.refer { padding: 20px 16px 40px; }
+
+.refer-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, rgba(168,85,247,.12), rgba(37,99,235,.12));
+  border: 1px solid rgba(168,85,247,.28);
+  margin-bottom: 16px;
+}
+.refer-card__icon {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: rgba(168,85,247,.2);
+  color: var(--purple);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.refer-card__body { flex: 1; min-width: 0; }
+.refer-card__label {
+  display: block;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+.refer-card__code {
+  display: block;
+  font-size: 18px; font-weight: 800;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.refer-card__copy {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px; font-weight: 700;
+  color: #fff;
+  background: var(--blue);
+}
+.refer-card__copy:hover { background: #3b82f6; }
+
+.refer__stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.refer__stat {
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.refer__stat strong {
+  display: block;
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.refer__stat span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.refer__subtitle {
+  font-size: 15px; font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.refer-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.refer-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.refer-row__avatar {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
+}
+.refer-row__body { flex: 1; min-width: 0; }
+.refer-row__body strong { display: block; font-size: 13.5px; font-weight: 600; }
+.refer-row__body span { display: block; font-size: 11.5px; color: var(--text-3); }
+.refer-row__status {
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.refer-row__status--pending { background: rgba(250,204,21,.15); color: #eab308; }
+.refer-row__status--active  { background: rgba(34,197,94,.15); color: var(--green); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 520px) {
+  .page-form { padding: 16px 14px 32px; }
+  .page-form__title { font-size: 20px; }
+  .account__trigger { padding: 14px; }
+  .account__icon { width: 34px; height: 34px; font-size: 14px; }
+  .account__text strong { font-size: 13.5px; }
+  .account__text em { font-size: 11.5px; }
+  .account-form__submit { width: 100%; }
+  .refer__stat strong { font-size: 18px; }
+}
+
+/* Referral link — truncate gracefully on small screens */
+.refer-card__code--link {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-2);
+  font-variant-numeric: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+@media (max-width: 520px) {
+  .refer-card { flex-wrap: wrap; }
+  .refer-card__body { flex-basis: 100%; }
+  .refer-card__code--link { font-size: 11.5px; }
+  .refer-card__copy { width: 100%; justify-content: center; }
+}
+
+.account-form__msg--err {
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.3);
+  color: var(--danger);
+}
