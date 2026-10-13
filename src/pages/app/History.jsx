@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
-  LuSearch, LuFilter, LuArrowDown, LuArrowUp, LuRefreshCw,
-  LuTarget, LuDownload,
+  LuArrowDown, LuArrowUp, LuRefreshCw, LuTarget, LuSearch,
 } from "react-icons/lu";
 import { isLive } from "../../lib/api";
+
+/* ------------------------------------------------------------------
+   Transaction history — one flat list, grouped by day, with a simple
+   type filter. Nothing else. Fast, scannable, honest.
+   ------------------------------------------------------------------ */
 
 const FILTERS = [
   { id: "all",      label: "All" },
@@ -15,8 +19,7 @@ const FILTERS = [
 
 function fmt(n) {
   const v = Number(n);
-  if (!Number.isFinite(v)) return "0.00";
-  return Math.abs(v).toFixed(2);
+  return Number.isFinite(v) ? Math.abs(v).toFixed(2) : "0.00";
 }
 
 function timeAgo(iso) {
@@ -31,19 +34,22 @@ function timeAgo(iso) {
 function dayLabel(iso) {
   const d = new Date(iso);
   const now = new Date();
-  const sameDay = (a, b) =>
+  const same = (a, b) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
-  if (sameDay(d, now)) return "Today";
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, yesterday)) return "Yesterday";
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
+  if (same(d, now)) return "Today";
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  if (same(d, y)) return "Yesterday";
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+  });
 }
 
 function describe(tx) {
-  const at = tx.at || tx.closedAt || tx.openedAt;
   const amount = Number(tx.amount) || 0;
 
   switch (tx.type) {
@@ -82,15 +88,6 @@ function describe(tx) {
         Icon: won ? LuArrowDown : LuArrowUp,
       };
     }
-    // Server sometimes tags trades as just "trade" with a signed amount
-    case "trade":
-      return {
-        title: tx.reference?.includes("settle") || amount > 0 ? "Trade settled" : "Trade opened",
-        sub: amount > 0 ? "Won" : "Placed",
-        amount,
-        tone: amount > 0 ? "pos" : "neg",
-        Icon: amount > 0 ? LuArrowDown : LuRefreshCw,
-      };
     default:
       return {
         title: tx.type || "Transaction",
@@ -106,25 +103,23 @@ export default function History() {
   const { store } = useOutletContext();
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
 
-  // Poll while visible so it stays fresh
+  // Refresh from the server periodically while visible
   useEffect(() => {
     if (!isLive()) return;
-    let cancelled = false;
+    let stopped = false;
     const tick = async () => {
-      if (cancelled) return;
-      if (document.visibilityState !== "visible") return;
+      if (stopped || document.visibilityState !== "visible") return;
       try { await store.refresh(); } catch {}
     };
     tick();
     const id = setInterval(tick, 5000);
-    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
-    document.addEventListener("visibilitychange", onVisible);
+    const onVis = () => { if (document.visibilityState === "visible") tick(); };
+    document.addEventListener("visibilitychange", onVis);
     return () => {
-      cancelled = true;
+      stopped = true;
       clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [store]);
 
@@ -143,10 +138,13 @@ export default function History() {
         }
         return true;
       })
-      .sort((a, b) => new Date(b.at || b.closedAt) - new Date(a.at || a.closedAt));
+      .sort((a, b) => {
+        const ta = new Date(a.at || a.closedAt || a.openedAt).getTime() || 0;
+        const tb = new Date(b.at || b.closedAt || b.openedAt).getTime() || 0;
+        return tb - ta;
+      });
   }, [all, filter, query]);
 
-  // Group by day
   const grouped = useMemo(() => {
     const map = new Map();
     for (const tx of filtered) {
@@ -158,97 +156,70 @@ export default function History() {
     return Array.from(map.values());
   }, [filtered]);
 
-  const totals = useMemo(() => {
-    let in_ = 0, out = 0;
-    for (const tx of all) {
-      const d = describe(tx);
-      if (d.amount > 0) in_ += d.amount;
-      else out += Math.abs(d.amount);
-    }
-    return { in: in_, out };
-  }, [all]);
+  const empty = grouped.length === 0;
 
   return (
-    <div className="history">
-      <div className="history__head">
-        <div>
-          <h1 className="page-form__title">History</h1>
-          <p className="page-form__lead">Every deposit, withdrawal, and settled trade.</p>
-        </div>
+    <div className="hist">
+      <div className="hist__head">
+        <h1 className="hist__title">History</h1>
+        <p className="hist__sub">Deposits, withdrawals, and trades.</p>
       </div>
 
-      <div className="history__totals">
-        <div className="history__total">
-          <span>In</span>
-          <strong className="is-pos">+${totals.in.toFixed(2)}</strong>
-        </div>
-        <div className="history__total">
-          <span>Out</span>
-          <strong className="is-neg">-${totals.out.toFixed(2)}</strong>
-        </div>
-      </div>
-
-      <div className="history__controls">
-        <div className="history__search">
+      <div className="hist__tools">
+        <div className="hist__search">
           <LuSearch />
           <input
             type="text"
-            placeholder="Search transactions"
+            placeholder="Search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        <div className="history__filter-wrap">
-          <button
-            className={`history__filter-btn ${filterOpen ? "is-open" : ""}`}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <LuFilter />
-            {FILTERS.find((f) => f.id === filter)?.label}
-          </button>
-
-          {filterOpen && (
-            <div className="history__filter-menu">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  className={`history__filter-option ${filter === f.id ? "is-active" : ""}`}
-                  onClick={() => { setFilter(f.id); setFilterOpen(false); }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="hist__filters">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              className={`hist__filter ${filter === f.id ? "is-active" : ""}`}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {grouped.length === 0 ? (
-        <div className="positions__empty">
-          <div className="positions__empty-icon"><LuTarget /></div>
-          <h3>{query || filter !== "all" ? "Nothing matches" : "No transactions yet"}</h3>
-          <p>{query || filter !== "all" ? "Try changing the filter or search." : "Deposits, withdrawals, and settled trades appear here."}</p>
+      {empty ? (
+        <div className="hist__empty">
+          <div className="hist__empty-icon"><LuTarget /></div>
+          <h3>{query || filter !== "all" ? "Nothing here" : "No activity yet"}</h3>
+          <p>
+            {query || filter !== "all"
+              ? "Try a different filter or search term."
+              : "Deposits, withdrawals, and trades appear here."}
+          </p>
         </div>
       ) : (
         grouped.map((group) => (
-          <div className="history__group" key={group.label}>
-            <div className="history__group-label">{group.label}</div>
-            <div className="positions__list history__group-list">
+          <div className="hist__group" key={group.label}>
+            <div className="hist__day">{group.label}</div>
+            <div className="hist__rows">
               {group.items.map((tx) => {
                 const d = describe(tx);
                 const iso = tx.at || tx.closedAt || tx.openedAt;
                 return (
-                  <div className="tx" key={tx.id ?? `${tx.type}-${iso}`}>
-                    <span className={`tx__icon tx__icon--${d.tone === "pos" ? "deposit" : "withdraw"}`}>
+                  <div className="hist__row" key={tx.id ?? `${tx.type}-${iso}`}>
+                    <span className={`hist__icon hist__icon--${d.tone}`}>
                       <d.Icon />
                     </span>
-                    <div className="tx__body">
-                      <strong>{d.title}</strong>
-                      <span>{d.sub} · {timeAgo(iso)}</span>
+                    <div className="hist__body">
+                      <strong className="hist__row-title">{d.title}</strong>
+                      <span className="hist__row-sub">{d.sub} · {timeAgo(iso)}</span>
                     </div>
-                    <span className={`tx__amount tx__amount--${d.tone}`}>
-                      {d.amount === 0 ? "—" : `${d.amount > 0 ? "+" : "-"}$${fmt(d.amount)}`}
+                    <span className={`hist__amount hist__amount--${d.tone}`}>
+                      {d.amount === 0
+                        ? "—"
+                        : `${d.amount > 0 ? "+" : "-"}$${fmt(d.amount)}`}
                     </span>
                   </div>
                 );
