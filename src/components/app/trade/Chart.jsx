@@ -73,28 +73,6 @@ export default function Chart({
             </linearGradient>
           </defs>
 
-          {[0.2, 0.4, 0.6, 0.8].map((p) => (
-            <line
-              key={`h${p}`}
-              x1="0" x2={VIEW_W}
-              y1={PAD_TOP + p * DRAW_H}
-              y2={PAD_TOP + p * DRAW_H}
-              stroke="rgba(148,163,184,.08)"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          {[0.2, 0.4, 0.6, 0.8].map((p) => (
-            <line
-              key={`v${p}`}
-              y1={PAD_TOP} y2={VIEW_H - PAD_BOTTOM}
-              x1={p * VIEW_W} x2={p * VIEW_W}
-              stroke="rgba(148,163,184,.06)"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-
           <path d={areaD} fill="url(#chartFill)" />
           <path
             d={pathD}
