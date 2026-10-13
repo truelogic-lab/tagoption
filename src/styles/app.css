@@ -2052,3 +2052,122 @@
     box-shadow: 0 1px 0 var(--border);
   }
 }
+
+/* =============================================================
+   History — phone refinements
+   ============================================================= */
+
+@media (max-width: 520px) {
+
+  .history { padding: 16px 14px 40px; }
+
+  /* Title block */
+  .history__head { margin-bottom: 12px; }
+  .history .page-form__title { font-size: 20px; letter-spacing: -.4px; }
+  .history .page-form__lead { font-size: 12.5px; }
+
+  /* Totals — tighter */
+  .history__totals {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .history__total {
+    padding: 12px 12px;
+    border-radius: var(--r-sm);
+  }
+  .history__total span {
+    font-size: 10px;
+    letter-spacing: .6px;
+    margin-bottom: 2px;
+  }
+  .history__total strong {
+    font-size: 16px;
+    letter-spacing: -.2px;
+  }
+
+  /* Search + filter row — stack vertically */
+  .history__controls {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .history__search {
+    width: 100%;
+    padding: 10px 12px;
+  }
+  .history__search input { font-size: 13px; }
+  .history__search svg { font-size: 13px; }
+
+  .history__filter-wrap { width: 100%; }
+  .history__filter-btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+  .history__filter-menu {
+    width: 100%;
+    right: 0;
+    left: 0;
+  }
+
+  /* Day groups */
+  .history__group { margin-bottom: 16px; }
+  .history__group-label {
+    padding: 0 2px 6px;
+    font-size: 10px;
+    letter-spacing: .8px;
+  }
+
+  /* Transaction rows — tight but readable */
+  .history .tx {
+    padding: 12px;
+    gap: 10px;
+    border-radius: var(--r-sm);
+  }
+  .history .tx__icon {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+  .history .tx__body strong {
+    font-size: 13px;
+    line-height: 1.25;
+    /* let long market names wrap cleanly */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .history .tx__body span {
+    font-size: 11px;
+    margin-top: 1px;
+  }
+  .history .tx__amount {
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+
+  /* Empty state */
+  .history .positions__empty {
+    padding: 56px 20px;
+  }
+  .history .positions__empty-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+  .history .positions__empty h3 { font-size: 15px; }
+  .history .positions__empty p { font-size: 12.5px; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .history { padding: 14px 12px 32px; }
+  .history__total strong { font-size: 15px; }
+  .history .tx { padding: 10px; gap: 8px; }
+  .history .tx__icon { width: 28px; height: 28px; font-size: 12px; }
+  .history .tx__body strong { font-size: 12.5px; }
+  .history .tx__amount { font-size: 12.5px; }
+  .history__search input { font-size: 12.5px; }
+}
