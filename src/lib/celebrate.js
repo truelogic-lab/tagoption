@@ -1,21 +1,36 @@
 import { showToast } from "./toast";
 
+/**
+ * Professional, restrained toasts.
+ * No emoji, no "congrats", just confirm what happened with the exact numbers.
+ */
+
 export function celebrateWin({ amount }) {
   showToast({
     tone: "win",
-    emoji: "🎉",
-    title: "Congratulations — you won!",
-    subtitle: `+$${amount.toFixed(2)} credited to your balance`,
-    ttl: 4500,
+    label: "Trade settled",
+    title: `You won $${amount.toFixed(2)}`,
+    subtitle: "Credited to your balance",
+    ttl: 4200,
+  });
+}
+
+export function celebrateLoss({ amount }) {
+  showToast({
+    tone: "loss",
+    label: "Trade settled",
+    title: `Lost $${amount.toFixed(2)}`,
+    subtitle: "Better luck on the next one",
+    ttl: 3600,
   });
 }
 
 export function celebrateDeposit({ amount, method }) {
   showToast({
     tone: "deposit",
-    emoji: "💸",
-    title: "Deposit successful",
-    subtitle: `$${amount.toFixed(2)} added via ${method}`,
+    label: "Deposit",
+    title: `$${amount.toFixed(2)} added`,
+    subtitle: `via ${method}`,
     ttl: 4200,
   });
 }
@@ -23,20 +38,9 @@ export function celebrateDeposit({ amount, method }) {
 export function celebrateWithdraw({ amount, method }) {
   showToast({
     tone: "withdraw",
-    emoji: "✅",
-    title: "Withdrawal requested",
-    subtitle: `$${amount.toFixed(2)} to ${method} — processing now`,
+    label: "Withdrawal",
+    title: `$${amount.toFixed(2)} requested`,
+    subtitle: `to ${method} · processing`,
     ttl: 4200,
-  });
-}
-
-export function celebrateLoss({ amount }) {
-  // Small, calm, no sad emoji
-  showToast({
-    tone: "info",
-    emoji: "📉",
-    title: "Trade lost",
-    subtitle: `-$${amount.toFixed(2)}. Next one's yours.`,
-    ttl: 3600,
   });
 }

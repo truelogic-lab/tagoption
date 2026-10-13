@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight, LuTriangleAlert,
 } from "react-icons/lu";
@@ -15,21 +15,24 @@ export default function WalletModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Reset whenever the modal opens
+  useEffect(() => {
+    if (open) {
+      setStep("method");
+      setMethod(null);
+      setAmount("");
+      setDetails({});
+      setError("");
+      setLoading(false);
+    }
+  }, [open, mode]);
+
   if (!open) return null;
 
-  const reset = () => {
-    setStep("method");
-    setMethod(null);
-    setAmount("");
-    setDetails({});
-    setError("");
-    setLoading(false);
-  };
-  const close = () => { reset(); onClose(); };
+  const close = () => { onClose(); };
 
   const pick = (m) => {
     setMethod(m);
-    // Reset fields
     const init = {};
     m.fields.forEach((f) => { init[f.name] = ""; });
     setDetails(init);
@@ -45,7 +48,6 @@ export default function WalletModal({
     if (!value || value < 1) { setError("Minimum is $1"); return; }
     if (!isDeposit && value > balance) { setError("Amount exceeds your balance"); return; }
 
-    // Validate every method-specific field
     for (const f of method.fields) {
       if (!f.validate(details[f.name])) {
         setError(f.error);
@@ -54,14 +56,15 @@ export default function WalletModal({
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
-
-    const payload = { amount: value, method: method.label, details: { ...details } };
-    if (isDeposit) await onDeposit?.(payload);
-    else await onWithdraw?.(payload);
-
-    setLoading(false);
-    close();
+    try {
+      const payload = { amount: value, method: method.label, details: { ...details } };
+      if (isDeposit) await onDeposit?.(payload);
+      else await onWithdraw?.(payload);
+      // Parent will close us
+    } catch (e) {
+      setError(e.message || "Something went wrong");
+      setLoading(false);
+    }
   };
 
   return (
@@ -87,7 +90,7 @@ export default function WalletModal({
                   ? () => <span className="paylist__usdt">₮</span>
                   : m.icon === "card" ? LuCreditCard : LuSmartphone;
                 return (
-                  <button key={m.id} className="paylist__row" onClick={() => pick(m)}>
+                  <button key={m.id} className="paylist__row" onClick={() => pick(m)} type="button">
                     <span className={`paylist__icon paylist__icon--${m.tone}`}><Icon /></span>
                     <div>
                       <strong>{m.label}</strong>
