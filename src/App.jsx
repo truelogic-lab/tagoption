@@ -13,7 +13,6 @@ import Privacy from "./pages/Privacy";
 import Responsible from "./pages/Responsible";
 import LiveChat from "./pages/LiveChat";
 import Auth from "./pages/Auth";
-import Ai from "./pages/Ai";
 
 // Guard + app shell
 import RequireAuth from "./components/guards/RequireAuth";
@@ -43,7 +42,6 @@ export default function App() {
         <Route path="/responsible" element={<Responsible />} />
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/ai" element={<Ai />} />
 
         {/* Authed app */}
         <Route
