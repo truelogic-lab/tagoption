@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppTopBar from "./AppTopBar";
 import AppBottomNav from "./AppBottomNav";
@@ -12,7 +12,6 @@ import { useAppStore } from "./useAppStore";
 import { useNotifications } from "./useNotifications";
 import { getSession } from "../../lib/auth";
 import { useTheme } from "../../lib/useTheme";
-import { celebrateDeposit, celebrateWithdraw } from "../../lib/celebrate";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -22,6 +21,30 @@ export default function AppLayout() {
   const [insufficient, setInsufficient] = useState(false);
   const [botResult, setBotResult] = useState(null);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Read the session reactively so AppTopBar always has the current user,
+  // even right after login (getSession can be called before localStorage writes).
+  const [sessionUser, setSessionUser] = useState(() => {
+    const s = getSession();
+    return { name: s?.user?.name ?? "", email: s?.user?.email ?? "" };
+  });
+
+  useEffect(() => {
+    const sync = () => {
+      const s = getSession();
+      setSessionUser({
+        name: s?.user?.name ?? "",
+        email: s?.user?.email ?? "",
+      });
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("focus", sync);
+    };
+  }, []);
 
   const store = useAppStore();
   const { balance, positions } = store;
@@ -44,20 +67,11 @@ export default function AppLayout() {
     return () => document.removeEventListener("contextmenu", handler);
   }, []);
 
-  const user = useMemo(() => {
-    const s = getSession();
-    return {
-      name: s?.user?.name ?? "",
-      email: s?.user?.email ?? "",
-    };
-  }, []);
-
   const handleManualPlace = (payload) => {
     if (balance < payload.stake) { setInsufficient(true); return; }
     store.placeTrade(payload);
     navigate("/positions");
   };
-
 
   const handleLoadBot = (result) => { setBotResult(result); navigate("/trade"); };
   const clearBotResult = () => setBotResult(null);
@@ -70,6 +84,7 @@ export default function AppLayout() {
         onDeposit={() => setWallet("deposit")}
         onBell={() => { setNotifOpen(true); notif.refresh(); }}
         unreadCount={notif.unreadCount}
+        user={sessionUser}
       />
       <main className="app__body">
         <Outlet
@@ -85,7 +100,7 @@ export default function AppLayout() {
       <Drawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        user={user}
+        user={sessionUser}
         darkTheme={isDark}
         onToggleDark={toggleTheme}
       />
