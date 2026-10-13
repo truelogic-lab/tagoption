@@ -5,7 +5,7 @@
  */
 import { pushNotification } from "./notify.js";
 
-const STALE_MS = 60_000;
+const STALE_MS = 6_000;
 const WIN_CHANCE = 0.952;
 
 export function startReaper(sql) {
@@ -89,7 +89,7 @@ export function startReaper(sql) {
     }
   };
 
-  const id = setInterval(tick, 30_000);
-  tick(); // run once on boot
+  const id = setInterval(tick, 2_000);
+  tick();
   return () => clearInterval(id);
 }

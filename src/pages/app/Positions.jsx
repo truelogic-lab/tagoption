@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   LuTarget, LuArrowUp, LuArrowDown, LuRefreshCw,
 } from "react-icons/lu";
 import TxList from "../../components/app/history/TxList";
+import { isLive } from "../../lib/api";
 
 const TABS = [
   { id: "open",   label: "Open" },
@@ -22,6 +23,33 @@ function timeAgo(iso) {
 export default function Positions() {
   const { store } = useOutletContext();
   const [tab, setTab] = useState("open");
+
+  // Poll the server every 2 seconds while the page is visible
+  useEffect(() => {
+    if (!isLive()) return;
+
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      if (document.visibilityState !== "visible") return;
+      try {
+        await store.refreshInFlight();
+      } catch {}
+    };
+
+    tick();
+    const id = setInterval(tick, 2000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [store]);
 
   const open = store.positions;
   const closed = store.closed;
@@ -62,7 +90,9 @@ export default function Positions() {
                 </div>
                 <div className="position__row">
                   <span>Payout if win</span>
-                  <strong className="position__win">${(p.stake + p.payout).toFixed(2)}</strong>
+                  <strong className="position__win">
+                    ${(p.stake + (p.payout ?? 0)).toFixed(2)}
+                  </strong>
                 </div>
                 <div className="position__foot">
                   <span>{timeAgo(p.openedAt)}</span>
@@ -96,7 +126,7 @@ export default function Positions() {
                   </div>
                   <div className="history__right">
                     <strong className={won ? "history__win" : "history__loss"}>
-                      {won ? "+" : "-"}${(won ? p.payout : p.stake).toFixed(2)}
+                      {won ? "+" : "-"}${(won ? (p.payout ?? 0) : p.stake).toFixed(2)}
                     </strong>
                   </div>
                 </div>
