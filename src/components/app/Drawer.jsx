@@ -18,7 +18,11 @@ export default function Drawer({ open, onClose, user, darkTheme, onToggleDark })
     // Purge per-user local caches so the next account starts fresh
     try {
       Object.keys(localStorage)
-        .filter((k) => k.startsWith("tagoption.notifications.") || k.startsWith("tagoption.store."))
+        .filter((k) =>
+          k.startsWith("tagoption.notifications.") ||
+          k.startsWith("tagoption.store.") ||
+          k.startsWith("tagoption.seenTrades.")
+        )
         .forEach((k) => localStorage.removeItem(k));
     } catch {}
     onClose();

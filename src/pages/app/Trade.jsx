@@ -17,6 +17,7 @@ import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
 import { celebrateWin, celebrateLoss } from "../../lib/celebrate";
+import { hasSeen, markSeen } from "../../lib/seenTrades";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -66,7 +67,6 @@ export default function Trade() {
   const [botBanner, setBotBanner] = useState(null);
 
   const [lastResult, setLastResult] = useState(null);
-  const seenClosedIds = useRef(new Set());
 
   const profit = profitOf(stake);
   const payout = +(stake + profit).toFixed(2);
@@ -85,11 +85,14 @@ export default function Trade() {
   useEffect(() => {
     const latest = store.closed[0];
     if (!latest) return;
-    if (seenClosedIds.current.has(latest.id)) return;
-    seenClosedIds.current.add(latest.id);
+
+    // Skip if we've already handled this trade on this device for this user
+    if (hasSeen(latest.id)) return;
+
+    markSeen(latest.id);
     setLastResult({ result: latest.result, key: latest.id });
 
-    // Fire a celebration only on the trade screen
+    // Fire a celebration only once per trade
     if (latest.result === "won") {
       celebrateWin({ amount: latest.payout ?? 0 });
     } else {
