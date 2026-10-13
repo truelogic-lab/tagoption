@@ -4,7 +4,6 @@ import {
   LuTarget, LuArrowUp, LuArrowDown, LuRefreshCw, LuBot, LuHand,
   LuChevronDown, LuFilter,
 } from "react-icons/lu";
-import TxList from "../../components/app/history/TxList";
 import { isLive } from "../../lib/api";
 
 const TABS = [
@@ -228,7 +227,39 @@ export default function Positions() {
         )
       )}
 
-      {tab === "tx" && <TxList items={tx} />}
+      {tab === "tx" && (
+        tx.length === 0 ? (
+          <Empty title="No transactions yet" sub="Deposits, withdrawals, and settled trades will appear here" />
+        ) : (
+          <div className="positions__list">
+            {tx.map((t) => {
+              const amount = Number(t.amount) || 0;
+              const isPos = amount >= 0;
+              const label =
+                t.type === "deposit" ? "Deposit"
+                : t.type === "withdraw" ? "Withdrawal"
+                : t.type === "trade-open" ? "Trade opened"
+                : t.type === "trade-settle" ? "Trade settled"
+                : (t.type || "Transaction");
+
+              return (
+                <div className="tx" key={t.id ?? `${t.type}-${t.at}`}>
+                  <span className={`tx__icon tx__icon--${isPos ? "deposit" : "withdraw"}`}>
+                    {isPos ? <LuArrowDown /> : <LuArrowUp />}
+                  </span>
+                  <div className="tx__body">
+                    <strong>{label}</strong>
+                    <span>{t.method || t.market || "—"} · {timeAgo(t.at || t.closedAt || t.openedAt)}</span>
+                  </div>
+                  <span className={`tx__amount tx__amount--${isPos ? "pos" : "neg"}`}>
+                    {amount === 0 ? "—" : `${isPos ? "+" : "-"}$${Math.abs(amount).toFixed(2)}`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
     </div>
   );
 }
