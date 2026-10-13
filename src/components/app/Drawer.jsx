@@ -39,7 +39,11 @@ export default function Drawer({ open, onClose, user, darkTheme, onToggleDark })
         </div>
 
         <div className="drawer__user">
-          <div className="drawer__avatar">{user?.avatarLetter ?? "?"}</div>
+          <div className="drawer__avatar">
+            {(user?.name?.trim()?.[0] || user?.email?.trim()?.[0] || "").toUpperCase() || (
+              <span className="drawer__avatar-dot" />
+            )}
+          </div>
           <div>
             <strong>{user?.name}</strong>
             <span>{user?.email}</span>

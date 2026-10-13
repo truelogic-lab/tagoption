@@ -2954,3 +2954,14 @@
   .hist__row-title { font-size: 13px; }
   .hist__amount { font-size: 13.5px; }
 }
+
+/* Neutral placeholder when user data isn't loaded yet */
+.topbar__wallet-dot,
+.drawer__avatar-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .6;
+}

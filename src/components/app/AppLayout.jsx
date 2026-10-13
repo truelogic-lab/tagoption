@@ -46,9 +46,10 @@ export default function AppLayout() {
 
   const user = useMemo(() => {
     const s = getSession();
-    const name = s?.user?.name ?? "Trader";
-    const email = s?.user?.email ?? "—";
-    return { name, email, avatarLetter: name.charAt(0).toUpperCase() || "T" };
+    return {
+      name: s?.user?.name ?? "",
+      email: s?.user?.email ?? "",
+    };
   }, []);
 
   const handleManualPlace = (payload) => {
