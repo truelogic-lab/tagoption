@@ -464,125 +464,6 @@
 }
 .ov__pending-btn:hover { background: #facc15; }
 
-/* ---------- 6. Tables (Users / Trades / Transactions / Audit) ---------- */
-.adm__search {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.adm__search input {
-  flex: 1;
-  padding: 11px 14px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: 13.5px;
-  outline: none;
-  min-width: 0;
-}
-.adm__search input:focus { border-color: var(--blue); }
-
-.adm__filters {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-  scrollbar-width: none;
-}
-.adm__filters::-webkit-scrollbar { display: none; }
-.adm__chip {
-  flex-shrink: 0;
-  padding: 6px 12px;
-  border-radius: 50px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-  background: var(--card);
-  border: 1px solid var(--border);
-  text-transform: capitalize;
-}
-.adm__chip.is-active {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
-}
-
-.adm__table {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
-.adm__row {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr minmax(0, auto);
-  gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: 12.5px;
-  align-items: center;
-  min-width: 0;
-}
-.adm__row:last-child { border-bottom: 0; }
-.adm__row--head {
-  background: var(--bg-2);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.adm__cell-email {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-2);
-  min-width: 0;
-}
-.adm__cell-mono {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 11px;
-  color: var(--text-3);
-  white-space: nowrap;
-}
-.adm__pos { color: var(--green); font-weight: 700; }
-.adm__neg { color: var(--danger); font-weight: 700; }
-
-.adm__btn {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-2);
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-}
-.adm__btn:hover { color: var(--text); border-color: var(--border-2); }
-.adm__btn--ok { color: var(--green); border-color: rgba(34, 197, 94, 0.35); }
-.adm__btn--danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.35); }
-
-.adm__row-actions {
-  display: inline-flex;
-  gap: 6px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.adm__loading {
-  padding: 40px;
-  text-align: center;
-  color: var(--text-3);
-  font-size: 13px;
-}
-.adm__err {
-  padding: 20px;
-  text-align: center;
-  color: var(--danger);
-  font-size: 13px;
-}
-
 /* ---------- 7. Responsive — tablet ---------- */
 @media (max-width: 1024px) {
   .adm { grid-template-columns: 220px minmax(0, 1fr); }
@@ -808,204 +689,246 @@
   }
 }
 
-/* =============================================================
-   Hard override: keep the mobile admin top bar exactly 56px
-   ============================================================= */
 
-@media (max-width: 900px) {
-  .adm__top {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 0 14px !important;
-    height: 56px !important;
-    min-height: 56px !important;
-    max-height: 56px !important;
-    background: var(--bg-2) !important;
-    border-bottom: 1px solid var(--border) !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 30 !important;
-    box-sizing: border-box !important;
-  }
-
-  .adm__burger {
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: grid !important;
-    place-items: center !important;
-    background: transparent !important;
-    border: 0 !important;
-    color: var(--text-2) !important;
-    font-size: 18px !important;
-    flex-shrink: 0 !important;
-  }
-
-  .adm__top-title {
-    flex: 1 1 auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    line-height: 1 !important;
-    color: var(--text) !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .adm__avatar {
-    width: 34px !important;
-    height: 34px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: grid !important;
-    place-items: center !important;
-    border-radius: 50% !important;
-    background: linear-gradient(135deg, #2563eb, #a855f7) !important;
-    color: #fff !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    flex-shrink: 0 !important;
-  }
-}
 
 /* =============================================================
-   Admin sub-pages — match the Dashboard mobile layout
+   Admin sub-pages — clean card layout
    ============================================================= */
 
-/* Give every admin page a consistent top gap below the 56px bar */
-@media (max-width: 900px) {
-  .adm__main {
-    padding: 14px 14px 32px !important;
-    gap: 14px;
-  }
-
-  /* Search + filter chips align with the KPI rhythm */
-  .adm__search {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .adm__search input {
-    height: 44px;
-    padding: 0 14px;
-    font-size: 14px;
-  }
-  .adm__search .btn {
-    padding: 12px 18px;
-    font-size: 13.5px;
-  }
-
-  .adm__filters {
-    gap: 6px;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-  }
-  .adm__chip {
-    padding: 8px 14px;
-    font-size: 12.5px;
-  }
-
-  /* Table → stacked cards on phones */
-  .adm__table {
-    border-radius: var(--r-md);
-    overflow: hidden;
-  }
-  .adm__row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 6px !important;
-    padding: 14px !important;
-    border-bottom: 1px solid var(--border) !important;
-    min-width: 0 !important;
-  }
-  .adm__row--head { display: none !important; }
-
-  /* Every cell becomes a key/value row */
-  .adm__row > * {
-    display: flex !important;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Add the label to each cell via a pseudo-element from the data */
-  .adm__row > *::before {
-    content: attr(data-label);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    color: var(--text-3);
-    flex-shrink: 0;
-  }
-
-  /* Email — the strongest cell, show full width above the rest */
-  .adm__cell-email {
-    font-size: 13.5px !important;
-    font-weight: 700;
-    color: var(--text) !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block !important;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 4px;
-  }
-  .adm__cell-email::before { display: none !important; }
-
-  /* Monospace cells shrink slightly */
-  .adm__cell-mono { font-size: 11.5px !important; }
-
-  /* Action row */
-  .adm__row-actions {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-    padding-top: 10px;
-    margin-top: 6px;
-    border-top: 1px solid var(--border);
-  }
-  .adm__row-actions::before { display: none !important; }
-  .adm__row-actions .adm__btn {
-    padding: 8px 14px;
-    font-size: 12.5px;
-  }
-
-  /* Amount colors still apply */
-  .adm__pos { color: var(--green) !important; font-weight: 800; }
-  .adm__neg { color: var(--danger) !important; font-weight: 800; }
-
-  /* Loading / error states */
-  .adm__loading {
-    padding: 32px 16px;
-    font-size: 13px;
-    color: var(--text-3);
-  }
-  .adm__err {
-    padding: 20px 16px;
-    font-size: 13px;
-  }
+.adm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
+.adm-page__head { display: block; }
+.adm-page__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.adm-page__sub {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* Search */
+.adm-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-search svg { color: var(--text-3); font-size: 14px; flex-shrink: 0; }
+.adm-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  outline: none;
+  padding: 10px 0;
+  min-width: 0;
+}
+.adm-search input::placeholder { color: var(--text-3); }
+.adm-search__btn {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--blue);
+  border: 0;
+}
+.adm-search__btn:hover { background: #3b82f6; }
+
+/* Filter chips */
+.adm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-chip {
+  padding: 7px 14px;
+  border-radius: 50px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--card);
+  border: 1px solid var(--border);
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+.adm-chip:hover { color: var(--text); border-color: var(--border-2); }
+.adm-chip.is-active {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+/* List of cards */
+.adm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.adm-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.adm-item__email {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.adm-item__role,
+.adm-item__status,
+.adm-item__action {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: var(--bg-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.adm-item__status--open {
+  color: var(--blue);
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.08);
+}
+.adm-item__status--won {
+  color: var(--green);
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+.adm-item__status--lost {
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.adm-item__amount {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.adm-item__amount.is-pos { color: var(--green); }
+.adm-item__amount.is-neg { color: var(--danger); }
+
+/* Key/value grid */
+.adm-item__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+@media (min-width: 700px) {
+  .adm-item__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1000px) {
+  .adm-item__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.adm-field__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.adm-field__value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card actions */
+.adm-item__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.adm-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.adm-btn:hover { color: var(--text); border-color: var(--border-2); }
+.adm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.adm-btn--ok { color: var(--green); border-color: rgba(34, 197, 94, 0.35); }
+.adm-btn--ok:hover { background: rgba(34, 197, 94, 0.08); color: var(--green); }
+.adm-btn--danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.35); }
+.adm-btn--danger:hover { background: rgba(239, 68, 68, 0.08); color: var(--danger); }
+
+/* States */
+.adm-state {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+/* Phone tweaks */
 @media (max-width: 520px) {
-  .adm__main {
-    padding: 12px 12px 28px !important;
-  }
-  .adm__search { flex-direction: column; }
-  .adm__search .btn { width: 100%; }
-  .adm__row { padding: 12px !important; }
-  .adm__row > * { font-size: 12.5px; }
-  .adm__chip { padding: 7px 12px; font-size: 12px; }
+  .adm-page__title { font-size: 20px; }
+  .adm-search { flex-wrap: wrap; padding: 10px 12px; }
+  .adm-search input { padding: 6px 0; min-width: 100%; order: 2; }
+  .adm-search svg { order: 1; }
+  .adm-search__btn { order: 3; width: 100%; }
+  .adm-item { padding: 14px; }
+  .adm-item__grid { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .adm-btn { flex: 1; text-align: center; }
 }

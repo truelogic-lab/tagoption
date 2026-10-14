@@ -7,27 +7,56 @@ export default function Audit() {
 
   useEffect(() => {
     (async () => {
-      try { setRows(await adminApi.audit()); } catch {}
+      try {
+        const data = await adminApi.audit();
+        setRows(data);
+      } catch {}
       setLoading(false);
     })();
   }, []);
 
-  if (loading) return <div className="adm__loading">Loading…</div>;
-
   return (
-    <div className="adm__table">
-      <div className="adm__row adm__row--head">
-        <span>Admin</span><span>Action</span><span>Target</span><span>Payload</span><span>When</span>
+    <div className="adm-page">
+      <div className="adm-page__head">
+        <h1 className="adm-page__title">Audit log</h1>
+        <p className="adm-page__sub">
+          {rows.length} action{rows.length === 1 ? "" : "s"} recorded
+        </p>
       </div>
-      {rows.map((a) => (
-        <div className="adm__row" key={a.id}>
-          <span className="adm__cell-email">{a.adminEmail}</span>
-          <span data-label="Action">{a.action}</span>
-          <span data-label="Target" className="adm__cell-mono">{a.targetId?.slice(-12) || "—"}</span>
-          <span data-label="Payload" className="adm__cell-mono">{a.payload ? JSON.stringify(a.payload) : "—"}</span>
-          <span data-label="When" className="adm__cell-mono">{new Date(a.at).toLocaleTimeString()}</span>
+
+      {loading ? (
+        <div className="adm-state">Loading…</div>
+      ) : rows.length === 0 ? (
+        <div className="adm-state">No admin actions yet.</div>
+      ) : (
+        <div className="adm-list">
+          {rows.map((a) => (
+            <article className="adm-item" key={a.id}>
+              <header className="adm-item__head">
+                <span className="adm-item__email">{a.adminEmail}</span>
+                <span className="adm-item__action">{a.action}</span>
+              </header>
+
+              <div className="adm-item__grid">
+                <Field label="Target"  value={a.targetId?.slice(-12) || "—"} />
+                <Field label="When"    value={new Date(a.at).toLocaleString()} />
+                {a.payload && (
+                  <Field label="Payload" value={JSON.stringify(a.payload)} />
+                )}
+              </div>
+            </article>
+          ))}
         </div>
-      ))}
+      )}
+    </div>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <div className="adm-field">
+      <span className="adm-field__label">{label}</span>
+      <span className="adm-field__value">{value}</span>
     </div>
   );
 }
