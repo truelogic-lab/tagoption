@@ -6,7 +6,7 @@
  */
 
 import {
-  PAYOUT_MULT,
+  DEFAULT_PAYOUT_MULT as PAYOUT_MULT,
   profitOf as settlementProfit,
   toCents,
   fromCents,
