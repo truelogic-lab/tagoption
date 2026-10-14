@@ -65,13 +65,15 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/refer" element={<Refer />} />
           <Route path="/payments/callback" element={<PaymentCallback />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Overview />} />
-            <Route path="users" element={<Users />} />
-            <Route path="trades" element={<Trades />} />
-            <Route path="transactions" element={<Transactions />} />
-            <Route path="audit" element={<Audit />} />
-          </Route>
+
+        </Route>
+
+                <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<Overview />} />
+          <Route path="/admin/users" element={<Users />} />
+          <Route path="/admin/trades" element={<Trades />} />
+          <Route path="/admin/transactions" element={<Transactions />} />
+          <Route path="/admin/audit" element={<Audit />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
