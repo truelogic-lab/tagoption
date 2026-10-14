@@ -25,6 +25,7 @@ import Withdraw from "./pages/app/Withdraw";
 import History from "./pages/app/History";
 import Refer from "./pages/app/Refer";
 import PaymentCallback from "./pages/app/PaymentCallback";
+import Admin from "./pages/admin/Admin";
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/refer" element={<Refer />} />
           <Route path="/payments/callback" element={<PaymentCallback />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

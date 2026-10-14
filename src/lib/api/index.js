@@ -7,3 +7,4 @@ export { tradeApi } from "./trade";
 export { notificationsApi } from "./notifications";
 export { paymentsApi } from "./payments";
 export { fxApi } from "./fx";
+export { adminApi } from "./admin";

@@ -69,3 +69,21 @@ alter table trades add column if not exists payout_mult_applied numeric(5,4);
 
 alter table transactions add column if not exists status text not null default 'completed';
 create index if not exists tx_reference_idx on transactions(reference);
+
+-- Role gate: 'user' (default) or 'admin'
+alter table users add column if not exists role text not null default 'user';
+create index if not exists users_role_idx on users(role);
+
+-- Every admin action is logged here
+create table if not exists admin_audit (
+  id          text primary key,
+  admin_id    text not null references users(id) on delete cascade,
+  action      text not null,
+  target_type text,
+  target_id   text,
+  payload     jsonb,
+  at          timestamptz not null default now()
+);
+
+create index if not exists audit_admin_at_idx on admin_audit(admin_id, at desc);
+create index if not exists audit_action_at_idx on admin_audit(action, at desc);

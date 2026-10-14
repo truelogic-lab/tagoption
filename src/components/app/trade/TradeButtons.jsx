@@ -7,7 +7,16 @@ export default function TradeButtons({ stake, payout, onPlace, disabled, autoRun
   useEffect(() => {
     if (!pressed) return;
     const id = setTimeout(() => setPressed(null), 900);
-    if (autoRunning) {
+    return () => clearTimeout(id);
+  }, [pressed]);
+
+  const handle = (contract) => {
+    if (disabled) return;
+    setPressed(contract);
+    onPlace(contract);
+  };
+
+  if (autoRunning) {
     return (
       <div className="actions actions--busy">
         <div className="actions__busy">

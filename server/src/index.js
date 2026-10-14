@@ -13,6 +13,8 @@ import accountRoutes from "./routes/account.js";
 import paymentsRoutes from "./routes/payments.js";
 import fxRoutes from "./routes/fx.js";
 import configRoutes from "./routes/config.js";
+import adminRoutes from "./routes/admin.js";
+import { requireAdmin } from "./middleware/requireAdmin.js";
 import { requireAuth } from "./middleware/auth.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
 import { startReaper } from "./lib/reaper.js";
@@ -54,6 +56,8 @@ await app.register(accountRoutes);
 await app.register(paymentsRoutes);
 await app.register(fxRoutes);
 await app.register(configRoutes);
+app.decorate("requireAdmin", requireAdmin);
+await app.register(adminRoutes);
 
 startTicker();
 startReaper(sql);
