@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { LuBot, LuX } from "react-icons/lu";
+import MarketLoader from "../../components/app/trade/MarketLoader";
 import CategoryTabs from "../../components/app/trade/CategoryTabs";
 import Chart from "../../components/app/trade/Chart";
 import MarketSelect from "../../components/app/trade/MarketSelect";
@@ -178,7 +179,7 @@ export default function Trade() {
   };
 
   if (marketsLoading || !activeMarket) {
-    return <div className="trade trade--loading">Loading market…</div>;
+    return <MarketLoader />;
   }
 
   return (
