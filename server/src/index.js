@@ -42,7 +42,16 @@ await app.register(cors, {
   origin: (process.env.CORS_ORIGIN || "http://localhost:5173").split(","),
   credentials: true,
 });
-await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+await app.register(rateLimit, {
+    max: 600,
+    timeWindow: "1 minute",
+    allowList: [
+      "/markets",
+      "/markets/*",
+      "/trades/auto/status",
+      "/wallet/balance",
+    ],
+  });
 
 app.decorate("requireAuth", requireAuth);
 

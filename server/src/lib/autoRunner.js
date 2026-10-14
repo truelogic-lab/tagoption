@@ -77,7 +77,7 @@ async function openTrade({ sql, userId, market, contract, stake }) {
 
     await tx`
       insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto, win_rate_applied, payout_mult_applied)
-      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', true, ${appliedRate}, ${getConfig().payoutMult})
+      values (${id}, ${userId}, ${market}, ${contract}, ${stakeCents}, ${profitCents}, 'open', true, ${appliedRate}, ${payoutMult})
     `;
 
     await tx`
