@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
+import AdjustModal from "../../components/admin/AdjustModal";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
@@ -9,7 +10,8 @@ export default function Users() {
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null);
 
   const load = async (q = "") => {
     setLoading(true);
@@ -22,27 +24,17 @@ export default function Users() {
 
   useEffect(() => { load(); }, []);
 
-  const adjust = async (user) => {
-    const amountRaw = window.prompt(
-      `Adjust balance for ${user.email}\n+100 credits $100 · -50 debits $50`,
-      "10"
-    );
-    if (amountRaw === null) return;
-
-    const amount = Number(amountRaw);
-    if (!Number.isFinite(amount) || amount === 0) return;
-
-    const reason = window.prompt("Reason (for audit log)", "Manual adjustment");
-    if (!reason) return;
-
-    setBusy(user.id);
+  const applyAdjust = async ({ amount, reason }) => {
+    if (!editing) return;
+    setBusy(true);
     try {
-      await adminApi.adjust(user.id, amount, reason);
+      await adminApi.adjust(editing.id, amount, reason);
+      setEditing(null);
       await load(query);
     } catch (e) {
       alert(e.message || "Failed to adjust");
     }
-    setBusy(null);
+    setBusy(false);
   };
 
   return (
@@ -69,11 +61,14 @@ export default function Users() {
       </form>
 
       {loading ? (
-        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading users…</span></div>
+        <div className="loading">
+          <Spinner size="md" tone="muted" />
+          <span>Loading users…</span>
+        </div>
       ) : rows.length === 0 ? (
         <div className="adm-state">No users match.</div>
       ) : (
-        <div className="adm-list">
+        <div className="adm-list adm-list--2col">
           {rows.map((u) => (
             <article className="adm-item" key={u.id}>
               <header className="adm-item__head">
@@ -91,16 +86,23 @@ export default function Users() {
               <div className="adm-item__actions">
                 <button
                   className="adm-btn"
-                  onClick={() => adjust(u)}
-                  disabled={busy === u.id}
+                  onClick={() => setEditing(u)}
                 >
-                  {busy === u.id ? "Working…" : "Adjust balance"}
+                  Adjust balance
                 </button>
               </div>
             </article>
           ))}
         </div>
       )}
+
+      <AdjustModal
+        open={!!editing}
+        user={editing}
+        busy={busy}
+        onClose={() => !busy && setEditing(null)}
+        onConfirm={applyAdjust}
+      />
     </div>
   );
 }

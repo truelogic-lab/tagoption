@@ -30,7 +30,7 @@ export default function Audit() {
       ) : rows.length === 0 ? (
         <div className="adm-state">No admin actions yet.</div>
       ) : (
-        <div className="adm-list">
+        <div className="adm-list adm-list--2col">
           {rows.map((a) => (
             <article className="adm-item" key={a.id}>
               <header className="adm-item__head">

@@ -63,7 +63,7 @@ export default function Transactions() {
       ) : rows.length === 0 ? (
         <div className="adm-state">Nothing matches these filters.</div>
       ) : (
-        <div className="adm-list">
+        <div className="adm-list adm-list--2col">
           {rows.map((t) => (
             <article className="adm-item" key={t.id}>
               <header className="adm-item__head">

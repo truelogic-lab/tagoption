@@ -873,3 +873,98 @@
   /* Sub-pages */
   .adm-page__title { font-size: 20px; }
 }
+
+/* =============================================================
+   2-column card layout + adjust-balance modal
+   ============================================================= */
+
+/* Desktop: full-width rows */
+.adm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Enable 2-column grid at narrow widths */
+@media (max-width: 900px) {
+  .adm-list--2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
+  /* On phones, cards in the 2-col grid become compact */
+  .adm-list--2col .adm-item {
+    padding: 12px;
+    gap: 8px;
+  }
+  .adm-list--2col .adm-item__head {
+    padding-bottom: 8px;
+    gap: 6px;
+  }
+  .adm-list--2col .adm-item__email {
+    font-size: 12.5px;
+  }
+  .adm-list--2col .adm-item__role,
+  .adm-list--2col .adm-item__status,
+  .adm-list--2col .adm-item__action {
+    font-size: 9.5px;
+    padding: 2px 7px;
+    letter-spacing: 0.3px;
+  }
+  .adm-list--2col .adm-item__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+  }
+  .adm-list--2col .adm-field__label { font-size: 9.5px; }
+  .adm-list--2col .adm-field__value {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .adm-list--2col .adm-item__amount { font-size: 12.5px; }
+  .adm-list--2col .adm-item__actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .adm-list--2col .adm-btn {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 11.5px;
+  }
+}
+
+/* Very small phones — stay 2 columns but tighter */
+@media (max-width: 380px) {
+  .adm-list--2col { gap: 8px; }
+  .adm-list--2col .adm-item { padding: 10px; gap: 6px; }
+  .adm-list--2col .adm-item__email { font-size: 11.5px; }
+  .adm-list--2col .adm-field__value { font-size: 11.5px; }
+  .adm-list--2col .adm-field__label { font-size: 9px; }
+  .adm-list--2col .adm-btn { font-size: 11px; padding: 7px 8px; }
+}
+
+/* ---------- Adjust modal ---------- */
+.adjust-quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: -6px;
+}
+.adjust-quick__chip {
+  padding: 9px 0;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.3);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.adjust-quick__chip:hover { filter: brightness(1.08); }
+.adjust-quick__chip.is-neg {
+  color: var(--danger);
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.3);
+}

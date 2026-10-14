@@ -60,7 +60,7 @@ export default function Trades() {
       ) : rows.length === 0 ? (
         <div className="adm-state">No {status} trades.</div>
       ) : (
-        <div className="adm-list">
+        <div className="adm-list adm-list--2col">
           {rows.map((t) => (
             <article className="adm-item" key={t.id}>
               <header className="adm-item__head">
