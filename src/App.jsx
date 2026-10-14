@@ -25,7 +25,12 @@ import Withdraw from "./pages/app/Withdraw";
 import History from "./pages/app/History";
 import Refer from "./pages/app/Refer";
 import PaymentCallback from "./pages/app/PaymentCallback";
-import Admin from "./pages/admin/Admin";
+import AdminLayout from "./components/admin/AdminLayout";
+import Overview from "./pages/admin/Overview";
+import Users from "./pages/admin/Users";
+import Trades from "./pages/admin/Trades";
+import Transactions from "./pages/admin/Transactions";
+import Audit from "./pages/admin/Audit";
 
 export default function App() {
   return (
@@ -60,7 +65,13 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/refer" element={<Refer />} />
           <Route path="/payments/callback" element={<PaymentCallback />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Overview />} />
+            <Route path="users" element={<Users />} />
+            <Route path="trades" element={<Trades />} />
+            <Route path="transactions" element={<Transactions />} />
+            <Route path="audit" element={<Audit />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
