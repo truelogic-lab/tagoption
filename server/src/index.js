@@ -14,13 +14,13 @@ import paymentsRoutes from "./routes/payments.js";
 import fxRoutes from "./routes/fx.js";
 import configRoutes from "./routes/config.js";
 import adminRoutes from "./routes/admin.js";
-import { requireAdmin } from "./middleware/requireAdmin.js";
 import { requireAuth } from "./middleware/auth.js";
+import { requireAdmin } from "./middleware/requireAdmin.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
 import { startReaper } from "./lib/reaper.js";
 import { resumeOrphans } from "./lib/autoRunner.js";
-import { loadConfig } from "./lib/settlement.js";
 import { warmFxCache } from "./lib/fx/index.js";
+import { loadConfig } from "./lib/settlement.js";
 import { sql } from "./db/index.js";
 
 dotenv.config();
@@ -43,17 +43,19 @@ await app.register(cors, {
   credentials: true,
 });
 await app.register(rateLimit, {
-    max: 600,
-    timeWindow: "1 minute",
-    allowList: [
-      "/markets",
-      "/markets/*",
-      "/trades/auto/status",
-      "/wallet/balance",
-    ],
-  });
+  max: 600,
+  timeWindow: "1 minute",
+  allowList: [
+    "/markets",
+    "/markets/*",
+    "/trades/auto/status",
+    "/wallet/balance",
+    "/health",
+  ],
+});
 
 app.decorate("requireAuth", requireAuth);
+app.decorate("requireAdmin", requireAdmin);
 
 app.get("/health", async () => ({ ok: true, ts: Date.now() }));
 
@@ -66,7 +68,6 @@ await app.register(accountRoutes);
 await app.register(paymentsRoutes);
 await app.register(fxRoutes);
 await app.register(configRoutes);
-app.decorate("requireAdmin", requireAdmin);
 await app.register(adminRoutes);
 
 startTicker();
@@ -74,12 +75,7 @@ startReaper(sql);
 warmFxCache().catch(() => {});
 loadConfig().catch(() => {});
 
-// Resume or force-finish any orphaned auto runs from a previous boot
-try {
-  await resumeOrphans(sql);
-} catch (e) {
-  console.error("[resume] failed:", e.message);
-}
+try { await resumeOrphans(sql); } catch (e) { console.error("[resume]", e.message); }
 
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, async () => {

@@ -1,10 +1,3 @@
-/**
- * Trade engine — ledger math for user / platform / escrow accounts.
- *
- * Payout multiplier and win rate are NOT defined here.
- * They come from settlement.js, the single source of truth.
- */
-
 import {
   DEFAULT_PAYOUT_MULT as PAYOUT_MULT,
   profitOf as settlementProfit,
@@ -12,7 +5,6 @@ import {
   fromCents,
 } from "./settlement.js";
 
-/* Re-export so any old import from this module keeps working. */
 export { PAYOUT_MULT };
 
 export function profitOf(stake) {
@@ -37,13 +29,7 @@ export function open({ userBalance, escrowBalance, stake }) {
   };
 }
 
-export function settle({
-  userBalance,
-  platformBalance,
-  escrowBalance,
-  stake,
-  result,
-}) {
+export function settle({ userBalance, platformBalance, escrowBalance, stake, result }) {
   const u = toCents(userBalance);
   const p = toCents(platformBalance);
   const e = toCents(escrowBalance);

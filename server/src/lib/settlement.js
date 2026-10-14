@@ -1,17 +1,7 @@
-/**
- * Settlement — single source of truth for win rate and payout multiplier.
- *
- * Reads per-user overrides from the DB when provided. Falls back to the
- * platform defaults otherwise. Every trade logs the rate that was actually
- * applied so the ledger is auditable.
- */
-
 import { sql } from "../db/index.js";
 
 export const DEFAULT_WIN_RATE = 0.30;
 export const DEFAULT_PAYOUT_MULT = 0.952;
-
-/* --- global config cache (updated when admin changes settings) --- */
 
 let cache = {
   winRate: DEFAULT_WIN_RATE,
@@ -27,14 +17,12 @@ export async function loadConfig() {
       if (r.key === "payout_mult") cache.payoutMult = Number(r.value);
     }
     cache.loadedAt = Date.now();
-  } catch {
-    // DB not ready yet; keep defaults
-  }
+  } catch {}
   return cache;
 }
 
 export function getConfig() {
-  return { ...cache };
+  return { winRate: cache.winRate, payoutMult: cache.payoutMult };
 }
 
 export async function setConfig({ winRate, payoutMult }) {
@@ -55,12 +43,6 @@ export async function setConfig({ winRate, payoutMult }) {
   return getConfig();
 }
 
-/* --- per-trade helpers --- */
-
-/**
- * Resolve the effective win rate for a given user.
- * If `userId` provided, checks users.win_rate_override first.
- */
 export async function effectiveWinRate(userId) {
   if (userId) {
     try {
@@ -74,7 +56,6 @@ export async function effectiveWinRate(userId) {
   return { rate: cache.winRate, source: "default" };
 }
 
-/** Roll an outcome given a win rate. */
 export function rollOutcome(winRate) {
   const r = Number.isFinite(winRate) ? winRate : cache.winRate;
   return Math.random() < r ? "won" : "lost";
@@ -92,6 +73,7 @@ export function toCents(amount) {
   if (!Number.isFinite(amount)) throw new Error("Invalid monetary amount");
   return Math.round(amount * 100);
 }
+
 export function fromCents(cents) {
   return cents / 100;
 }

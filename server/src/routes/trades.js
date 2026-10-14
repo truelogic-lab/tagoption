@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { sql } from "../db/index.js";
-import { open, settle, profitOf } from "../lib/tradeEngine.js";
-import { profitOf as settlementProfit, effectiveWinRate, getConfig } from "../lib/settlement.js";
+import { open, settle } from "../lib/tradeEngine.js";
+import { effectiveWinRate, getConfig } from "../lib/settlement.js";
 import { startAuto, stopAuto, getRun } from "../lib/autoRunner.js";
 import { pushNotification } from "../lib/notify.js";
 
@@ -32,8 +32,6 @@ function newId(prefix) {
 export default async function tradeRoutes(fastify) {
   fastify.addHook("preHandler", fastify.requireAuth);
 
-  /* ---------- manual ---------- */
-
   fastify.post("/trades", async (req, reply) => {
     const parse = place.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: "Invalid input" });
@@ -41,8 +39,8 @@ export default async function tradeRoutes(fastify) {
 
     const stakeCents = Math.round(stake * 100);
     const { rate: appliedRate } = await effectiveWinRate(req.userId);
-        const profitCents = Math.round(settlementProfit(stake) * 100);
-
+    const { payoutMult } = getConfig();
+    const profitCents = Math.round(stake * 100 * payoutMult);
     const id = newId("p");
 
     try {
@@ -71,7 +69,7 @@ export default async function tradeRoutes(fastify) {
 
         await tx`
           insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto, win_rate_applied, payout_mult_applied)
-          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto}, ${appliedRate}, ${getConfig().payoutMult})
+          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto}, ${appliedRate}, ${payoutMult})
         `;
 
         await tx`
@@ -132,9 +130,7 @@ export default async function tradeRoutes(fastify) {
           where user_id = ${req.userId}
         `;
 
-        await tx`
-          update trades set status = ${result}, closed_at = now() where id = ${trade.id}
-        `;
+        await tx`update trades set status = ${result}, closed_at = now() where id = ${trade.id}`;
 
         const creditCents = result === "won"
           ? Number(trade.stake_cents) + Number(trade.profit_cents)
@@ -205,8 +201,6 @@ export default async function tradeRoutes(fastify) {
     }));
   });
 
-  /* ---------- auto ---------- */
-
   fastify.post("/trades/auto/start", async (req, reply) => {
     const parse = autoStart.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: "Invalid input" });
@@ -232,18 +226,4 @@ export default async function tradeRoutes(fastify) {
     const run = await getRun(sql, req.userId);
     return run ?? { running: false, progress: null };
   });
-
-  fastify.get("/trades/auto/debug", async (req) => {
-    const run = await sql`select * from auto_runs where user_id = ${req.userId}`;
-    const recentTrades = await sql`
-      select id, status, auto, opened_at, closed_at
-      from trades where user_id = ${req.userId}
-      order by opened_at desc limit 5
-    `;
-    const bal = await sql`select * from balances where user_id = ${req.userId}`;
-    return { run: run[0] ?? null, recentTrades, balance: bal[0] ?? null };
-  });
-
 }
-
-// TEMP DEBUG — remove once auto is stable

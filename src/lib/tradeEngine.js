@@ -2,18 +2,15 @@
  * Client-side engine — mirrors the server's settlement arithmetic.
  *
  * Only used in offline / preview mode. When the API is live, all settlement
- * happens on the server (server/src/lib/settlement.js).
- *
- * The payout multiplier is fetched from the server on boot (see
- * usePayoutMultiplier.js) so this file never hard-codes a number that could
- * drift from production.
+ * happens on the server. The payout multiplier is fetched from the server on
+ * boot (see usePayoutMultiplier.js) so this file never drifts.
  */
 
 let CACHED_MULT = null;
 const listeners = new Set();
 
 export function getPayoutMultiplier() {
-  return CACHED_MULT ?? 0.952; // pre-fetch fallback
+  return CACHED_MULT ?? 0.952;   // pre-fetch fallback
 }
 
 export function setPayoutMultiplier(mult) {
@@ -47,7 +44,6 @@ function fromCents(cents) {
   return cents / 100;
 }
 
-/** Move stake from user balance into escrow. */
 export function open({ userBalance, escrowBalance, stake }) {
   const u = toCents(userBalance);
   const e = toCents(escrowBalance);
@@ -60,7 +56,6 @@ export function open({ userBalance, escrowBalance, stake }) {
   };
 }
 
-/** Settle a trade: escrow → user (win) or escrow → platform (loss). */
 export function settle({
   userBalance,
   platformBalance,
