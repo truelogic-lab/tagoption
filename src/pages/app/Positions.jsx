@@ -5,6 +5,7 @@ import {
   LuChevronDown, LuFilter,
 } from "react-icons/lu";
 import { isLive } from "../../lib/api";
+import { on } from "../../lib/events";
 
 const TABS = [
   { id: "open",   label: "Open" },
@@ -29,6 +30,7 @@ function timeAgo(iso) {
 export default function Positions() {
   const { store } = useOutletContext();
   const [tab, setTab] = useState("open");
+  const [stoppingIds, setStoppingIds] = useState(() => new Set());
   const [filter, setFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -173,8 +175,8 @@ export default function Positions() {
                 </div>
                 <div className="position__foot">
                   <span>{timeAgo(p.openedAt)}</span>
-                  <span className="position__live">
-                    <LuRefreshCw /> Running
+                  <span className={`position__live ${stoppingIds.has(p.id) ? "is-stopping" : ""}`}>
+                    <LuRefreshCw /> {stoppingIds.has(p.id) ? "Stopping…" : "Running"}
                   </span>
                 </div>
               </div>

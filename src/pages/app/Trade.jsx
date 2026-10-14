@@ -17,6 +17,7 @@ import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
 import { tradeApi } from "../../lib/api";
+import { emit } from "../../lib/events";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -110,13 +111,20 @@ export default function Trade() {
       setRunState("idle");
       return;
     }
+
+    // Signal the Positions page that this trade is stopping right now
+    emit("trade:stopping", { id: activePositionId });
+
     try {
       await tradeApi.settle(activePositionId, Math.random() < 0.5 ? "won" : "lost");
       await store.refreshInFlight();
     } catch {}
+
     setActivePositionId(null);
     setActiveSide(null);
     setRunState("idle");
+
+    emit("trade:stopped", { id: activePositionId });
   };
 
   useEffect(() => {

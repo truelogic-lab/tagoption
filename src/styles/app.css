@@ -3531,3 +3531,11 @@
   .actions { gap: 8px; margin: 0 14px 14px; }
   .actions__btn { padding: 15px 12px; font-size: 16px; }
 }
+
+/* Positions — trade stopping indicator */
+.position__live.is-stopping {
+  color: #f59e0b;
+}
+.position__live.is-stopping svg {
+  animation-duration: 0.5s;
+}
