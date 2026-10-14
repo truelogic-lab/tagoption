@@ -1,9 +1,13 @@
-import { WIN_RATE, PAYOUT_MULT, HOUSE_EDGE } from "../lib/settlement.js";
+import { getConfig } from "../lib/settlement.js";
 
 export default async function configRoutes(fastify) {
-  fastify.get("/config", async () => ({
-    payoutMultiplier: PAYOUT_MULT,
-    winRate: WIN_RATE,
-    houseEdge: HOUSE_EDGE,
-  }));
+  fastify.get("/config", async () => {
+    const { winRate, payoutMult } = getConfig();
+    const edge = (1 - winRate) * 1 - winRate * payoutMult;
+    return {
+      payoutMultiplier: payoutMult,
+      winRate,
+      houseEdge: edge,
+    };
+  });
 }
