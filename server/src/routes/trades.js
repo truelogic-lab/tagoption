@@ -71,7 +71,7 @@ export default async function tradeRoutes(fastify) {
 
         await tx`
           insert into trades (id, user_id, market, contract, stake_cents, profit_cents, status, auto, win_rate_applied, payout_mult_applied)
-          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto}, ${WIN_RATE}, ${PAYOUT_MULT})
+          values (${id}, ${req.userId}, ${marketName}, ${contract}, ${stakeCents}, ${profitCents}, 'open', ${auto}, ${appliedRate}, ${getConfig().payoutMult})
         `;
 
         await tx`
