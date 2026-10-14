@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 
-// Apply the saved theme before first paint so there's no flash
 try {
   const stored = localStorage.getItem("tagoption.theme");
   document.documentElement.setAttribute(
