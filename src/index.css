@@ -1,3 +1,5 @@
+/* TagOption — stylesheet entrypoint */
+
 @import './styles/tokens.css';
 @import './styles/landing.css';
 @import './styles/page.css';
@@ -5,3 +7,4 @@
 @import './styles/ai.css';
 @import './styles/app.css';
 @import './styles/app-pages.css';
+@import './styles/admin.css';
