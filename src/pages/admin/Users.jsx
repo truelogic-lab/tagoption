@@ -56,10 +56,10 @@ export default function Users() {
           {rows.map((u) => (
             <div className="adm__row" key={u.id}>
               <span className="adm__cell-email">{u.email}</span>
-              <span>{u.name}</span>
-              <span>{money(u.balance)}</span>
-              <span>{money(u.volume)}</span>
-              <span>
+              <span data-label="Name">{u.name}</span>
+              <span data-label="Balance">{money(u.balance)}</span>
+              <span data-label="Volume">{money(u.volume)}</span>
+              <span className="adm__row-actions">
                 <button className="adm__btn" onClick={() => adjust(u)} disabled={acting === u.id}>
                   Adjust
                 </button>

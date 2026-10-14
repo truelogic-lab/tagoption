@@ -38,11 +38,13 @@ export default function Transactions() {
           {rows.map((t) => (
             <div className="adm__row" key={t.id}>
               <span className="adm__cell-email">{t.email}</span>
-              <span>{t.type}</span>
-              <span className={t.amount >= 0 ? "adm__pos" : "adm__neg"}>{money(t.amount)}</span>
-              <span>{t.method || "—"}</span>
-              <span>{t.status}</span>
-              <span className="adm__cell-mono">{t.id.slice(-8)}</span>
+              <span data-label="Type">{t.type}</span>
+              <span data-label="Amount" className={t.amount >= 0 ? "adm__pos" : "adm__neg"}>
+                {money(t.amount)}
+              </span>
+              <span data-label="Method">{t.method || "—"}</span>
+              <span data-label="Status">{t.status}</span>
+              <span data-label="Ref" className="adm__cell-mono">{t.id.slice(-8)}</span>
             </div>
           ))}
         </div>

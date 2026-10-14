@@ -22,10 +22,10 @@ export default function Audit() {
       {rows.map((a) => (
         <div className="adm__row" key={a.id}>
           <span className="adm__cell-email">{a.adminEmail}</span>
-          <span>{a.action}</span>
-          <span className="adm__cell-mono">{a.targetId?.slice(-12) || "—"}</span>
-          <span className="adm__cell-mono">{a.payload ? JSON.stringify(a.payload) : "—"}</span>
-          <span className="adm__cell-mono">{new Date(a.at).toLocaleTimeString()}</span>
+          <span data-label="Action">{a.action}</span>
+          <span data-label="Target" className="adm__cell-mono">{a.targetId?.slice(-12) || "—"}</span>
+          <span data-label="Payload" className="adm__cell-mono">{a.payload ? JSON.stringify(a.payload) : "—"}</span>
+          <span data-label="When" className="adm__cell-mono">{new Date(a.at).toLocaleTimeString()}</span>
         </div>
       ))}
     </div>

@@ -40,10 +40,10 @@ export default function Trades() {
           {rows.map((t) => (
             <div className="adm__row" key={t.id}>
               <span className="adm__cell-email">{t.email}</span>
-              <span>{t.market}</span>
-              <span>{t.contract}{t.auto && " · auto"}</span>
-              <span>{money(t.stake)}</span>
-              <span>{t.status}</span>
+              <span data-label="Market">{t.market}</span>
+              <span data-label="Contract">{t.contract}{t.auto && " · auto"}</span>
+              <span data-label="Stake">{money(t.stake)}</span>
+              <span data-label="Status">{t.status}</span>
               <span className="adm__row-actions">
                 {t.status === "open" && (
                   <>
