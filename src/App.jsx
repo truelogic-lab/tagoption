@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// Public
+/* Public pages */
 import Home from "./pages/Home";
 import OnlineTrading from "./pages/OnlineTrading";
 import Markets from "./pages/Markets";
@@ -14,7 +14,7 @@ import Responsible from "./pages/Responsible";
 import LiveChat from "./pages/LiveChat";
 import Auth from "./pages/Auth";
 
-// Guard + app shell
+/* Authed app shell */
 import RequireAuth from "./components/guards/RequireAuth";
 import AppLayout from "./components/app/AppLayout";
 import Trade from "./pages/app/Trade";
@@ -25,6 +25,8 @@ import Withdraw from "./pages/app/Withdraw";
 import History from "./pages/app/History";
 import Refer from "./pages/app/Refer";
 import PaymentCallback from "./pages/app/PaymentCallback";
+
+/* Admin shell */
 import AdminLayout from "./components/admin/AdminLayout";
 import Overview from "./pages/admin/Overview";
 import Users from "./pages/admin/Users";
@@ -36,7 +38,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public */}
+        {/* ---------- Public ---------- */}
         <Route path="/" element={<Home />} />
         <Route path="/online-trading" element={<OnlineTrading />} />
         <Route path="/markets" element={<Markets />} />
@@ -49,7 +51,23 @@ export default function App() {
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* Authed app */}
+        {/* ---------- Admin (own shell, auth required) ---------- */}
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <AdminLayout />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Overview />} />
+          <Route path="users" element={<Users />} />
+          <Route path="trades" element={<Trades />} />
+          <Route path="transactions" element={<Transactions />} />
+          <Route path="audit" element={<Audit />} />
+        </Route>
+
+        {/* ---------- Authed app (trader shell) ---------- */}
         <Route
           element={
             <RequireAuth>
@@ -65,17 +83,9 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/refer" element={<Refer />} />
           <Route path="/payments/callback" element={<PaymentCallback />} />
-
         </Route>
 
-                <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Overview />} />
-          <Route path="/admin/users" element={<Users />} />
-          <Route path="/admin/trades" element={<Trades />} />
-          <Route path="/admin/transactions" element={<Transactions />} />
-          <Route path="/admin/audit" element={<Audit />} />
-        </Route>
-
+        {/* ---------- Fallback ---------- */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
