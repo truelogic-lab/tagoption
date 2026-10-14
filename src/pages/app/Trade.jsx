@@ -65,6 +65,7 @@ export default function Trade() {
   const [multiplier, setMultiplier] = useState(2);
   const [autoCount, setAutoCount] = useState(5);
   const [botBanner, setBotBanner] = useState(null);
+  const [activeSide, setActiveSide] = useState(null); // "Even" | "Odd" | null
   const [runState, setRunState] = useState("idle"); // idle | starting | running
 
   const [lastResult, setLastResult] = useState(null);
@@ -125,6 +126,7 @@ export default function Trade() {
 
   const handleManualPlace = async (contract) => {
     if (!activeMarket) return;
+    setActiveSide(contract);
     setRunState("starting");
     try {
       await store.placeTrade({
@@ -136,6 +138,7 @@ export default function Trade() {
       setRunState("running");
     } catch (e) {
       setRunState("idle");
+      setActiveSide(null);
       alert(e.message || "Trade failed");
     }
   };
@@ -231,6 +234,7 @@ export default function Trade() {
             onStop={handleManualStop}
             running={runState === "running"}
             runState={runState}
+            activeSide={activeSide}
             disabled={auto.running}
           />
         </>

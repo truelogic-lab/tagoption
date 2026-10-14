@@ -1,50 +1,48 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  LuTrendingUp, LuTrendingDown, LuRefreshCw, LuSquare,
-} from "react-icons/lu";
+import React, { useState, useEffect, useRef } from "react";
+import { LuSquare, LuRefreshCw } from "react-icons/lu";
 
 /**
- * Manual trade buttons.
+ * Even / Odd trade buttons.
  *
- * Flow:
- *   1. Idle      → Even / Odd show icon + label + payout
- *   2. Press     → button shows a spinner + "Starting…"
- *   3. Placed    → both buttons collapse to a single STOP button
- *   4. Stop      → halts the run, returns to idle
+ * Idle:
+ *   ┌──────────────┬──────────────┐
+ *   │ ● Even       │ ● Odd        │
+ *   │ 95.2%        │ 95.2%        │
+ *   │ $19.52 Payout│ $19.52 Payout│
+ *   └──────────────┴──────────────┘
  *
- * props:
- *   stake, payout     — numbers
- *   onPlace(contract) — called when the user taps Even / Odd
- *   onStop()          — called when the user taps Stop
- *   disabled          — externally blocked (e.g. auto run active)
- *   running           — true while a manual trade is active
- *   runState          — "idle" | "starting" | "running"
+ * During a trade: the active side stays bright, the other dims,
+ * and a Stop button replaces the layout underneath.
  */
 export default function TradeButtons({
-  stake, payout, onPlace, onStop, disabled, running, runState,
+  stake, payout, onPlace, onStop,
+  disabled, running, runState, activeSide,
 }) {
-  const [lastPressed, setLastPressed] = useState(null);
-  const clearTimer = useRef(null);
-
-  useEffect(() => {
-    if (!lastPressed) return;
-    clearTimer.current = setTimeout(() => setLastPressed(null), 1500);
-    return () => clearTimeout(clearTimer.current);
-  }, [lastPressed]);
-
-  const handle = (contract) => {
-    if (disabled || running) return;
-    setLastPressed(contract);
-    onPlace(contract);
-  };
-
   const isStarting = runState === "starting";
-  const isRunning = runState === "running" || running;
+  const isRunning = running || runState === "running";
 
-  /* ---------- running state: single Stop button ---------- */
+  /* ---------- running / starting ---------- */
   if (isRunning || isStarting) {
     return (
-      <div className="actions actions--running">
+      <div className="actions actions--live">
+        <button
+          className={`actions__btn actions__btn--green ${activeSide === "Odd" ? "is-dim" : "is-active"}`}
+          disabled
+        >
+          <span className="actions__name"><span className="actions__dot actions__dot--green" />Even</span>
+          <span className="actions__pct">95.2%</span>
+          <span className="actions__payout">${payout} Payout</span>
+        </button>
+
+        <button
+          className={`actions__btn actions__btn--red ${activeSide === "Even" ? "is-dim" : "is-active"}`}
+          disabled
+        >
+          <span className="actions__name"><span className="actions__dot actions__dot--red" />Odd</span>
+          <span className="actions__pct">95.2%</span>
+          <span className="actions__payout">${payout} Payout</span>
+        </button>
+
         <button
           className={`actions__stop ${isStarting ? "is-starting" : ""}`}
           onClick={isStarting ? undefined : onStop}
@@ -53,12 +51,11 @@ export default function TradeButtons({
           {isStarting ? (
             <>
               <LuRefreshCw className="actions__spin" />
-              <span>Starting…</span>
+              Starting…
             </>
           ) : (
             <>
-              <LuSquare />
-              <span>Stop</span>
+              <LuSquare /> STOP
             </>
           )}
         </button>
@@ -66,39 +63,27 @@ export default function TradeButtons({
     );
   }
 
-  /* ---------- idle state: Even / Odd ---------- */
+  /* ---------- idle ---------- */
   return (
     <div className="actions">
       <button
-        className={`ticket ticket--even ${lastPressed === "Even" ? "is-pressed" : ""}`}
-        onClick={() => handle("Even")}
+        className="actions__btn actions__btn--green"
+        onClick={() => onPlace("Even")}
         disabled={disabled}
-        aria-label="Place Even trade"
       >
-        <span className="ticket__icon">
-          <LuTrendingUp />
-        </span>
-        <span className="ticket__body">
-          <strong className="ticket__title">Even</strong>
-          <em className="ticket__sub">95.2% · ${payout} payout</em>
-        </span>
-        <span className="ticket__amount">${payout}</span>
+        <span className="actions__name"><span className="actions__dot actions__dot--green" />Even</span>
+        <span className="actions__pct">95.2%</span>
+        <span className="actions__payout">${payout} Payout</span>
       </button>
 
       <button
-        className={`ticket ticket--odd ${lastPressed === "Odd" ? "is-pressed" : ""}`}
-        onClick={() => handle("Odd")}
+        className="actions__btn actions__btn--red"
+        onClick={() => onPlace("Odd")}
         disabled={disabled}
-        aria-label="Place Odd trade"
       >
-        <span className="ticket__icon">
-          <LuTrendingDown />
-        </span>
-        <span className="ticket__body">
-          <strong className="ticket__title">Odd</strong>
-          <em className="ticket__sub">95.2% · ${payout} payout</em>
-        </span>
-        <span className="ticket__amount">${payout}</span>
+        <span className="actions__name"><span className="actions__dot actions__dot--red" />Odd</span>
+        <span className="actions__pct">95.2%</span>
+        <span className="actions__payout">${payout} Payout</span>
       </button>
     </div>
   );
