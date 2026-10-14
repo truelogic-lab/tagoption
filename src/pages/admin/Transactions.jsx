@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
-import Spinner from "../../components/ui/Spinner";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 const TYPES = ["all", "deposit", "withdraw", "trade-open", "trade-settle"];
