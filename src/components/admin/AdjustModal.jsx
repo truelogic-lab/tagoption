@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { LuX, LuTriangleAlert } from "react-icons/lu";
 
-/**
- * Modal for adjusting a user's balance.
- * props: open, user, onClose, onConfirm({ amount, reason })
- */
 export default function AdjustModal({ open, user, onClose, onConfirm, busy }) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -52,7 +48,7 @@ export default function AdjustModal({ open, user, onClose, onConfirm, busy }) {
         <p className="modal__lead">
           {user.email}
           <br />
-          Current: <strong>${Number(user.balance || 0).toFixed(2)}</strong>
+          Current balance: <strong>${Number(user.balance || 0).toFixed(2)}</strong>
         </p>
 
         <form className="wallet-form" onSubmit={submit}>

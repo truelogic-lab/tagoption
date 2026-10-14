@@ -12,13 +12,17 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [error, setError] = useState("");
 
   const load = async (q = "") => {
     setLoading(true);
+    setError("");
     try {
       const data = await adminApi.users(q ? { q } : {});
-      setRows(data);
-    } catch {}
+      setRows(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || "Failed to load");
+    }
     setLoading(false);
   };
 
@@ -65,6 +69,8 @@ export default function Users() {
           <Spinner size="md" tone="muted" />
           <span>Loading users…</span>
         </div>
+      ) : error ? (
+        <div className="adm-state">{error}</div>
       ) : rows.length === 0 ? (
         <div className="adm-state">No users match.</div>
       ) : (
@@ -73,21 +79,21 @@ export default function Users() {
             <article className="adm-item" key={u.id}>
               <header className="adm-item__head">
                 <span className="adm-item__email">{u.email}</span>
-                <span className="adm-item__role">{u.role}</span>
+                <span className="adm-item__role">{u.role || "user"}</span>
               </header>
 
               <div className="adm-item__grid">
-                <Field label="Name"    value={u.name} />
+                <Field label="Name"    value={u.name || "—"} />
                 <Field label="Balance" value={money(u.balance)} />
                 <Field label="Volume"  value={money(u.volume)} />
-                <Field label="Joined"  value={new Date(u.createdAt).toLocaleDateString()} />
+                <Field
+                  label="Joined"
+                  value={u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                />
               </div>
 
               <div className="adm-item__actions">
-                <button
-                  className="adm-btn"
-                  onClick={() => setEditing(u)}
-                >
+                <button className="adm-btn" onClick={() => setEditing(u)}>
                   Adjust balance
                 </button>
               </div>
