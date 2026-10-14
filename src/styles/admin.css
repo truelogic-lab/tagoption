@@ -807,3 +807,67 @@
     transition: none;
   }
 }
+
+/* =============================================================
+   Hard override: keep the mobile admin top bar exactly 56px
+   ============================================================= */
+
+@media (max-width: 900px) {
+  .adm__top {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 0 14px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    background: var(--bg-2) !important;
+    border-bottom: 1px solid var(--border) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    box-sizing: border-box !important;
+  }
+
+  .adm__burger {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    background: transparent !important;
+    border: 0 !important;
+    color: var(--text-2) !important;
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .adm__top-title {
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    color: var(--text) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .adm__avatar {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #2563eb, #a855f7) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    flex-shrink: 0 !important;
+  }
+}
