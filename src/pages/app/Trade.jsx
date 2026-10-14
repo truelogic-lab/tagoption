@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { LuBot, LuX } from "react-icons/lu";
 import CategoryTabs from "../../components/app/trade/CategoryTabs";
-import MarketLoader from "../../components/app/trade/MarketLoader";
 import Chart from "../../components/app/trade/Chart";
 import MarketSelect from "../../components/app/trade/MarketSelect";
 import DigitStrip from "../../components/app/trade/DigitStrip";
@@ -16,8 +15,7 @@ import { useAutoTrade } from "../../components/app/trade/useAutoTrade";
 import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
-import { celebrateWin, celebrateLoss } from "../../lib/celebrate";
-import { hasSeen, markSeen } from "../../lib/seenTrades";
+import { tradeApi } from "../../lib/api";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -29,12 +27,12 @@ const BOT_PRESETS = {
 const ZOOM_MIN = 20;
 const ZOOM_MAX = 320;
 const ZOOM_STEP = 1.4;
+const RESULT_FLASH_MS = 1600;
 
 export default function Trade() {
-  const { store, onPlaceTrade, botResult, clearBotResult } = useOutletContext();
+  const { store, botResult, clearBotResult } = useOutletContext();
   const { markets, loading: marketsLoading } = useMarkets();
 
-  // Active market — user-selected, defaults to first active one
   const [activeId, setActiveId] = useState(null);
   const activeMarket = markets.find((m) => m.id === activeId)
     ?? markets.find((m) => m.active)
@@ -65,13 +63,15 @@ export default function Trade() {
   const [multiplier, setMultiplier] = useState(2);
   const [autoCount, setAutoCount] = useState(5);
   const [botBanner, setBotBanner] = useState(null);
-  const [activeSide, setActiveSide] = useState(null); // "Even" | "Odd" | null
+
   const [runState, setRunState] = useState("idle"); // idle | starting | running
+  const [activeSide, setActiveSide] = useState(null);
+  const [lastResult, setLastResult] = useState(null); // { result, amount }
+  const [activePositionId, setActivePositionId] = useState(null);
 
-  const [lastResult, setLastResult] = useState(null);
+  const resultTimer = useRef(null);
 
-  const profit = profitOf(stake);
-  const payout = +(stake + profit).toFixed(2);
+  const payout = +(stake + profitOf(stake)).toFixed(2);
 
   const auto = useAutoTrade({
     onTick: () => store.refreshInFlight(),
@@ -80,27 +80,70 @@ export default function Trade() {
 
   const canZoomIn = windowSize > ZOOM_MIN;
   const canZoomOut = windowSize < ZOOM_MAX;
-  const zoomIn = () => { if (canZoomIn) setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
+  const zoomIn  = () => { if (canZoomIn)  setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
 
-  useEffect(() => {
-    const latest = store.closed[0];
-    if (!latest) return;
-
-    // Skip if we've already handled this trade on this device for this user
-    if (hasSeen(latest.id)) return;
-
-    markSeen(latest.id);
-    setLastResult({ result: latest.result, key: latest.id });
-
-    // Fire a celebration only once per trade
-    if (latest.result === "won") {
-      celebrateWin({ amount: latest.payout ?? 0 });
-    } else {
-      celebrateLoss({ amount: latest.stake ?? 0 });
+  /* ---------- place a manual trade ---------- */
+  const handleManualPlace = async (side) => {
+    if (!activeMarket || activeSide) return;
+    setActiveSide(side);
+    setRunState("starting");
+    try {
+      const position = await store.placeTrade({
+        contract: side,
+        stake,
+        market: activeMarket.name,
+        marketId: activeMarket.id,
+      });
+      setActivePositionId(position?.id ?? null);
+      setRunState("running");
+    } catch (e) {
+      setActiveSide(null);
+      setRunState("idle");
+      alert(e.message || "Trade failed");
     }
-  }, [store.closed]);
+  };
 
+  /* ---------- STOP is instant: settle the open position now ---------- */
+  const handleManualStop = async () => {
+    if (!activePositionId) {
+      setActiveSide(null);
+      setRunState("idle");
+      return;
+    }
+    const side = activeSide;
+    try {
+      await tradeApi.settle(activePositionId, Math.random() < 0.5 ? "won" : "lost");
+      await store.refreshInFlight();
+      // The closed list will pick up the result — the effect below flashes it.
+    } catch {
+      // If settling failed, still let the user out
+    }
+    setActivePositionId(null);
+    setActiveSide(null);
+    setRunState("idle");
+  };
+
+  /* ---------- detect when the active trade settled ---------- */
+  useEffect(() => {
+    if (!activePositionId) return;
+    const settled = store.closed.find((c) => c.id === activePositionId);
+    if (!settled) return;
+
+    const won = settled.result === "won";
+    const amount = won ? Number(settled.payout || 0) : Number(settled.stake || 0);
+
+    setLastResult({ result: settled.result, amount, side: activeSide });
+
+    setActivePositionId(null);
+    setActiveSide(null);
+    setRunState("idle");
+
+    if (resultTimer.current) clearTimeout(resultTimer.current);
+    resultTimer.current = setTimeout(() => setLastResult(null), RESULT_FLASH_MS);
+  }, [store.closed, activePositionId, activeSide]);
+
+  /* ---------- bot banner ---------- */
   useEffect(() => {
     if (!botResult) return;
     const preset = BOT_PRESETS[botResult.category] ?? BOT_PRESETS.evenodd;
@@ -124,43 +167,6 @@ export default function Trade() {
     if (key === "multiplier") setMultiplier(value);
   };
 
-  const handleManualPlace = async (contract) => {
-    if (!activeMarket) return;
-    setActiveSide(contract);
-    setRunState("starting");
-    try {
-      await store.placeTrade({
-        contract,
-        stake,
-        market: activeMarket.name,
-        marketId: activeMarket.id,
-      });
-      setRunState("running");
-    } catch (e) {
-      setRunState("idle");
-      setActiveSide(null);
-      alert(e.message || "Trade failed");
-    }
-  };
-
-  const handleManualStop = () => {
-    setRunState("idle");
-  };
-
-  // Any newly opened position means the run is live
-  useEffect(() => {
-    if (runState === "starting" && store.positions.length > 0) {
-      setRunState("running");
-    }
-  }, [store.positions, runState]);
-
-  // If there are no open positions, we're back to idle
-  useEffect(() => {
-    if (runState === "running" && store.positions.length === 0) {
-      setRunState("idle");
-    }
-  }, [store.positions.length, runState]);
-
   const handleAutoStart = () => {
     auto.start({
       count: autoCount,
@@ -172,7 +178,7 @@ export default function Trade() {
   };
 
   if (marketsLoading || !activeMarket) {
-    return <MarketLoader />;
+    return <div className="trade trade--loading">Loading market…</div>;
   }
 
   return (
@@ -210,7 +216,7 @@ export default function Trade() {
           <div className="bot-banner__body">
             <strong>Scanner picked {botBanner.market?.name}</strong>
             <span>
-              {botBanner.signal} · {botBanner.confidence}% quality · preset{" "}
+              {botBanner.signal} · {botBanner.confidence}% · preset{" "}
               {botBanner.preset.count} trades · ${botBanner.preset.stake}/trade
             </span>
           </div>
@@ -220,7 +226,7 @@ export default function Trade() {
         </div>
       )}
 
-      <ModeToggle value={mode} onChange={setMode} disabled={auto.running} />
+      <ModeToggle value={mode} onChange={setMode} disabled={auto.running || runState !== "idle"} />
 
       {mode === "manual" ? (
         <>
@@ -228,14 +234,12 @@ export default function Trade() {
           <StakeChips value={stake} onChange={setStake} />
           <SettingsRow target={target} stop={stop} multiplier={multiplier} onChange={onSetting} />
           <TradeButtons
-            stake={stake}
-            payout={payout}
             onPlace={handleManualPlace}
             onStop={handleManualStop}
-            running={runState === "running"}
+            disabled={auto.running}
             runState={runState}
             activeSide={activeSide}
-            disabled={auto.running}
+            lastResult={lastResult}
           />
         </>
       ) : (

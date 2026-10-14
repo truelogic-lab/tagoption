@@ -3451,8 +3451,10 @@
 
 
 
+
+
 /* =============================================================
-   Even / Odd buttons
+   Even / Odd buttons — flat, single row
    ============================================================= */
 
 .actions {
@@ -3463,73 +3465,62 @@
 }
 
 .actions__btn {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  gap: 2px 8px;
-  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 14px;
   border-radius: var(--r-md);
   color: #fff;
-  text-align: left;
-  transition: opacity .2s, filter .15s, transform .1s;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.2px;
   border: 0;
   cursor: pointer;
+  transition: opacity .2s, filter .15s, transform .1s;
 }
-.actions__btn:disabled { cursor: not-allowed; }
 .actions__btn:not(:disabled):active { transform: scale(.98); }
+.actions__btn:disabled { cursor: not-allowed; }
 
-/* Constant colours — never change */
+/* Constant green / red */
 .actions__btn--green { background: var(--green); }
 .actions__btn--red   { background: var(--red); }
 
 .actions__btn.is-dim { opacity: .45; }
 
-/* STOP state on the pressed button — same colour, just a bigger icon+label */
+/* STOP state — same colour, pulses */
 .actions__btn.is-stop {
-  cursor: pointer;
   animation: stopPulse 1.4s ease-in-out infinite;
 }
-
 @keyframes stopPulse {
   0%, 100% { filter: brightness(1); }
   50%      { filter: brightness(1.12); }
 }
 
+/* Result flash — same colour, brighter */
+.actions__btn.is-result { animation: resultFlash 1.6s ease-out; }
+.actions__btn.is-win  { filter: brightness(1.15); }
+.actions__btn.is-loss { filter: brightness(0.85); }
+
+@keyframes resultFlash {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
 .actions__name {
-  grid-row: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -.2px;
 }
 .actions__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: #fff;
-  opacity: .85;
 }
-
-.actions__pct {
-  grid-row: 1;
-  align-self: center;
-  font-size: 11.5px;
-  font-weight: 600;
-  opacity: .85;
-  text-align: right;
-}
-
-.actions__payout {
-  grid-row: 2;
-  grid-column: 1 / -1;
-  font-size: 12.5px;
-  font-weight: 700;
-  opacity: .95;
-  margin-top: 4px;
-}
+.actions__dot--green { background: #fff; opacity: .8; }
+.actions__dot--red   { background: #fff; opacity: .8; }
 
 .actions__spin {
   font-size: 15px;
@@ -3537,11 +3528,7 @@
 }
 @keyframes actionsSpin { to { transform: rotate(360deg); } }
 
-/* Phone tuning */
 @media (max-width: 520px) {
   .actions { gap: 8px; margin: 0 14px 14px; }
-  .actions__btn { padding: 12px 14px; }
-  .actions__name { font-size: 15.5px; }
-  .actions__pct { font-size: 11px; }
-  .actions__payout { font-size: 11.5px; }
+  .actions__btn { padding: 15px 12px; font-size: 16px; }
 }
