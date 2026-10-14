@@ -4,6 +4,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { adminApi } from "../../lib/api";
+import Spinner from "../../components/ui/Spinner";
 
 function money(n) { return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function compact(n) { return Number(n || 0).toLocaleString(); }
@@ -33,7 +34,12 @@ export default function Overview() {
   }, []);
 
   if (err) return <div className="adm__err">{err}</div>;
-  if (!data) return <div className="adm__loading">Loading dashboard…</div>;
+  if (!data) return (
+    <div className="loading">
+      <Spinner size="md" tone="muted" />
+      <span>Loading dashboard…</span>
+    </div>
+  );
 
   const cards = [
     { icon: <LuUsers />,       label: "Total users",     value: compact(data.users),                    tone: "blue" },

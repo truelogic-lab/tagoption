@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import { adminApi } from "../../lib/api";
+import Spinner from "../../components/ui/Spinner";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
@@ -68,7 +69,7 @@ export default function Users() {
       </form>
 
       {loading ? (
-        <div className="adm-state">Loading…</div>
+        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading users…</span></div>
       ) : rows.length === 0 ? (
         <div className="adm-state">No users match.</div>
       ) : (

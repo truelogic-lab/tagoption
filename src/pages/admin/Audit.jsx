@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
+import Spinner from "../../components/ui/Spinner";
 
 export default function Audit() {
   const [rows, setRows] = useState([]);
@@ -25,7 +26,7 @@ export default function Audit() {
       </div>
 
       {loading ? (
-        <div className="adm-state">Loading…</div>
+        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading audit log…</span></div>
       ) : rows.length === 0 ? (
         <div className="adm-state">No admin actions yet.</div>
       ) : (

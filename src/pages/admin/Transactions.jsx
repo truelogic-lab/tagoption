@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
+import Spinner from "../../components/ui/Spinner";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 const TYPES = ["all", "deposit", "withdraw", "trade-open", "trade-settle"];
@@ -58,7 +59,7 @@ export default function Transactions() {
       </div>
 
       {loading ? (
-        <div className="adm-state">Loading…</div>
+        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading transactions…</span></div>
       ) : rows.length === 0 ? (
         <div className="adm-state">Nothing matches these filters.</div>
       ) : (

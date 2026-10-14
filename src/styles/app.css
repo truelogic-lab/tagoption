@@ -3468,3 +3468,41 @@
   .ov__actions { grid-template-columns: 1fr; }
   .adm__main { padding: 14px 12px 32px; }
 }
+
+/* =============================================================
+   Spinner
+   ============================================================= */
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: currentColor;
+  border-top-color: transparent;
+  animation: spinnerSpin 0.7s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.spinner--sm { width: 14px; height: 14px; border-width: 2px; }
+.spinner--md { width: 18px; height: 18px; border-width: 2px; }
+.spinner--lg { width: 26px; height: 26px; border-width: 3px; }
+
+.spinner--blue   { color: var(--blue); }
+.spinner--muted  { color: var(--text-3); }
+.spinner--white  { color: #fff; }
+
+@keyframes spinnerSpin { to { transform: rotate(360deg); } }
+
+/* Loading block used on admin pages */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 20px;
+  font-size: 13.5px;
+  color: var(--text-3);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
