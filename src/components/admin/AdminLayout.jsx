@@ -1,29 +1,25 @@
 import React, { useState } from "react";
-import { Outlet, useNavigate, Link } from "react-router-dom";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import {
-  LuMenu, LuX, LuShieldCheck, LuChartLine, LuUsers, LuActivity,
-  LuDollarSign, LuClock, LuListChecks, LuLogOut, LuArrowLeft,
+  LuMenu, LuX, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
+  LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut,
 } from "react-icons/lu";
-import { clearSession } from "../../lib/auth";
-import { getSession } from "../../lib/auth";
+import { clearSession, getSession } from "../../lib/auth";
 
 const NAV = [
-  { id: "overview",      label: "Overview",      icon: LuChartLine },
-  { id: "users",         label: "Users",         icon: LuUsers },
-  { id: "trades",        label: "Trades",        icon: LuActivity },
-  { id: "transactions",  label: "Transactions",  icon: LuDollarSign },
-  { id: "audit",         label: "Audit log",     icon: LuListChecks },
+  { to: "/admin",             label: "Dashboard",    icon: LuLayoutDashboard, end: true },
+  { to: "/admin/users",       label: "Users",        icon: LuUsers },
+  { to: "/admin/trades",      label: "Trades",       icon: LuActivity },
+  { to: "/admin/transactions",label: "Transactions", icon: LuDollarSign },
+  { to: "/admin/audit",       label: "Audit log",    icon: LuListChecks },
 ];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const admin = (() => {
-    const s = getSession();
-    return { name: s?.user?.name ?? "", email: s?.user?.email ?? "" };
-  })();
-
+  const s = getSession();
+  const admin = { name: s?.user?.name ?? "", email: s?.user?.email ?? "" };
   const initial = (admin.name?.[0] || admin.email?.[0] || "A").toUpperCase();
 
   const logout = () => {
@@ -41,89 +37,103 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="admlayout">
-      <header className="adm-top">
+    <div className="adm">
+      {/* Sidebar — desktop */}
+      <aside className="adm__sidebar">
+        <div className="adm__brand">
+          <span className="adm__brand-badge">
+            <LuShieldCheck />
+          </span>
+          <div className="adm__brand-text">
+            <strong>TagOption</strong>
+            <em>Admin Console</em>
+          </div>
+        </div>
+
+        <nav className="adm__nav">
+          {NAV.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.end}
+              className={({ isActive }) =>
+                `adm__nav-item ${isActive ? "is-active" : ""}`
+              }
+            >
+              <n.icon /> {n.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="adm__side-foot">
+          <NavLink to="/trade" className="adm__nav-item">
+            <LuArrowLeft /> Back to site
+          </NavLink>
+          <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
+            <LuLogOut /> Log out
+          </button>
+        </div>
+      </aside>
+
+      {/* Top bar — mobile */}
+      <header className="adm__top">
         <button
-          className="adm-top__burger"
+          className="adm__burger"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
         >
           <LuMenu />
         </button>
-
-        <Link to="/admin" className="adm-top__brand">
-          <span className="adm-top__brand-badge">
-            <LuShieldCheck />
-          </span>
-          <span className="adm-top__brand-text">
-            TagOption <em>Admin</em>
-          </span>
-        </Link>
-
-        <div className="adm-top__right">
-          <span className="adm-top__avatar">{initial}</span>
-        </div>
+        <span className="adm__top-title">Dashboard</span>
+        <span className="adm__avatar">{initial}</span>
       </header>
 
+      {/* Mobile drawer */}
       {menuOpen && (
-        <div className="adm-drawer" onClick={() => setMenuOpen(false)}>
-          <div className="adm-drawer__panel" onClick={(e) => e.stopPropagation()}>
-            <div className="adm-drawer__top">
-              <button
-                className="adm-drawer__close"
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close"
-              >
+        <div className="adm__drawer" onClick={() => setMenuOpen(false)}>
+          <div className="adm__drawer-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="adm__drawer-top">
+              <button className="adm__drawer-close" onClick={() => setMenuOpen(false)}>
                 <LuX />
               </button>
-              <span className="adm-drawer__title">Admin menu</span>
+              <span>Menu</span>
             </div>
 
-            <div className="adm-drawer__user">
-              <div className="adm-drawer__avatar">{initial}</div>
+            <div className="adm__drawer-user">
+              <div className="adm__drawer-avatar">{initial}</div>
               <div>
                 <strong>{admin.name || "Administrator"}</strong>
                 <span>{admin.email}</span>
               </div>
             </div>
 
-            <nav className="adm-drawer__nav">
+            <nav className="adm__drawer-nav">
               {NAV.map((n) => (
-                <button
-                  key={n.id}
-                  className="adm-drawer__row"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate(`/admin/${n.id}`);
-                  }}
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.end}
+                  className={({ isActive }) =>
+                    `adm__nav-item ${isActive ? "is-active" : ""}`
+                  }
+                  onClick={() => setMenuOpen(false)}
                 >
                   <n.icon /> {n.label}
-                </button>
+                </NavLink>
               ))}
-
-              <div className="adm-drawer__divider" />
-
-              <Link
-                to="/trade"
-                className="adm-drawer__row"
-                onClick={() => setMenuOpen(false)}
-              >
+              <div className="adm__divider" />
+              <NavLink to="/trade" className="adm__nav-item" onClick={() => setMenuOpen(false)}>
                 <LuArrowLeft /> Back to site
-              </Link>
-
-              <button className="adm-drawer__row adm-drawer__row--danger" onClick={logout}>
+              </NavLink>
+              <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
                 <LuLogOut /> Log out
               </button>
             </nav>
-
-            <div className="adm-drawer__foot">
-              {new Date().toISOString().slice(0, 19).replace("T", " ")} GMT
-            </div>
           </div>
         </div>
       )}
 
-      <main className="adm-body">
+      <main className="adm__main">
         <Outlet />
       </main>
     </div>
