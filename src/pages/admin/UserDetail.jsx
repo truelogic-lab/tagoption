@@ -1,12 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { LuArrowLeft, LuTrendingUp, LuTrendingDown } from "react-icons/lu";
+import { LuArrowLeft, LuTrendingUp, LuTrendingDown, LuShield } from "react-icons/lu";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
 import AdjustModal from "../../components/admin/AdjustModal";
 import WinRateModal from "../../components/admin/WinRateModal";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+
+/* Turn a raw audit row into human-readable text, without dumping JSON. */
+function describeAction(a) {
+  const p = a.payload || {};
+  switch (a.action) {
+    case "user.adjust":
+      return `Adjusted balance by ${p.amount >= 0 ? "+" : ""}$${Number(p.amount || 0).toFixed(2)}`;
+    case "user.win_rate":
+      if (p.winRate == null) return "Cleared win-rate override";
+      return `Set win rate to ${(p.winRate * 100).toFixed(0)}%`;
+    case "config.update":
+      return "Updated global config";
+    case "trade.settle":
+      return `Force-settled a trade as ${p.result}`;
+    case "tx.manual_credit":
+      return "Manually credited a deposit";
+    case "tx.withdraw_approved":
+      return "Approved a withdrawal";
+    default:
+      return a.action;
+  }
+}
 
 export default function UserDetail() {
   const { id } = useParams();
@@ -85,7 +107,6 @@ export default function UserDetail() {
         </div>
       </div>
 
-      {/* Profile card */}
       <div className="ud-profile">
         <div className="ud-profile__avatar">
           {(user.name?.[0] || user.email[0]).toUpperCase()}
@@ -99,14 +120,13 @@ export default function UserDetail() {
             {user.verified && <span className="ud-tag ud-tag--ok">verified</span>}
             {user.winRateOverride != null && (
               <span className="ud-tag ud-tag--warn">
-                win rate {(user.winRateOverride * 100).toFixed(0)}%
+                <LuShield /> {Math.round(user.winRateOverride * 100)}%
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* KPI strip */}
       <div className="ud-kpis">
         <Kpi label="Balance" value={money(user.balance)} />
         <Kpi label="Escrow" value={money(user.escrow)} />
@@ -115,14 +135,9 @@ export default function UserDetail() {
         <Kpi label="Won" value={stats.won} />
         <Kpi label="Lost" value={stats.lost} />
         <Kpi label="Win rate" value={`${(stats.winRate * 100).toFixed(1)}%`} />
-        <Kpi
-          label="Net P&L"
-          value={money(stats.netPnl)}
-          tone={stats.netPnl >= 0 ? "pos" : "neg"}
-        />
+        <Kpi label="Net P&L" value={money(stats.netPnl)} tone={stats.netPnl >= 0 ? "pos" : "neg"} />
       </div>
 
-      {/* Trades */}
       <Section title="Recent trades">
         {trades.length === 0 ? (
           <div className="adm-state">No trades yet.</div>
@@ -145,9 +160,7 @@ export default function UserDetail() {
                   <span className={
                     t.status === "won" ? "ud-pos" :
                     t.status === "lost" ? "ud-neg" : ""
-                  }>
-                    {t.status}
-                  </span>
+                  }>{t.status}</span>
                 </div>
               </div>
             ))}
@@ -155,7 +168,6 @@ export default function UserDetail() {
         )}
       </Section>
 
-      {/* Transactions */}
       <Section title="Recent transactions">
         {transactions.length === 0 ? (
           <div className="adm-state">No transactions yet.</div>
@@ -179,7 +191,6 @@ export default function UserDetail() {
         )}
       </Section>
 
-      {/* Adjustments */}
       <Section title="Admin actions">
         {adjustments.length === 0 ? (
           <div className="adm-state">No admin actions on this user.</div>
@@ -188,13 +199,7 @@ export default function UserDetail() {
             {adjustments.map((a) => (
               <div className="ud-row" key={a.id}>
                 <div className="ud-row__body">
-                  <strong>{a.action}</strong>
-                  <span>
-                    {a.adminEmail || "admin"} ·{" "}
-                    {a.payload ? JSON.stringify(a.payload) : "—"}
-                  </span>
-                </div>
-                <div className="ud-row__right">
+                  <strong>{describeAction(a)}</strong>
                   <span>{new Date(a.at).toLocaleString()}</span>
                 </div>
               </div>

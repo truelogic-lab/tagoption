@@ -86,8 +86,8 @@ export default function Users() {
               <header className="adm-item__head">
                 <span className="adm-item__email">{u.email}</span>
                 {u.winRateOverride != null && (
-                  <span className="adm-item__role">
-                    {(u.winRateOverride * 100).toFixed(0)}%
+                  <span className="adm-item__role adm-item__role--flag" title="Custom settings">
+                    ●
                   </span>
                 )}
               </header>

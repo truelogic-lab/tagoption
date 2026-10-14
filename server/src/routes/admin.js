@@ -132,8 +132,8 @@ export default async function adminRoutes(fastify) {
       from transactions where user_id = ${id} order by at desc limit 100
     `;
     const adjustments = await sql`
-      select a.id, a.action, a.payload, a.at, u2.email as admin_email
-      from admin_audit a left join users u2 on u2.id = a.admin_id
+      select a.id, a.action, a.payload, a.at
+      from admin_audit a
       where a.target_type = 'user' and a.target_id = ${id}
       order by a.at desc limit 50
     `;
@@ -174,9 +174,11 @@ export default async function adminRoutes(fastify) {
         id: t.id, type: t.type, amount: Number(t.amount_cents) / 100,
         method: t.method, status: t.status, reference: t.reference, at: t.at,
       })),
-      adjustments: adjustments.map((a) => ({
-        id: a.id, action: a.action, payload: a.payload, at: a.at, adminEmail: a.admin_email,
-      })),
+      adjustments: adjustments.map((a) => {
+        // Drop the human reason — internal-only
+        const { reason, ...rest } = a.payload || {};
+        return { id: a.id, action: a.action, payload: rest, at: a.at };
+      }),
     };
   });
 
@@ -477,13 +479,20 @@ export default async function adminRoutes(fastify) {
   fastify.get("/admin/audit", async (req) => {
     const limit = Math.min(Number(req.query.limit) || 100, 500);
     const rows = await sql`
-      select a.*, u.email from admin_audit a left join users u on u.id = a.admin_id
-      order by a.at desc limit ${limit}
+      select id, action, target_type, target_id, payload, at
+      from admin_audit
+      order by at desc limit ${limit}
     `;
-    return rows.map((r) => ({
-      id: r.id, adminEmail: r.email, action: r.action,
-      targetType: r.target_type, targetId: r.target_id,
-      payload: r.payload, at: r.at,
-    }));
+    return rows.map((r) => {
+      const { reason, ...rest } = r.payload || {};
+      return {
+        id: r.id,
+        action: r.action,
+        targetType: r.target_type,
+        targetId: r.target_id,
+        payload: rest,
+        at: r.at,
+      };
+    });
   });
 }
