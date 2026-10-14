@@ -5,7 +5,7 @@
  */
 import { pushNotification } from "./notify.js";
 
-import { rollOutcome } from "./settlement.js";
+import { rollOutcome, effectiveWinRate } from "./settlement.js";
 
 const STALE_MS = 1_500;
 
@@ -20,7 +20,8 @@ export function startReaper(sql) {
       `;
 
       for (const trade of stale) {
-        const result = rollOutcome();
+        const { rate } = await effectiveWinRate(trade.user_id);
+        const result = rollOutcome(rate);
         const won = result === "won";
         const stakeCents = Number(trade.stake_cents);
         const profitCents = Number(trade.profit_cents);

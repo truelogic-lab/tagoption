@@ -87,3 +87,18 @@ create table if not exists admin_audit (
 
 create index if not exists audit_admin_at_idx on admin_audit(admin_id, at desc);
 create index if not exists audit_action_at_idx on admin_audit(action, at desc);
+
+-- Per-user win-rate override (audit-logged when changed)
+alter table users add column if not exists win_rate_override numeric(5,4);
+alter table users add column if not exists banned boolean not null default false;
+
+-- Every trade records which rate was applied
+alter table trades add column if not exists win_rate_applied numeric(5,4);
+alter table trades add column if not exists payout_mult_applied numeric(5,4);
+
+-- Global config (payout multiplier, default win rate)
+create table if not exists app_config (
+  key    text primary key,
+  value  jsonb not null,
+  at     timestamptz not null default now()
+);

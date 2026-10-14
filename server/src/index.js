@@ -19,6 +19,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { startTicker, stopTicker } from "./lib/marketFeed.js";
 import { startReaper } from "./lib/reaper.js";
 import { resumeOrphans } from "./lib/autoRunner.js";
+import { loadConfig } from "./lib/settlement.js";
 import { warmFxCache } from "./lib/fx/index.js";
 import { sql } from "./db/index.js";
 
@@ -62,6 +63,7 @@ await app.register(adminRoutes);
 startTicker();
 startReaper(sql);
 warmFxCache().catch(() => {});
+loadConfig().catch(() => {});
 
 // Resume or force-finish any orphaned auto runs from a previous boot
 try {

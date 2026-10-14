@@ -6,7 +6,7 @@
  * `heartbeat_at` is resumed; anything stale is force-settled.
  */
 import { pushNotification } from "./notify.js";
-import { rollOutcome, profitOf as settlementProfit, WIN_RATE, PAYOUT_MULT } from "./settlement.js";
+import { rollOutcome, profitOf as settlementProfit, effectiveWinRate, getConfig } from "./settlement.js";
 
 const SETTLE_MS = 1400;
 const INTERTRADE_MS = 150;
