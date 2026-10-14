@@ -1,52 +1,104 @@
-import React, { useEffect, useState } from "react";
-import { LuRefreshCw } from "react-icons/lu";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  LuTrendingUp, LuTrendingDown, LuRefreshCw, LuSquare,
+} from "react-icons/lu";
 
-export default function TradeButtons({ stake, payout, onPlace, disabled, autoRunning }) {
-  const [pressed, setPressed] = useState(null);
+/**
+ * Manual trade buttons.
+ *
+ * Flow:
+ *   1. Idle      → Even / Odd show icon + label + payout
+ *   2. Press     → button shows a spinner + "Starting…"
+ *   3. Placed    → both buttons collapse to a single STOP button
+ *   4. Stop      → halts the run, returns to idle
+ *
+ * props:
+ *   stake, payout     — numbers
+ *   onPlace(contract) — called when the user taps Even / Odd
+ *   onStop()          — called when the user taps Stop
+ *   disabled          — externally blocked (e.g. auto run active)
+ *   running           — true while a manual trade is active
+ *   runState          — "idle" | "starting" | "running"
+ */
+export default function TradeButtons({
+  stake, payout, onPlace, onStop, disabled, running, runState,
+}) {
+  const [lastPressed, setLastPressed] = useState(null);
+  const clearTimer = useRef(null);
 
   useEffect(() => {
-    if (!pressed) return;
-    const id = setTimeout(() => setPressed(null), 900);
-    return () => clearTimeout(id);
-  }, [pressed]);
+    if (!lastPressed) return;
+    clearTimer.current = setTimeout(() => setLastPressed(null), 1500);
+    return () => clearTimeout(clearTimer.current);
+  }, [lastPressed]);
 
   const handle = (contract) => {
-    if (disabled) return;
-    setPressed(contract);
+    if (disabled || running) return;
+    setLastPressed(contract);
     onPlace(contract);
   };
 
-  if (autoRunning) {
+  const isStarting = runState === "starting";
+  const isRunning = runState === "running" || running;
+
+  /* ---------- running state: single Stop button ---------- */
+  if (isRunning || isStarting) {
     return (
-      <div className="actions actions--busy">
-        <div className="actions__busy">
-          <LuRefreshCw className="actions__spin" />
-          <span>Auto trade running…</span>
-        </div>
+      <div className="actions actions--running">
+        <button
+          className={`actions__stop ${isStarting ? "is-starting" : ""}`}
+          onClick={isStarting ? undefined : onStop}
+          disabled={isStarting}
+        >
+          {isStarting ? (
+            <>
+              <LuRefreshCw className="actions__spin" />
+              <span>Starting…</span>
+            </>
+          ) : (
+            <>
+              <LuSquare />
+              <span>Stop</span>
+            </>
+          )}
+        </button>
       </div>
     );
   }
 
+  /* ---------- idle state: Even / Odd ---------- */
   return (
     <div className="actions">
       <button
-        className={`actions__btn actions__btn--green ${pressed === "Even" ? "is-pressed" : ""}`}
+        className={`ticket ticket--even ${lastPressed === "Even" ? "is-pressed" : ""}`}
         onClick={() => handle("Even")}
         disabled={disabled}
+        aria-label="Place Even trade"
       >
-        <span className="actions__name">Even</span>
-        <span className="actions__pct">95.2%</span>
-        <span className="actions__payout">${payout} Payout</span>
+        <span className="ticket__icon">
+          <LuTrendingUp />
+        </span>
+        <span className="ticket__body">
+          <strong className="ticket__title">Even</strong>
+          <em className="ticket__sub">95.2% · ${payout} payout</em>
+        </span>
+        <span className="ticket__amount">${payout}</span>
       </button>
 
       <button
-        className={`actions__btn actions__btn--red ${pressed === "Odd" ? "is-pressed" : ""}`}
+        className={`ticket ticket--odd ${lastPressed === "Odd" ? "is-pressed" : ""}`}
         onClick={() => handle("Odd")}
         disabled={disabled}
+        aria-label="Place Odd trade"
       >
-        <span className="actions__name">Odd</span>
-        <span className="actions__pct">95.2%</span>
-        <span className="actions__payout">${payout} Payout</span>
+        <span className="ticket__icon">
+          <LuTrendingDown />
+        </span>
+        <span className="ticket__body">
+          <strong className="ticket__title">Odd</strong>
+          <em className="ticket__sub">95.2% · ${payout} payout</em>
+        </span>
+        <span className="ticket__amount">${payout}</span>
       </button>
     </div>
   );

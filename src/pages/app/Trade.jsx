@@ -65,6 +65,7 @@ export default function Trade() {
   const [multiplier, setMultiplier] = useState(2);
   const [autoCount, setAutoCount] = useState(5);
   const [botBanner, setBotBanner] = useState(null);
+  const [runState, setRunState] = useState("idle"); // idle | starting | running
 
   const [lastResult, setLastResult] = useState(null);
 
@@ -122,15 +123,40 @@ export default function Trade() {
     if (key === "multiplier") setMultiplier(value);
   };
 
-  const handleManualPlace = (contract) => {
+  const handleManualPlace = async (contract) => {
     if (!activeMarket) return;
-    store.placeTrade({
-      contract,
-      stake,
-      market: activeMarket.name,
-      marketId: activeMarket.id,
-    });
+    setRunState("starting");
+    try {
+      await store.placeTrade({
+        contract,
+        stake,
+        market: activeMarket.name,
+        marketId: activeMarket.id,
+      });
+      setRunState("running");
+    } catch (e) {
+      setRunState("idle");
+      alert(e.message || "Trade failed");
+    }
   };
+
+  const handleManualStop = () => {
+    setRunState("idle");
+  };
+
+  // Any newly opened position means the run is live
+  useEffect(() => {
+    if (runState === "starting" && store.positions.length > 0) {
+      setRunState("running");
+    }
+  }, [store.positions, runState]);
+
+  // If there are no open positions, we're back to idle
+  useEffect(() => {
+    if (runState === "running" && store.positions.length === 0) {
+      setRunState("idle");
+    }
+  }, [store.positions.length, runState]);
 
   const handleAutoStart = () => {
     auto.start({
@@ -198,7 +224,15 @@ export default function Trade() {
           <StakePanel value={stake} onChange={setStake} />
           <StakeChips value={stake} onChange={setStake} />
           <SettingsRow target={target} stop={stop} multiplier={multiplier} onChange={onSetting} />
-          <TradeButtons stake={stake} payout={payout} onPlace={handleManualPlace} autoRunning={auto.running} />
+          <TradeButtons
+            stake={stake}
+            payout={payout}
+            onPlace={handleManualPlace}
+            onStop={handleManualStop}
+            running={runState === "running"}
+            runState={runState}
+            disabled={auto.running}
+          />
         </>
       ) : (
         <AutoPanel
