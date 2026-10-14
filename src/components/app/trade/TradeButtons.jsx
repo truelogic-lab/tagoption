@@ -1,90 +1,86 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { LuSquare, LuRefreshCw } from "react-icons/lu";
 
 /**
- * Even / Odd trade buttons.
+ * Even / Odd buttons.
  *
  * Idle:
  *   ┌──────────────┬──────────────┐
- *   │ ● Even       │ ● Odd        │
- *   │ 95.2%        │ 95.2%        │
+ *   │ ● Even 95.2% │ ● Odd  95.2% │
  *   │ $19.52 Payout│ $19.52 Payout│
  *   └──────────────┴──────────────┘
  *
- * During a trade: the active side stays bright, the other dims,
- * and a Stop button replaces the layout underneath.
+ * Active (e.g. Even tapped): the pressed button turns into STOP,
+ * keeps its green colour, the other side dims.
  */
 export default function TradeButtons({
-  stake, payout, onPlace, onStop,
-  disabled, running, runState, activeSide,
+  payout,
+  onPlace,
+  onStop,
+  disabled,
+  runState,
+  activeSide,
 }) {
   const isStarting = runState === "starting";
-  const isRunning = running || runState === "running";
+  const isRunning = runState === "running";
 
-  /* ---------- running / starting ---------- */
-  if (isRunning || isStarting) {
-    return (
-      <div className="actions actions--live">
-        <button
-          className={`actions__btn actions__btn--green ${activeSide === "Odd" ? "is-dim" : "is-active"}`}
-          disabled
-        >
-          <span className="actions__name"><span className="actions__dot actions__dot--green" />Even</span>
-          <span className="actions__pct">95.2%</span>
-          <span className="actions__payout">${payout} Payout</span>
-        </button>
+  const renderBtn = (side) => {
+    const isThis = activeSide === side;
+    const isOther = activeSide && !isThis;
+    const colour = side === "Even" ? "green" : "red";
+    const dotClass = side === "Even" ? "actions__dot--green" : "actions__dot--red";
 
+    /* ---------- the pressed button turns into STOP ---------- */
+    if (isThis && (isStarting || isRunning)) {
+      return (
         <button
-          className={`actions__btn actions__btn--red ${activeSide === "Even" ? "is-dim" : "is-active"}`}
-          disabled
-        >
-          <span className="actions__name"><span className="actions__dot actions__dot--red" />Odd</span>
-          <span className="actions__pct">95.2%</span>
-          <span className="actions__payout">${payout} Payout</span>
-        </button>
-
-        <button
-          className={`actions__stop ${isStarting ? "is-starting" : ""}`}
+          key={side}
+          className={`actions__btn actions__btn--${colour} is-active is-stop`}
           onClick={isStarting ? undefined : onStop}
           disabled={isStarting}
         >
           {isStarting ? (
             <>
-              <LuRefreshCw className="actions__spin" />
-              Starting…
+              <span className="actions__name">
+                <LuRefreshCw className="actions__spin" />
+                Starting…
+              </span>
             </>
           ) : (
             <>
-              <LuSquare /> STOP
+              <span className="actions__name">
+                <LuSquare /> STOP
+              </span>
+              <span className="actions__pct">95.2%</span>
+              <span className="actions__payout">${payout} Payout</span>
             </>
           )}
         </button>
-      </div>
-    );
-  }
+      );
+    }
 
-  /* ---------- idle ---------- */
+    /* ---------- regular side ---------- */
+    return (
+      <button
+        key={side}
+        className={`actions__btn actions__btn--${colour} ${isOther ? "is-dim" : ""}`}
+        onClick={() => onPlace(side)}
+        disabled={disabled || !!activeSide}
+      >
+        <span className="actions__name">
+          <span className={`actions__dot ${dotClass}`} />
+          {side}
+        </span>
+        <span className="actions__pct">95.2%</span>
+        <span className="actions__payout">${payout} Payout</span>
+      </button>
+    );
+  };
+
   return (
     <div className="actions">
-      <button
-        className="actions__btn actions__btn--green"
-        onClick={() => onPlace("Even")}
-        disabled={disabled}
-      >
-        <span className="actions__name"><span className="actions__dot actions__dot--green" />Even</span>
-        <span className="actions__pct">95.2%</span>
-        <span className="actions__payout">${payout} Payout</span>
-      </button>
-
-      <button
-        className="actions__btn actions__btn--red"
-        onClick={() => onPlace("Odd")}
-        disabled={disabled}
-      >
-        <span className="actions__name"><span className="actions__dot actions__dot--red" />Odd</span>
-        <span className="actions__pct">95.2%</span>
-        <span className="actions__payout">${payout} Payout</span>
-      </button>
+      {renderBtn("Even")}
+      {renderBtn("Odd")}
     </div>
   );
 }

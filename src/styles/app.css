@@ -3449,6 +3449,8 @@
 
 
 
+
+
 /* =============================================================
    Even / Odd buttons
    ============================================================= */
@@ -3470,14 +3472,28 @@
   color: #fff;
   text-align: left;
   transition: opacity .2s, filter .15s, transform .1s;
+  border: 0;
+  cursor: pointer;
 }
+.actions__btn:disabled { cursor: not-allowed; }
 .actions__btn:not(:disabled):active { transform: scale(.98); }
 
-.actions__btn--green { background: #4a5568; }   /* dark grayish-blue */
-.actions__btn--red   { background: #8b1d2c; }   /* dark maroon */
+/* Constant colours — never change */
+.actions__btn--green { background: var(--green); }
+.actions__btn--red   { background: var(--red); }
 
 .actions__btn.is-dim { opacity: .45; }
-.actions__btn.is-active { filter: brightness(1.05); }
+
+/* STOP state on the pressed button — same colour, just a bigger icon+label */
+.actions__btn.is-stop {
+  cursor: pointer;
+  animation: stopPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes stopPulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.12); }
+}
 
 .actions__name {
   grid-row: 1;
@@ -3493,9 +3509,9 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: #fff;
+  opacity: .85;
 }
-.actions__dot--green { background: #22c55e; }
-.actions__dot--red   { background: #ff2d55; }
 
 .actions__pct {
   grid-row: 1;
@@ -3515,54 +3531,17 @@
   margin-top: 4px;
 }
 
-/* ---------- running layout ---------- */
-.actions--live {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 8px 10px;
-}
-.actions--live .actions__stop {
-  grid-column: 1 / -1;
-  grid-row: 2;
-}
-
-.actions__stop {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 15px;
-  border-radius: var(--r-md);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #fff;
-  background: #f59e0b;
-  border: 0;
-  cursor: pointer;
-  transition: filter .15s;
-}
-.actions__stop:hover { filter: brightness(1.05); }
-.actions__stop.is-starting {
-  background: var(--card);
-  color: var(--text-2);
-  border: 1px solid var(--border);
-  cursor: wait;
-  font-weight: 700;
-  letter-spacing: normal;
-}
 .actions__spin {
   font-size: 15px;
   animation: actionsSpin .9s linear infinite;
 }
 @keyframes actionsSpin { to { transform: rotate(360deg); } }
 
-/* Phone */
+/* Phone tuning */
 @media (max-width: 520px) {
   .actions { gap: 8px; margin: 0 14px 14px; }
   .actions__btn { padding: 12px 14px; }
   .actions__name { font-size: 15.5px; }
   .actions__pct { font-size: 11px; }
   .actions__payout { font-size: 11.5px; }
-  .actions__stop { padding: 13px; font-size: 14px; }
 }
