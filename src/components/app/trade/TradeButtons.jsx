@@ -1,13 +1,6 @@
 import React from "react";
 import { LuSquare, LuRefreshCw } from "react-icons/lu";
 
-/**
- * Even / Odd buttons.
- *
- *   Idle:   [ Even ]  [ Odd ]
- *   Active: pressed button becomes [ STOP ], other dims
- *   Result: after settle, the pressed button briefly shows +$X or -$X
- */
 export default function TradeButtons({
   onPlace,
   onStop,
@@ -20,12 +13,11 @@ export default function TradeButtons({
   const isRunning  = runState === "running";
 
   const renderBtn = (side) => {
-    const isThis = activeSide === side;
+    const isThis  = activeSide === side;
     const isOther = activeSide && !isThis;
     const colour  = side === "Even" ? "green" : "red";
     const dotClass = side === "Even" ? "actions__dot--green" : "actions__dot--red";
 
-    /* ---------- active: button becomes STOP ---------- */
     if (isThis && (isStarting || isRunning)) {
       return (
         <button
@@ -45,7 +37,6 @@ export default function TradeButtons({
       );
     }
 
-    /* ---------- just-settled: show P/L on this side ---------- */
     if (isThis && lastResult) {
       const won = lastResult.result === "won";
       return (
@@ -61,7 +52,6 @@ export default function TradeButtons({
       );
     }
 
-    /* ---------- idle ---------- */
     return (
       <button
         key={side}

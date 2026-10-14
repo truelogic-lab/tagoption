@@ -65,9 +65,9 @@ export default function Trade() {
   const [autoCount, setAutoCount] = useState(5);
   const [botBanner, setBotBanner] = useState(null);
 
-  const [runState, setRunState] = useState("idle"); // idle | starting | running
+  const [runState, setRunState] = useState("idle");
   const [activeSide, setActiveSide] = useState(null);
-  const [lastResult, setLastResult] = useState(null); // { result, amount }
+  const [lastResult, setLastResult] = useState(null);
   const [activePositionId, setActivePositionId] = useState(null);
 
   const resultTimer = useRef(null);
@@ -84,7 +84,6 @@ export default function Trade() {
   const zoomIn  = () => { if (canZoomIn)  setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
 
-  /* ---------- place a manual trade ---------- */
   const handleManualPlace = async (side) => {
     if (!activeMarket || activeSide) return;
     setActiveSide(side);
@@ -105,27 +104,21 @@ export default function Trade() {
     }
   };
 
-  /* ---------- STOP is instant: settle the open position now ---------- */
   const handleManualStop = async () => {
     if (!activePositionId) {
       setActiveSide(null);
       setRunState("idle");
       return;
     }
-    const side = activeSide;
     try {
       await tradeApi.settle(activePositionId, Math.random() < 0.5 ? "won" : "lost");
       await store.refreshInFlight();
-      // The closed list will pick up the result — the effect below flashes it.
-    } catch {
-      // If settling failed, still let the user out
-    }
+    } catch {}
     setActivePositionId(null);
     setActiveSide(null);
     setRunState("idle");
   };
 
-  /* ---------- detect when the active trade settled ---------- */
   useEffect(() => {
     if (!activePositionId) return;
     const settled = store.closed.find((c) => c.id === activePositionId);
@@ -135,7 +128,6 @@ export default function Trade() {
     const amount = won ? Number(settled.payout || 0) : Number(settled.stake || 0);
 
     setLastResult({ result: settled.result, amount, side: activeSide });
-
     setActivePositionId(null);
     setActiveSide(null);
     setRunState("idle");
@@ -144,7 +136,6 @@ export default function Trade() {
     resultTimer.current = setTimeout(() => setLastResult(null), RESULT_FLASH_MS);
   }, [store.closed, activePositionId, activeSide]);
 
-  /* ---------- bot banner ---------- */
   useEffect(() => {
     if (!botResult) return;
     const preset = BOT_PRESETS[botResult.category] ?? BOT_PRESETS.evenodd;
@@ -178,6 +169,7 @@ export default function Trade() {
     });
   };
 
+  /* ---------- loading state ---------- */
   if (marketsLoading || !activeMarket) {
     return <MarketLoader />;
   }

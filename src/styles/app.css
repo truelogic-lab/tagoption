@@ -3453,6 +3453,8 @@
 
 
 
+
+
 /* =============================================================
    Even / Odd buttons — flat, single row
    ============================================================= */
@@ -3482,13 +3484,11 @@
 .actions__btn:not(:disabled):active { transform: scale(.98); }
 .actions__btn:disabled { cursor: not-allowed; }
 
-/* Constant green / red */
 .actions__btn--green { background: var(--green); }
 .actions__btn--red   { background: var(--red); }
 
 .actions__btn.is-dim { opacity: .45; }
 
-/* STOP state — same colour, pulses */
 .actions__btn.is-stop {
   animation: stopPulse 1.4s ease-in-out infinite;
 }
@@ -3497,7 +3497,6 @@
   50%      { filter: brightness(1.12); }
 }
 
-/* Result flash — same colour, brighter */
 .actions__btn.is-result { animation: resultFlash 1.6s ease-out; }
 .actions__btn.is-win  { filter: brightness(1.15); }
 .actions__btn.is-loss { filter: brightness(0.85); }
@@ -3518,9 +3517,9 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: #fff;
+  opacity: .8;
 }
-.actions__dot--green { background: #fff; opacity: .8; }
-.actions__dot--red   { background: #fff; opacity: .8; }
 
 .actions__spin {
   font-size: 15px;
