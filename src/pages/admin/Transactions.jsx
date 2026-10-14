@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
+import Spinner from "../../components/ui/Spinner";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 const TYPES = ["all", "deposit", "withdraw", "trade-open", "trade-settle"];
@@ -11,6 +12,7 @@ export default function Transactions() {
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +82,29 @@ export default function Transactions() {
                 <Field label="Ref"    value={t.id.slice(-10)} />
                 <Field label="When"   value={new Date(t.at).toLocaleString()} />
               </div>
+
+              {t.status === "pending" && (
+                <div className="adm-item__actions">
+                  {t.type === "deposit" && (
+                    <button
+                      className="adm-btn adm-btn--ok"
+                      onClick={() => credit(t)}
+                      disabled={busy === t.id}
+                    >
+                      {busy === t.id ? "Working…" : "Credit deposit"}
+                    </button>
+                  )}
+                  {t.type === "withdraw" && (
+                    <button
+                      className="adm-btn adm-btn--ok"
+                      onClick={() => approve(t)}
+                      disabled={busy === t.id}
+                    >
+                      {busy === t.id ? "Working…" : "Mark as paid"}
+                    </button>
+                  )}
+                </div>
+              )}
             </article>
           ))}
         </div>

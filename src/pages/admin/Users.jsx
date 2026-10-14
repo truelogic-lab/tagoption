@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { LuSearch } from "react-icons/lu";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
@@ -7,6 +8,7 @@ import AdjustModal from "../../components/admin/AdjustModal";
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
 export default function Users() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,10 +78,18 @@ export default function Users() {
       ) : (
         <div className="adm-list adm-list--2col">
           {rows.map((u) => (
-            <article className="adm-item" key={u.id}>
+            <article
+              className="adm-item adm-item--clickable"
+              key={u.id}
+              onClick={() => navigate(`/admin/users/${u.id}`)}
+            >
               <header className="adm-item__head">
                 <span className="adm-item__email">{u.email}</span>
-                <span className="adm-item__role">{u.role || "user"}</span>
+                {u.winRateOverride != null && (
+                  <span className="adm-item__role">
+                    {(u.winRateOverride * 100).toFixed(0)}%
+                  </span>
+                )}
               </header>
 
               <div className="adm-item__grid">
@@ -93,7 +103,10 @@ export default function Users() {
               </div>
 
               <div className="adm-item__actions">
-                <button className="adm-btn" onClick={() => setEditing(u)}>
+                <button
+                  className="adm-btn"
+                  onClick={(e) => { e.stopPropagation(); setEditing(u); }}
+                >
                   Adjust balance
                 </button>
               </div>

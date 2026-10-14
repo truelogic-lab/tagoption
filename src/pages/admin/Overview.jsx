@@ -4,6 +4,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { adminApi } from "../../lib/api";
+import PnlChart from "../../components/admin/PnlChart";
 import Spinner from "../../components/ui/Spinner";
 
 function money(n) { return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
@@ -128,6 +129,17 @@ export default function Overview() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* P&L chart */}
+      <div className="ov__panel">
+        <div className="ov__panel-head">
+          <div>
+            <h2 className="ov__panel-title">Platform P&amp;L</h2>
+            <p className="ov__panel-sub">Daily net revenue over the last 14 days.</p>
+          </div>
+        </div>
+        <PnlChart days={14} />
       </div>
 
       {/* Quick actions */}

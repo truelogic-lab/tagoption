@@ -5,6 +5,7 @@ import {
   LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
+import GlobalSearch from "./GlobalSearch";
 
 const NAV = [
   { to: "/admin",             label: "Dashboard",    icon: LuLayoutDashboard, end: true },
@@ -50,6 +51,10 @@ export default function AdminLayout() {
           </div>
         </div>
 
+        <div className="adm__sidebar-search">
+          <GlobalSearch />
+        </div>
+
         <nav className="adm__nav">
           {NAV.map((n) => (
             <NavLink
@@ -85,6 +90,7 @@ export default function AdminLayout() {
           <LuMenu />
         </button>
         <span className="adm__top-title">Dashboard</span>
+        <GlobalSearch />
         <span className="adm__avatar">{initial}</span>
       </header>
 
