@@ -43,6 +43,6 @@ def market_tick(request, market_id):
             "change": tick["change"],
             "lastDigit": tick["lastDigit"],
             "history": tick["history"],
-            "enabled": m.enabled,
+            "active": m.enabled,
         }
     )
