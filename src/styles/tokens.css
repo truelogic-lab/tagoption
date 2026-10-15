@@ -1,6 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* ---------- Theme: dark (default) ---------- */
+/* =============================================================
+   Themes
+   Light is the document default. Every page renders with these
+   values unless it sits inside `.app[data-theme="dark"]`, which
+   flips to the dark set. Marketing pages, auth, and admin never
+   carry that attribute, so they stay light regardless of the
+   user's app-shell preference.
+   ============================================================= */
+
+/* ---------- Light (default) ---------- */
 :root {
   --bg: #ffffff;
   --bg-2: #f8fafc;
@@ -21,6 +30,13 @@
 
   --overlay: rgba(15,23,42,.35);
   --header-blur: rgba(255,255,255,.85);
+
+  /* Extended tokens */
+  --hover-bg:    rgba(15,23,42,.05);
+  --hover-bg-2:  rgba(15,23,42,.03);
+  --skeleton:    rgba(15,23,42,.06);
+  --grid-line:   rgba(15,23,42,.08);
+  --danger:      #dc2626;
 }
 
 /* ---------- Dark (app shell only) ---------- */
@@ -44,10 +60,15 @@
 
   --overlay: rgba(0,0,0,.6);
   --header-blur: rgba(10,10,15,.85);
+
+  --hover-bg:    rgba(255,255,255,.06);
+  --hover-bg-2:  rgba(255,255,255,.04);
+  --skeleton:    rgba(255,255,255,.08);
+  --grid-line:   rgba(148,163,184,.10);
+  --danger:      #ef4444;
 }
 
-
-/* ---------- Shared ---------- */
+/* ---------- Shared scale ---------- */
 :root {
   --r-sm: 8px;
   --r-md: 12px;
@@ -123,22 +144,6 @@ input, select, textarea { font: inherit; color: inherit; }
   .reveal { opacity: 1; transform: none; transition: none; }
 }
 
-/* ---------- Extended theme tokens ---------- */
-:root {
-  --hover-bg:    rgba(15,23,42,.05);
-  --hover-bg-2:  rgba(15,23,42,.03);
-  --skeleton:    rgba(15,23,42,.06);
-  --grid-line:   rgba(15,23,42,.08);
-  --danger:      #dc2626;
-}
-.app[data-theme="dark"] {
-  --hover-bg:    rgba(255,255,255,.06);
-  --hover-bg-2:  rgba(255,255,255,.04);
-  --skeleton:    rgba(255,255,255,.08);
-  --grid-line:   rgba(148,163,184,.10);
-  --danger:      #ef4444;
-}
-
 /* -------------------------------------------------------------
    No text selection on UI chrome (prevents the Android
    copy/paste popup on long-press / double-tap)
@@ -199,12 +204,6 @@ textarea,
 
 /* ---------- Buttons: disabled ---------- */
 
-/*
- * Base buttons had no disabled styling, so a `disabled` btn-blue on a light
- * background was rendering as near-invisible blue text on blue. The rules
- * below cover every variant — the variant colours are overridden by a single
- * muted palette so the disabled state reads the same on all of them.
- */
 .btn:disabled,
 .btn[aria-disabled="true"] {
   background: var(--bg-2);
@@ -214,25 +213,17 @@ textarea,
   opacity: 1;
   box-shadow: none;
 }
-
 .btn:disabled:hover,
 .btn[aria-disabled="true"]:hover {
   background: var(--bg-2);
   color: var(--text-3);
   border-color: var(--border);
 }
-
 .btn-blue:disabled,
 .btn-primary:disabled {
   background: var(--bg-2);
   color: var(--text-3);
 }
-
-/*
- * AutoPanel's insufficient-balance button is a real call to action — the user
- * needs to see that it's blocked and know what to do about it. Tint it as a
- * warning rather than a plain disabled button, so it stands out on the panel.
- */
 .auto__action:disabled {
   background: rgba(234, 179, 8, 0.12);
   color: var(--yellow);
