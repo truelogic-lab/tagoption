@@ -65,12 +65,17 @@ def admin_config(request):
 from .models import SiteConfig
 
 
+MAX_DATA_URI = 400_000  # ~300 KB raw, ~400 KB base64
+
+
 def _site_payload():
     row = SiteConfig.objects.filter(id=1).first()
     return {
         "name": row.name if row else "",
         "logoUrl": row.logo_url if row else "",
+        "logoData": row.logo_data if row else "",
         "faviconUrl": row.favicon_url if row else "",
+        "faviconData": row.favicon_data if row else "",
         "supportEmail": row.support_email if row else "",
     }
 
@@ -93,13 +98,35 @@ def admin_site_config(request):
 
     if "name" in request.data:
         row.name = str(request.data["name"]).strip()[:60]
+
     if "logoUrl" in request.data:
         row.logo_url = str(request.data["logoUrl"]).strip()[:400]
+
+    if "logoData" in request.data:
+        data = str(request.data["logoData"] or "")
+        if data and len(data) > MAX_DATA_URI:
+            return Response({"error": "Logo is too large (max 300 KB)"}, status=400)
+        if data and not data.startswith("data:image/"):
+            return Response({"error": "Logo must be an image data URI"}, status=400)
+        row.logo_data = data
+
     if "faviconUrl" in request.data:
         row.favicon_url = str(request.data["faviconUrl"]).strip()[:400]
+
+    if "faviconData" in request.data:
+        data = str(request.data["faviconData"] or "")
+        if data and len(data) > MAX_DATA_URI:
+            return Response({"error": "Favicon is too large (max 300 KB)"}, status=400)
+        if data and not data.startswith("data:image/"):
+            return Response({"error": "Favicon must be an image data URI"}, status=400)
+        row.favicon_data = data
+
     if "supportEmail" in request.data:
         row.support_email = str(request.data["supportEmail"]).strip()[:254]
 
     row.save()
-    record(request.user, "site.update", metadata=_site_payload())
+    record(request.user, "site.update", metadata={
+        k: v for k, v in _site_payload().items()
+        if not k.endswith("Data")  # do not put base64 blobs into the audit log
+    })
     return Response(_site_payload())
