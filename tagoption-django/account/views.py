@@ -25,7 +25,9 @@ def change_password(request):
         return Response({"error": "Current password is incorrect"}, status=400)
 
     request.user.set_password(new)
-    request.user.save(update_fields=["password"])
+    # Invalidate every previously issued token for this user.
+    request.user.token_version = (request.user.token_version or 0) + 1
+    request.user.save(update_fields=["password", "token_version"])
     return Response({"ok": True})
 
 

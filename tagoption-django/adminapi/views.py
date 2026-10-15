@@ -188,7 +188,14 @@ def set_banned(request, user_id):
     reason = (request.data.get("reason") or "").strip()
 
     user.banned = banned
-    user.save(update_fields=["banned"])
+    # Bumping the token version kills any live session for this user the
+    # moment they're banned — otherwise their existing JWT stays valid
+    # until it expires.
+    if banned:
+        user.token_version = (user.token_version or 0) + 1
+        user.save(update_fields=["banned", "token_version"])
+    else:
+        user.save(update_fields=["banned"])
 
     record(
         request.user, "user.ban" if banned else "user.unban",

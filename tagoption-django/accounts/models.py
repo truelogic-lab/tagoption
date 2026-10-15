@@ -41,6 +41,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Bumping this invalidates every issued access token for the user. Increment
+    # on password change, ban, and any other action that should force re-login.
+    token_version = models.IntegerField(default=0)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -48,6 +52,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def bump_token_version(self):
+        self.token_version = (self.token_version or 0) + 1
+        self.save(update_fields=["token_version"])
 
 
 from .notifications import Notification  # noqa: E402
