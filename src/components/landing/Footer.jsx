@@ -4,6 +4,7 @@ import {
   LuFacebook, LuTwitter, LuInstagram, LuLinkedin, LuSend,
 } from "react-icons/lu";
 import Reveal from "../ui/Reveal";
+import { useSite } from "../../lib/SiteContext";
 
 const columns = [
   {
@@ -47,14 +48,16 @@ const socials = [
 ];
 
 export default function Footer() {
+  const site = useSite();
+
   return (
     <footer className="footer">
       <div className="container">
         <Reveal className="footer__grid">
           <div className="footer__brand">
             <div className="footer__logo">
-              <span className="footer__logo-badge">T</span>
-              <span className="footer__logo-text">TAGOPTION</span>
+              <span className="footer__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
+              <span className="footer__logo-text">{site.name.toUpperCase()}</span>
             </div>
             <p className="footer__desc">
               A modern trading experience focused on market access, useful tools,
@@ -80,7 +83,7 @@ export default function Footer() {
         </Reveal>
 
         <div className="footer__bottom">
-          <p>© 2026 TagOption. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
           <p>
             Trading involves risk. You may lose some or all of your trading stake.
             Never trade money you cannot afford to lose.

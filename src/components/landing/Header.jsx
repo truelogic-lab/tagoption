@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LuMenu, LuX, LuChevronDown, LuUser, LuGlobe, LuLayoutDashboard } from "react-icons/lu";
 import { useAuth } from "../../lib/useAuth";
+import { useSite } from "../../lib/SiteContext";
 
 const NAV = [
   { label: "Online Trading", to: "/online-trading",
@@ -36,6 +37,7 @@ const NAV = [
 
 export default function Header() {
   const { isAuthenticated } = useAuth();
+  const site = useSite();
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [openGroup, setOpenGroup] = useState(null);
@@ -69,8 +71,8 @@ export default function Header() {
       <header className="header">
         <div className="header__inner">
           <Link to="/" className="header__logo" onClick={closeAll}>
-            <span className="header__logo-badge">T</span>
-            <span className="header__logo-text">TAGOPTION</span>
+            <span className="header__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
+            <span className="header__logo-text">{site.name.toUpperCase()}</span>
           </Link>
 
           <nav className="header__nav">
@@ -122,8 +124,8 @@ export default function Header() {
         <div className="mobile">
           <div className="mobile__top">
             <Link to="/" className="header__logo" onClick={closeAll}>
-              <span className="header__logo-badge">T</span>
-              <span className="header__logo-text">TAGOPTION</span>
+              <span className="header__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
+              <span className="header__logo-text">{site.name.toUpperCase()}</span>
             </Link>
             <button className="mobile__close" onClick={closeAll} aria-label="Close menu">
               <LuX />
