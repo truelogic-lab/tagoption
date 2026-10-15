@@ -916,3 +916,342 @@
     .hero__bg-image { transform: none; }
   }
 }
+
+/* =========================================================
+   TAGOPTION HERO — FINAL RESPONSIVE OVERRIDES
+   Desktop: illustration behind the copy.
+   Mobile: illustration below the copy.
+   ========================================================= */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 96px 0 88px;
+}
+
+/* Keep the text above the illustration. */
+.hero .hero__inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 560px) 1fr;
+  align-items: center;
+  gap: 40px;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+
+.hero .hero__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 560px;
+}
+
+/* Desktop illustration layer. */
+.hero .hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.hero .hero__bg-image {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  display: block;
+  width: 62%;
+  max-width: 860px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.85;
+  transform: translate3d(
+    calc(var(--enter-x, 0%) + var(--scroll-x, 0%)),
+    -50%,
+    0
+  );
+  transform-origin: center;
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  user-select: none;
+}
+
+/* The scroll movement must track the scroll position directly. */
+.hero.is-scrolling .hero__bg-image {
+  transition: none;
+}
+
+/* Fade the illustration behind the left-hand copy. */
+.hero .hero__bg-fade {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(
+    100deg,
+    var(--bg) 0%,
+    var(--bg) 32%,
+    rgba(255, 255, 255, 0) 62%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
+/* Headline hierarchy. */
+.hero .hero__title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 100%;
+  margin: 0 0 24px;
+  color: var(--text);
+  font-size: clamp(42px, 6.2vw, 76px);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.hero .hero__title-lead {
+  display: block;
+  font-size: 0.72em;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.hero .hero__title-accent {
+  display: block;
+  min-width: 13ch;
+  min-height: 1.05em;
+  color: var(--red);
+  font-size: 1em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.hero .hero__title-accent .tw {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.hero .hero__title-accent .tw__caret {
+  display: inline-block;
+  width: 0.045em;
+  height: 0.82em;
+  flex: 0 0 auto;
+  background: currentColor;
+  translate: 0 0.05em;
+  animation: tw-caret 1s steps(1, end) infinite;
+}
+
+.hero .hero__subtitle {
+  max-width: 520px;
+  margin: 0 0 30px;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.hero .hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero .hero__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 22px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hero .hero__btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.hero .hero__disclaimer {
+  margin: 20px 0 0;
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Medium screens. */
+@media (max-width: 1100px) {
+  .hero .hero__bg-image {
+    right: -15%;
+    width: 70%;
+    opacity: 0.62;
+  }
+
+  .hero .hero__bg-fade {
+    background: linear-gradient(
+      100deg,
+      var(--bg) 0%,
+      var(--bg) 42%,
+      rgba(255, 255, 255, 0) 75%
+    );
+  }
+
+  .hero .hero__title {
+    font-size: clamp(40px, 5.8vw, 60px);
+  }
+}
+
+/* Tablet and mobile: image becomes a separate block below the copy. */
+@media (max-width: 900px) {
+  .hero {
+    padding: 64px 0 56px;
+  }
+
+  .hero .hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .hero .hero__content {
+    max-width: 620px;
+  }
+
+  .hero .hero__bg {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+    margin: 34px 0 0;
+    padding-inline: var(--page-pad);
+  }
+
+  .hero .hero__bg-image {
+    position: static;
+    top: auto;
+    right: auto;
+    width: 90%;
+    max-width: 480px;
+    height: auto;
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  .hero .hero__bg-fade {
+    display: none;
+  }
+
+  .hero .hero__title {
+    font-size: clamp(38px, 7vw, 56px);
+  }
+
+  .hero .hero__subtitle {
+    font-size: 15px;
+  }
+}
+
+/* Small phones. */
+@media (max-width: 520px) {
+  .hero {
+    padding: 42px 0 44px;
+  }
+
+  .hero .hero__inner {
+    padding-inline: var(--page-pad);
+  }
+
+  .hero .hero__title {
+    gap: 5px;
+    margin-bottom: 18px;
+    font-size: clamp(30px, 8.8vw, 44px);
+    letter-spacing: -0.04em;
+  }
+
+  .hero .hero__title-lead {
+    font-size: 0.68em;
+  }
+
+  .hero .hero__title-accent {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 0.94em;
+  }
+
+  .hero .hero__subtitle {
+    margin-bottom: 24px;
+    font-size: 13.5px;
+    line-height: 1.75;
+  }
+
+  .hero .hero__actions {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .hero .hero__btn {
+    max-width: 100%;
+    padding: 11px 15px;
+    font-size: 12.5px;
+  }
+
+  .hero .hero__btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hero .hero__disclaimer {
+    margin-top: 16px;
+    font-size: 11px;
+  }
+
+  .hero .hero__bg {
+    margin-top: 28px;
+    padding-inline: var(--page-pad);
+  }
+
+  .hero .hero__bg-image {
+    width: 100%;
+    max-width: 340px;
+  }
+}
+
+/* Respect the visitor's accessibility preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .hero .hero__bg-image {
+    transform: translate3d(0, -50%, 0);
+    transition: none;
+    will-change: auto;
+  }
+
+  .hero.is-scrolling .hero__bg-image {
+    transition: none;
+  }
+
+  .hero .hero__title-accent .tw__caret {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .hero .hero__bg-image {
+    transform: none;
+  }
+}

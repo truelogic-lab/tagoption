@@ -1,35 +1,62 @@
 import { useEffect, useState } from "react";
 
-/**
- * Returns 0..1 representing how far the user has scrolled through the
- * first `range` pixels of the page. 0 = top of page, 1 = scrolled `range`
- * pixels or more.
- *
- * Uses requestAnimationFrame to coalesce scroll events — the browser fires
- * scroll at ~60Hz on desktop, faster on high-refresh displays, and we don't
- * want a state update per event. The rAF loop runs while the component is
- * mounted; the work per frame is one getBoundingClientRect + one setState.
- */
-export function useScrollProgress(range = 600) {
+export function useScrollProgress(range = 700) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    let raf = null;
-    let last = -1;
+    if (typeof window === "undefined") return undefined;
 
-    const tick = () => {
-      const y = window.scrollY || window.pageYOffset || 0;
-      const next = Math.max(0, Math.min(1, y / range));
-      if (Math.abs(next - last) > 0.001) {
-        last = next;
-        setProgress(next);
+    const motionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+
+      if (motionQuery.matches) {
+        setProgress(0);
+        return;
       }
-      raf = requestAnimationFrame(tick);
+
+      const scrollTop =
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        0;
+
+      const next = Math.min(
+        1,
+        Math.max(0, scrollTop / Math.max(1, range))
+      );
+
+      setProgress((previous) =>
+        Math.abs(previous - next) < 0.002 ? previous : next
+      );
     };
 
-    raf = requestAnimationFrame(tick);
+    const scheduleUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", scheduleUpdate, {
+      passive: true,
+    });
+
+    window.addEventListener("resize", scheduleUpdate);
+    motionQuery.addEventListener?.("change", scheduleUpdate);
+
+    update();
+
     return () => {
-      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      motionQuery.removeEventListener?.("change", scheduleUpdate);
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
     };
   }, [range]);
 
