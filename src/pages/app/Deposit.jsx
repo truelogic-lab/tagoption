@@ -27,7 +27,6 @@ export default function Deposit() {
   const [methodId, setMethodId] = useState("mpesa");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,7 +51,6 @@ export default function Deposit() {
         amount: amountNum,
         method: method.label,
         phone: method.id === "mpesa" ? phone.trim() : undefined,
-        email: email || undefined,
         currency: "KES",
       });
       const url = res?.redirectUrl || res?.redirect_url;
@@ -153,20 +151,6 @@ export default function Deposit() {
             />
           </section>
         )}
-
-        <section className="deposit__section">
-          <label className="deposit__label" htmlFor="deposit-email">Email for receipt</label>
-          <input
-            id="deposit-email"
-            className="deposit__input"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </section>
 
         {error && (
           <div className="deposit__error" role="alert">
