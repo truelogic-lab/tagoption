@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LuMenu, LuX, LuChevronDown, LuUser, LuGlobe, LuLayoutDashboard } from "react-icons/lu";
 import { useAuth } from "../../lib/useAuth";
-import { useSite } from "../../lib/SiteContext";
 import BrandMark from "../ui/BrandMark";
 
 const NAV = [
@@ -38,7 +37,6 @@ const NAV = [
 
 export default function Header() {
   const { isAuthenticated } = useAuth();
-  const site = useSite();
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [openGroup, setOpenGroup] = useState(null);
