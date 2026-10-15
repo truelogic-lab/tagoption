@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getSiteConfig, loadSiteConfig } from "./siteConfig";
 
+/**
+ * Provides the current site branding. Seeded from the synchronous cache so
+ * the first render is correct — no flash of the default name.
+ */
 const Ctx = createContext(getSiteConfig());
 
 export function SiteProvider({ children }) {
@@ -8,17 +12,19 @@ export function SiteProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadSiteConfig().then((c) => {
-      if (!cancelled) setConfig(c);
+
+    // The load function dispatches `tagoption:site-config` when it settles
+    // (and when admin saves a change). One listener handles both cases.
+    const sync = () => setConfig(getSiteConfig());
+    window.addEventListener("tagoption:site-config", sync);
+
+    loadSiteConfig().then(() => {
+      if (!cancelled) sync();
     });
 
-    // The admin Settings page dispatches this after a save so every consumer
-    // re-renders without a full reload.
-    const onUpdate = () => setConfig(getSiteConfig());
-    window.addEventListener("tagoption:site-config", onUpdate);
     return () => {
       cancelled = true;
-      window.removeEventListener("tagoption:site-config", onUpdate);
+      window.removeEventListener("tagoption:site-config", sync);
     };
   }, []);
 
