@@ -2227,3 +2227,40 @@
   letter-spacing: 1.2px;
   color: var(--text);
 }
+
+/* BrandMark variants — Header, Footer, Auth each have their own sizing */
+
+.brand-mark--header .brand-mark__text {
+  font-size: 15px;
+  letter-spacing: 1.4px;
+}
+.brand-mark--header .brand-mark__badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  font-size: 15px;
+}
+
+.brand-mark--footer .brand-mark__text {
+  font-size: 15px;
+  letter-spacing: 1.2px;
+  color: var(--text);
+}
+.brand-mark--footer .brand-mark__badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+.brand-mark--auth .brand-mark__text {
+  font-size: 15px;
+  letter-spacing: 1.2px;
+  color: var(--text);
+}
+.brand-mark--auth .brand-mark__badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 16px;
+}

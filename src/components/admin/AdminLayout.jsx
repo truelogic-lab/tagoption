@@ -9,6 +9,7 @@ import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
 import { useSite } from "../../lib/SiteContext";
 import AdminMetrics from "./AdminMetrics";
+import BrandMark from "../ui/BrandMark";
 
 const NAV = [
   { to: "/admin",              label: "Dashboard",    icon: LuLayoutDashboard, end: true },

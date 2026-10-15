@@ -5,6 +5,7 @@ import {
 } from "react-icons/lu";
 import Reveal from "../ui/Reveal";
 import { useSite } from "../../lib/SiteContext";
+import BrandMark from "../ui/BrandMark";
 
 const columns = [
   {
@@ -56,8 +57,7 @@ export default function Footer() {
         <Reveal className="footer__grid">
           <div className="footer__brand">
             <div className="footer__logo">
-              <span className="footer__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
-              <span className="footer__logo-text">{site.name.toUpperCase()}</span>
+              <BrandMark variant="footer" />
             </div>
             <p className="footer__desc">
               A modern trading experience focused on market access, useful tools,

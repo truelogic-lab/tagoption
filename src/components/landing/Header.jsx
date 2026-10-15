@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LuMenu, LuX, LuChevronDown, LuUser, LuGlobe, LuLayoutDashboard } from "react-icons/lu";
 import { useAuth } from "../../lib/useAuth";
 import { useSite } from "../../lib/SiteContext";
+import BrandMark from "../ui/BrandMark";
 
 const NAV = [
   { label: "Online Trading", to: "/online-trading",
@@ -71,8 +72,7 @@ export default function Header() {
       <header className="header">
         <div className="header__inner">
           <Link to="/" className="header__logo" onClick={closeAll}>
-            <span className="header__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
-            <span className="header__logo-text">{site.name.toUpperCase()}</span>
+            <BrandMark variant="header" />
           </Link>
 
           <nav className="header__nav">
@@ -124,8 +124,7 @@ export default function Header() {
         <div className="mobile">
           <div className="mobile__top">
             <Link to="/" className="header__logo" onClick={closeAll}>
-              <span className="header__logo-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
-              <span className="header__logo-text">{site.name.toUpperCase()}</span>
+              <BrandMark variant="header" />
             </Link>
             <button className="mobile__close" onClick={closeAll} aria-label="Close menu">
               <LuX />

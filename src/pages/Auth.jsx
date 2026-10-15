@@ -5,6 +5,7 @@ import {
 } from "react-icons/lu";
 import { signIn, signUp } from "../lib/auth";
 import { useSite } from "../lib/SiteContext";
+import BrandMark from "../components/ui/BrandMark";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -79,8 +80,7 @@ export default function Auth() {
     <div className="auth">
       <div className="auth__panel">
         <Link to="/" className="auth__brand">
-          <span className="auth__brand-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
-          <span className="auth__brand-text">{site.name.toUpperCase()}</span>
+          <BrandMark variant="auth" />
         </Link>
 
         <div className="auth__head">
