@@ -12,7 +12,7 @@ class PesapalConfig(models.Model):
     """
     Single-row table caching the IPN id Pesapal returns on registration.
     In-memory caching doesn't survive Render restarts, and re-registering on
-    every cold start will eventually get rate-limited. One row, always id 1.
+    every cold start will eventually get rate-limited.
     """
     id = models.IntegerField(primary_key=True, default=1, editable=False)
     ipn_id = models.CharField(max_length=80)
@@ -24,12 +24,17 @@ class Deposit(models.Model):
     """
     One row per deposit attempt.
 
-    `reference` is our internal id, sent to Pesapal as merchant_reference.
-    `order_tracking_id` is Pesapal's id — the client uses it to poll status.
-    Both are unique so re-submitting an order never double-credits.
+    Currency model:
+      - `amount_cents` is what the user asked to deposit, in USD. This is
+        what gets credited to their wallet, regardless of what happens to
+        the exchange rate between request and confirmation.
+      - `kes_charged_cents` is what Pesapal was told to charge, in KES. It
+        is derived from `rate_at_deposit` at request time and never changes.
+      - `rate_at_deposit` is the USD->KES rate quoted to the user. Stored so
+        the transaction is auditable and FX exposure can be measured.
 
-    Crediting happens exactly once, gated on the state transition from PENDING
-    to COMPLETED. If a webhook arrives twice, the second is a no-op.
+    A deposit is credited exactly once, gated on the state transition from
+    PENDING to COMPLETED. A duplicate IPN is a no-op.
     """
     STATUS_PENDING = "pending"
     STATUS_COMPLETED = "completed"
@@ -42,8 +47,15 @@ class Deposit(models.Model):
         on_delete=models.CASCADE,
         related_name="deposits",
     )
+
+    # USD — what the user gets credited
     amount_cents = models.BigIntegerField()
-    currency = models.CharField(max_length=8, default="KES")
+
+    # KES — what Pesapal was asked to charge
+    kes_charged_cents = models.BigIntegerField(default=0)
+    rate_at_deposit = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+
+    currency = models.CharField(max_length=8, default="USD")
     method = models.CharField(max_length=40, blank=True, default="")
     phone = models.CharField(max_length=32, blank=True, default="")
     email = models.EmailField(blank=True, default="")

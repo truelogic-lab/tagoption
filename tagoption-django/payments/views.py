@@ -1,5 +1,6 @@
 import logging
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction as db_transaction
 from django.utils import timezone
@@ -10,12 +11,17 @@ from rest_framework.response import Response
 
 from accounts.models import new_id
 from accounts.notifications import Notification
+from fx.service import current_rate
 from wallet.models import Balance, Transaction
 
 from .models import Deposit
 from . import service
 
 log = logging.getLogger(__name__)
+
+# Reject the deposit if the client's quoted rate differs from the server's by
+# more than this fraction. Protects against tampered payloads and stale quotes.
+RATE_TOLERANCE = Decimal("0.02")
 
 
 def _new_reference():
@@ -24,9 +30,8 @@ def _new_reference():
 
 def _credit_deposit(deposit):
     """
-    Apply a completed deposit to the user's balance. Must be idempotent:
-    the caller checks status, this function assumes the transition is valid
-    and holds the balance row lock while mutating.
+    Apply a completed deposit to the user's balance. Idempotent: the caller
+    checks status, this function rechecks under a row lock before mutating.
     """
     with db_transaction.atomic():
         locked = Deposit.objects.select_for_update().get(pk=deposit.pk)
@@ -64,28 +69,54 @@ def _credit_deposit(deposit):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def start_deposit(request):
-    amount = request.data.get("amount")
+    usd_amount_raw = request.data.get("amount")
+    client_rate_raw = request.data.get("rate")
     method = (request.data.get("method") or "pesapal").strip()
     phone = (request.data.get("phone") or "").strip()
     email = (request.data.get("email") or request.user.email or "").strip()
-    currency = (request.data.get("currency") or "KES").strip().upper()
 
-    if not amount:
+    if not usd_amount_raw:
         return Response({"error": "amount is required"}, status=400)
 
     try:
-        amount = float(amount)
-    except (TypeError, ValueError):
+        usd_amount = Decimal(str(usd_amount_raw))
+    except Exception:
         return Response({"error": "Invalid amount"}, status=400)
 
-    if amount <= 0:
+    if usd_amount <= 0:
         return Response({"error": "Invalid amount"}, status=400)
+
+    # Server owns the rate. Client sends what it displayed so we can detect
+    # tampering or staleness, but the rate we use is ours.
+    server_rate = Decimal(str(current_rate()["rate"]))
+    if client_rate_raw not in (None, ""):
+        try:
+            client_rate = Decimal(str(client_rate_raw))
+        except Exception:
+            return Response({"error": "Invalid rate"}, status=400)
+
+        drift = abs(client_rate - server_rate) / server_rate
+        if drift > RATE_TOLERANCE:
+            return Response(
+                {"error": "Exchange rate has moved. Refresh and try again."},
+                status=409,
+            )
+
+    # KES charged = USD amount * server rate, rounded to whole shillings.
+    kes_amount = (usd_amount * server_rate).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    if kes_amount <= 0:
+        return Response({"error": "Amount too small"}, status=400)
+
+    usd_cents = int((usd_amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    kes_cents = int((kes_amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
     reference = _new_reference()
     deposit = Deposit.objects.create(
         user=request.user,
-        amount_cents=int(round(amount * 100)),
-        currency=currency,
+        amount_cents=usd_cents,
+        kes_charged_cents=kes_cents,
+        rate_at_deposit=server_rate,
+        currency="USD",
         method=method,
         phone=phone,
         email=email,
@@ -95,9 +126,11 @@ def start_deposit(request):
     try:
         result = service.submit_order(
             reference=reference,
-            amount=amount,
-            currency=currency,
-            description="TagOption deposit",
+            # Pesapal operates in KES for Kenyan merchants. Send shillings,
+            # not the USD figure the user typed.
+            amount=float(kes_amount),
+            currency="KES",
+            description=f"TagOption deposit (${usd_amount})",
             email=email,
             phone=phone,
         )
@@ -114,11 +147,26 @@ def start_deposit(request):
     return Response(
         {
             "reference": deposit.reference,
-            "order_tracking_id": deposit.order_tracking_id,
-            "redirect_url": deposit.redirect_url,
+            "orderTrackingId": deposit.order_tracking_id,
+            "redirectUrl": deposit.redirect_url,
+            "amount": usd_cents / 100,
+            "kesCharged": kes_cents / 100,
+            "rate": float(server_rate),
         },
         status=201,
     )
+
+
+def _deposit_payload(deposit):
+    return {
+        "reference": deposit.reference,
+        "status": deposit.status,
+        "amount": deposit.amount_cents / 100,
+        "currency": deposit.currency,
+        "kesCharged": deposit.kes_charged_cents / 100,
+        "rate": float(deposit.rate_at_deposit) if deposit.rate_at_deposit else None,
+        "confirmationCode": deposit.confirmation_code,
+    }
 
 
 @api_view(["GET"])
@@ -129,17 +177,8 @@ def status(request, order_tracking_id):
     except Deposit.DoesNotExist:
         return Response({"error": "Unknown deposit"}, status=404)
 
-    # If we already have a final state, don't hit Pesapal again.
     if deposit.status in (Deposit.STATUS_COMPLETED, Deposit.STATUS_FAILED, Deposit.STATUS_REVERSED):
-        return Response(
-            {
-                "reference": deposit.reference,
-                "status": deposit.status,
-                "amount": deposit.amount_cents / 100,
-                "currency": deposit.currency,
-                "confirmation_code": deposit.confirmation_code,
-            }
-        )
+        return Response(_deposit_payload(deposit))
 
     try:
         s = service.get_status(order_tracking_id)
@@ -159,15 +198,7 @@ def status(request, order_tracking_id):
     else:
         deposit.save(update_fields=["last_status_payload"])
 
-    return Response(
-        {
-            "reference": deposit.reference,
-            "status": deposit.status,
-            "amount": deposit.amount_cents / 100,
-            "currency": deposit.currency,
-            "confirmation_code": deposit.confirmation_code,
-        }
-    )
+    return Response(_deposit_payload(deposit))
 
 
 @csrf_exempt
@@ -175,10 +206,8 @@ def status(request, order_tracking_id):
 @permission_classes([AllowAny])
 def ipn(request):
     """
-    Pesapal server-to-server notification.
-
-    The body cannot be trusted. We always call GetTransactionStatus before
-    crediting. The credit function is idempotent, so a duplicate IPN is safe.
+    Pesapal server-to-server notification. Body is untrusted — always call
+    GetTransactionStatus before crediting. Credit is idempotent.
     """
     order_tracking_id = request.data.get("OrderTrackingId") or request.query_params.get("OrderTrackingId")
     merchant_reference = request.data.get("OrderMerchantReference") or request.query_params.get("OrderMerchantReference")
@@ -221,15 +250,10 @@ def ipn(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def callback(request):
-    """
-    User-facing redirect from Pesapal. The client reads OrderTrackingId from
-    the query string and polls /payments/status. We don't credit here — the
-    IPN or the status poll does that.
-    """
     return Response(
         {
             "ok": True,
-            "order_tracking_id": request.query_params.get("OrderTrackingId", ""),
-            "merchant_reference": request.query_params.get("OrderMerchantReference", ""),
+            "orderTrackingId": request.query_params.get("OrderTrackingId", ""),
+            "merchantReference": request.query_params.get("OrderMerchantReference", ""),
         }
     )
