@@ -6,10 +6,15 @@ does not survive a multi-worker deploy, so this port derives the price from
 (symbol, time_bucket) instead: every worker computes the same value for the
 same instant, no shared state, no DB writes.
 
-The slow component is linearly interpolated between adjacent windows so the
-price walks smoothly instead of stepping once per window boundary. Bounds are
-+/-2% of base, matching the Fastify generator. `lastDigit` is the hundredths
-digit of the current price, the input the Even/Odd contract resolves against.
+Both components are interpolated: `slow` crosses continuously across its
+60-bucket windows, `fast` crosses continuously across 6-bucket windows. That
+keeps the price walking smoothly rather than jumping each tick — the earlier
+version generated a fresh `fast` value every bucket, which produced ~60-point
+steps on a market with a +/-190 band.
+
+Bounds are +/-2% of base, matching the Fastify generator. `lastDigit` is the
+hundredths digit of the current price, the input the Even/Odd contract
+resolves against.
 """
 
 import hashlib
@@ -20,9 +25,11 @@ TICK_MS = 900
 HISTORY_LEN = 200
 CLIENT_HISTORY = 80
 BAND = Decimal("0.02")          # +/-2% of base, matches Fastify
-SLOW_WINDOW = 60                # buckets per slow-component step
-SLOW_WEIGHT = 0.8
-FAST_WEIGHT = 0.2
+
+SLOW_WINDOW = 60                # ~54s per slow cycle
+FAST_WINDOW = 6                 # ~5.4s per fast cycle
+SLOW_WEIGHT = 0.85
+FAST_WEIGHT = 0.15
 
 
 def _bucket(t: float | None = None) -> int:
@@ -39,34 +46,31 @@ def _unit(symbol: str, n: int) -> float:
     return int.from_bytes(h[:6], "big") / float(1 << 48)
 
 
-def _slow(symbol: str, bucket: int) -> float:
+def _osc(symbol: str, bucket: int, window: int, name: str) -> float:
     """
-    Slow component in [-1, 1]. Linearly interpolates between window k and
-    window k+1 so the value crosses continuously at window boundaries.
+    Oscillator in [-1, 1] that linearly interpolates between window k and k+1
+    so the value crosses continuously at window boundaries. No step jumps.
     """
-    k = bucket // SLOW_WINDOW
-    frac = (bucket % SLOW_WINDOW) / SLOW_WINDOW
-    a = _unit(symbol + ":slow", k) * 2.0 - 1.0
-    b = _unit(symbol + ":slow", k + 1) * 2.0 - 1.0
+    k = bucket // window
+    frac = (bucket % window) / window
+    a = _unit(f"{symbol}:{name}", k) * 2.0 - 1.0
+    b = _unit(f"{symbol}:{name}", k + 1) * 2.0 - 1.0
     return a + (b - a) * frac
-
-
-def _fast(symbol: str, bucket: int) -> float:
-    """Fast noise in [-1, 1], changes every bucket."""
-    return _unit(symbol + ":fast", bucket) * 2.0 - 1.0
 
 
 def _price_at(symbol: str, base: Decimal, bucket: int) -> Decimal:
     base_f = float(base)
     band_f = base_f * float(BAND)
 
-    offset = (SLOW_WEIGHT * _slow(symbol, bucket) + FAST_WEIGHT * _fast(symbol, bucket)) * band_f
+    slow = _osc(symbol, bucket, SLOW_WINDOW, "slow")
+    fast = _osc(symbol, bucket, FAST_WINDOW, "fast")
+    offset = (SLOW_WEIGHT * slow + FAST_WEIGHT * fast) * band_f
+
     price = base_f + offset
     lo = base_f - band_f
     hi = base_f + band_f
     price = max(lo, min(hi, price))
 
-    # Match Fastify's 2-decimal rounding.
     return Decimal(f"{price:.2f}")
 
 
