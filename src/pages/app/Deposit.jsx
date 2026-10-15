@@ -73,6 +73,21 @@ export default function Deposit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // A redirect to Pesapal followed by a browser back does not remount this
+  // component — bfcache restores it with whatever state was last rendered,
+  // including `loading: true`. Without this listener the button stays stuck
+  // on "Opening secure checkout…" forever.
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) {
+        setLoading(false);
+        setError("");
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   const method = METHODS.find((m) => m.id === methodId);
   const amountNum = Number(amount) || 0;
   const kesAmount = useMemo(() => toKes(amountNum), [amountNum, toKes]);
@@ -89,6 +104,15 @@ export default function Deposit() {
     if (!phoneValid) { setError("Enter a valid M-Pesa phone number"); return; }
 
     setLoading(true);
+
+    // If the redirect never happens — Pesapal is slow, the network stalls, the
+    // user cancels the browser prompt — the button must come back. This timer
+    // resets loading after 45s regardless of what the network does.
+    const safety = setTimeout(() => {
+      setLoading(false);
+      setError("The payment window is taking longer than expected. Try again.");
+    }, 45000);
+
     try {
       const res = await paymentsApi.startDeposit({
         amount: amountNum,
@@ -98,8 +122,10 @@ export default function Deposit() {
       });
       const url = res?.redirectUrl || res?.redirect_url;
       if (!url) throw new Error("Payment provider did not return a redirect URL");
+      clearTimeout(safety);
       window.location.href = url;
     } catch (err) {
+      clearTimeout(safety);
       setError(err?.message || "Could not start the payment");
       setLoading(false);
     }

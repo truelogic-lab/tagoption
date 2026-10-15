@@ -64,6 +64,14 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
     }
 
     setLoading(true);
+
+    // Same rationale as Deposit.jsx — a hung request must not leave the
+    // submit button spinning indefinitely.
+    const safety = setTimeout(() => {
+      setLoading(false);
+      setError("The payment window is taking longer than expected. Try again.");
+    }, 45000);
+
     try {
       const res = await paymentsApi.startDeposit({
         amount: amountNum,
@@ -86,9 +94,11 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
         );
       }
 
+      clearTimeout(safety);
       onCompleted?.();
       window.location.href = url;
     } catch (err) {
+      clearTimeout(safety);
       setError(err.message || "Could not start the payment");
       setLoading(false);
     }
