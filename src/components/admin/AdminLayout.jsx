@@ -2,24 +2,32 @@ import React, { useState } from "react";
 import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
   LuMenu, LuX, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
-  LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuSettings,
+  LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuCoins, LuBanknote,
+  LuSettings2,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
+import AdminMetrics from "./AdminMetrics";
 
 const NAV = [
   { to: "/admin",              label: "Dashboard",    icon: LuLayoutDashboard, end: true },
   { to: "/admin/users",        label: "Users",        icon: LuUsers },
+  { to: "/admin/markets",      label: "Markets",      icon: LuCoins },
   { to: "/admin/trades",       label: "Trades",       icon: LuActivity },
+  { to: "/admin/withdrawals",  label: "Withdrawals",  icon: LuBanknote },
   { to: "/admin/transactions", label: "Transactions", icon: LuDollarSign },
+  { to: "/admin/config",       label: "Config",       icon: LuSettings2 },
   { to: "/admin/audit",        label: "Audit log",    icon: LuListChecks },
 ];
 
 const TITLES = {
   "/admin":              "Dashboard",
   "/admin/users":        "Users",
+  "/admin/markets":      "Markets",
   "/admin/trades":       "Trades",
+  "/admin/withdrawals":  "Withdrawals",
   "/admin/transactions": "Transactions",
+  "/admin/config":       "Config",
   "/admin/audit":        "Audit log",
 };
 
@@ -152,6 +160,7 @@ export default function AdminLayout() {
       )}
 
       <main className="adm__main">
+        <AdminMetrics />
         <Outlet />
       </main>
     </div>

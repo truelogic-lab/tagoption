@@ -736,3 +736,39 @@ def approve_withdraw(request, tx_id):
         metadata={"providerRef": provider_ref},
     )
     return Response({"ok": True})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def platform_metrics(request):
+    """
+    The three numbers shown in the admin metric bar. One aggregate query
+    each, polled from every admin page.
+    """
+    open_trades = Trade.objects.filter(status=Trade.STATUS_OPEN).count()
+    pending_withdrawals = Withdrawal.objects.filter(
+        status=Withdrawal.STATUS_PENDING
+    ).count()
+
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_pnl_cents = (
+        Trade.objects
+        .filter(closed_at__gte=today_start, status__in=[Trade.STATUS_WON, Trade.STATUS_LOST])
+        .aggregate(
+            total=Sum(
+                Case(
+                    When(status=Trade.STATUS_WON, then=-F("profit_cents")),
+                    default=F("stake_cents"),
+                    output_field=BigIntegerField(),
+                )
+            )
+        )["total"]
+        or 0
+    )
+
+    return Response({
+        "openTrades": open_trades,
+        "pendingWithdrawals": pending_withdrawals,
+        "pnlToday": today_pnl_cents / 100,
+    })

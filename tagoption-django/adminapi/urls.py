@@ -1,10 +1,14 @@
 from django.urls import path
 
+from markets import admin_views as market_views
+
 from . import views
 
 urlpatterns = [
     path("admin/overview", views.overview),
     path("admin/pnl", views.pnl),
+    path("admin/metrics", views.metrics),
+    path("admin/platform-metrics", views.platform_metrics),
 
     path("admin/users", views.users_list),
     path("admin/users/<str:user_id>", views.user_detail),
@@ -23,7 +27,10 @@ urlpatterns = [
     path("admin/withdrawals", views.withdrawals_list),
     path("admin/withdrawals/<str:withdrawal_id>/review", views.withdrawal_review),
 
+    path("admin/markets", market_views.list_markets),
+    path("admin/markets/<str:market_id>/toggle", market_views.toggle_market),
+    path("admin/markets/<str:market_id>", market_views.edit_market),
+
     path("admin/audit", views.audit_list),
-    path("admin/metrics", views.metrics),
     path("admin/search", views.search),
 ]
