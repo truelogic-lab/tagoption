@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { accountApi } from "../../../lib/api";
 
+/**
+ * Profile form. The server returns the updated user as flat fields —
+ * { id, email, name, role, ... } — not nested under `user`. Do not read
+ * res.user.name; that was the earlier bug and it reported failure on a
+ * successful update.
+ */
 export default function NameForm({ initialName, initialEmail, onSaved }) {
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
@@ -15,15 +21,26 @@ export default function NameForm({ initialName, initialEmail, onSaved }) {
     setErr("");
     try {
       const res = await accountApi.updateProfile({ name, email });
-      // Persist to the local session so the header shows the new name
-      const raw = localStorage.getItem("tagoption.session");
-      if (raw) {
-        const s = JSON.parse(raw);
-        s.user = { ...s.user, name: res.user.name, email: res.user.email };
-        localStorage.setItem("tagoption.session", JSON.stringify(s));
+
+      // Persist to the local session so the header and drawer show the
+      // new values without a reload.
+      try {
+        const raw = localStorage.getItem("tagoption.session");
+        if (raw) {
+          const s = JSON.parse(raw);
+          s.user = {
+            ...s.user,
+            name: res?.name ?? name,
+            email: res?.email ?? email,
+          };
+          localStorage.setItem("tagoption.session", JSON.stringify(s));
+        }
+      } catch {
+        // Session write failing must not be reported as a profile failure.
       }
+
       setMsg("Profile updated.");
-      onSaved?.(res.user);
+      onSaved?.(res);
       setTimeout(() => setMsg(""), 1800);
     } catch (e) {
       setErr(e.message || "Could not update profile");

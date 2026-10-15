@@ -75,6 +75,22 @@ def verification_status(request):
 @permission_classes([IsAuthenticated])
 def verification_submit(request):
     v, _ = Verification.objects.get_or_create(user=request.user)
+
+    # Do not allow a second submission to reset an approved or already-pending
+    # record. The user can only submit when there is nothing outstanding.
+    if v.status == Verification.STATUS_APPROVED:
+        return Response(
+            {"status": v.status, "submittedAt": v.submitted_at,
+             "error": "Already verified"},
+            status=409,
+        )
+    if v.status == Verification.STATUS_PENDING:
+        return Response(
+            {"status": v.status, "submittedAt": v.submitted_at,
+             "error": "A submission is already pending review"},
+            status=409,
+        )
+
     v.payload = request.data or {}
     v.status = Verification.STATUS_PENDING
     v.submitted_at = timezone.now()

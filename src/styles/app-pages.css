@@ -1512,3 +1512,20 @@
   .account__trigger { padding: 12px 14px; gap: 12px; min-height: 72px; }
   .account__icon { width: 40px; height: 40px; }
 }
+
+/* Verification status tones. The base .account-form__status is defined above. */
+.account-form__status--idle {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.account-form__status--wait {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  color: var(--blue);
+}
+.account-form__status--err {
+  background: rgba(255, 45, 85, 0.08);
+  border: 1px solid rgba(255, 45, 85, 0.28);
+  color: var(--red);
+}

@@ -1,43 +1,89 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { accountApi } from "../../../lib/api";
 
 /**
- * Identity verification. The backend stores the submission and marks it
- * pending; approval is a manual admin action. Copy reflects that — no
- * automated SLA is promised because none exists.
+ * Identity verification.
+ *
+ * Reads the current status on mount so a reload does not reset what the user
+ * already submitted. The backend stores the submission and marks it pending;
+ * approval is manual. Copy is written to match that — no automated SLA.
  */
+const STATUS_COPY = {
+  none:     { label: "Not submitted",   tone: "idle" },
+  pending:  { label: "Pending review",  tone: "wait" },
+  approved: { label: "Verified",        tone: "ok"   },
+  rejected: { label: "Rejected",        tone: "err"  },
+};
+
 export default function VerifyForm() {
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await accountApi.verification();
+        if (cancelled) return;
+        setStatus(res?.status || "none");
+      } catch {
+        if (!cancelled) setStatus("none");
+      } finally {
+        if (!cancelled) setLoadingStatus(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const submit = async () => {
     setErr("");
-    setLoading(true);
+    setSubmitting(true);
     try {
-      await accountApi.submitKYC({});
-      setSent(true);
+      const res = await accountApi.submitKYC({});
+      setStatus(res?.status || "pending");
     } catch (e) {
       setErr(e?.message || "Could not submit verification");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (loadingStatus) {
+    return (
+      <div className="account-form">
+        <p className="account-form__note">Loading verification status…</p>
+      </div>
+    );
+  }
+
+  const meta = STATUS_COPY[status] || STATUS_COPY.none;
+  const canSubmit = status === "none" || status === "rejected";
+
   return (
     <div className="account-form">
+      <div className={`account-form__status account-form__status--${meta.tone}`}>
+        {meta.label}
+      </div>
+
       <p className="account-form__note">
-        Submit your identity for review. A team member checks each submission
-        manually and will notify you when it's complete.
+        {status === "pending"
+          ? "A team member is reviewing your submission. You will be notified when it's complete."
+          : status === "approved"
+            ? "Your identity is verified. No further action is required."
+            : status === "rejected"
+              ? "Your previous submission was not accepted. You can submit again."
+              : "Submit your identity for review. A team member checks each submission manually and will notify you when it's complete."}
       </p>
 
-      {sent ? (
-        <div className="account-form__status account-form__status--ok">
-          Submitted. Verification is pending review.
-        </div>
-      ) : (
-        <button className="btn btn-blue account-form__submit" onClick={submit} disabled={loading}>
-          {loading ? "Submitting…" : "Start verification"}
+      {canSubmit && (
+        <button
+          className="btn btn-blue account-form__submit"
+          onClick={submit}
+          disabled={submitting}
+        >
+          {submitting ? "Submitting…" : status === "rejected" ? "Resubmit" : "Start verification"}
         </button>
       )}
 
