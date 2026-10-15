@@ -24,11 +24,8 @@ INSTALLED_APPS = [
     "markets",
     "fx",
     "ops",
-    "fx",
-    "ops",
     "trading",
     "wallet",
-    "ops",
 ]
 
 MIDDLEWARE = [
