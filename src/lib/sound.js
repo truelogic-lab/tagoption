@@ -114,3 +114,42 @@ export function play(event) {
     // Never let a sound break the app.
   }
 }
+
+/* =============================================================
+   File-based sounds
+
+   The synthesized tones above are zero-asset. Sample-based sounds
+   are used where a specific sound matters more than bundle size,
+   e.g. the scanner sweep. Same mute toggle, same autoplay policy.
+   ============================================================= */
+
+const FILE_SOUNDS = {
+  scanner: "/sounds/scanner.mp3",
+};
+
+// One audio element per sound so a rapid repeat doesn't restart the
+// previous one — cloneNode on demand instead, and let the GC clean up.
+const _fileCache = {};
+
+function getAudio(name) {
+  const src = FILE_SOUNDS[name];
+  if (!src) return null;
+  if (_fileCache[src]) return _fileCache[src].cloneNode();
+  const el = new Audio(src);
+  el.preload = "auto";
+  _fileCache[src] = el;
+  return el.cloneNode();
+}
+
+export function playFile(name, { loop = false, volume = 0.6 } = {}) {
+  if (!isEnabled()) return null;
+  const el = getAudio(name);
+  if (!el) return null;
+  el.loop = loop;
+  el.volume = volume;
+  try {
+    const p = el.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  } catch {}
+  return el;
+}

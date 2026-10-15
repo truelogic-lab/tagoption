@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   LuX, LuSearch, LuSparkles, LuBot, LuRefreshCw,
 } from "react-icons/lu";
 import { useMarkets } from "../../../lib/useMarkets";
 import { useScanner } from "../../ai/useScanner";
+import { playFile } from "../../../lib/sound";
 
 function pct(n) {
   return `${(n * 100).toFixed(1)}%`;
@@ -23,9 +24,27 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
     running, progress, total, currentMarket, result, error, start, reset,
   } = useScanner(enabledMarkets);
 
+  // Holds the currently-playing scanner sweep so it can be stopped if the
+  // user closes the modal mid-scan. A 6s loop running after the modal is
+  // gone is jarring and has no UI affordance to cancel it.
+  const scannerAudioRef = useRef(null);
+
+  const startWithSound = React.useCallback(() => {
+    scannerAudioRef.current = playFile("scanner", { volume: 0.4 });
+    start();
+  }, [start]);
+
+  const stopScannerAudio = () => {
+    const el = scannerAudioRef.current;
+    if (el) {
+      try { el.pause(); el.currentTime = 0; } catch {}
+      scannerAudioRef.current = null;
+    }
+  };
+
   if (!open) return null;
 
-  const close = () => { reset(); onClose(); };
+  const close = () => { stopScannerAudio(); reset(); onClose(); };
 
   const loadBot = () => {
     if (!result) return;
@@ -128,7 +147,7 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
 
         <button
           className="btn btn-blue scanner__scan"
-          onClick={start}
+          onClick={startWithSound}
           disabled={running || loading || !enabledMarkets.length}
         >
           {running
