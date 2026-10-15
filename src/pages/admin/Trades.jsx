@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
 
@@ -10,20 +10,26 @@ export default function Trades() {
   const [status, setStatus] = useState("open");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const data = await adminApi.trades({ status, limit: 200 });
-      setRows(data);
-    } catch {}
+      const list = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+      setRows(list);
+    } catch (e) {
+      setError(e.message || "Failed to load trades");
+      setRows([]);
+    }
     setLoading(false);
-  };
+  }, [status]);
 
-  useEffect(() => { load(); }, [status]); // eslint-disable-line
+  useEffect(() => { load(); }, [load]);
 
   const forceSettle = async (trade, result) => {
-    if (!window.confirm(`Force-settle trade ${trade.id.slice(-8)} as ${result.toUpperCase()}?`)) return;
+    if (!window.confirm(`Settle trade ${trade.id.slice(-8)} as ${result.toUpperCase()}?`)) return;
     setBusy(trade.id);
     try {
       await adminApi.forceSettle(trade.id, result);
@@ -36,11 +42,13 @@ export default function Trades() {
 
   return (
     <div className="adm-page">
-      <div className="adm-page__head">
-        <h1 className="adm-page__title">Trades</h1>
-        <p className="adm-page__sub">
-          {rows.length} trade{rows.length === 1 ? "" : "s"} in {status}
-        </p>
+      <div className="adm-hero adm-hero--compact">
+        <div>
+          <h1 className="adm-hero__title">Trades</h1>
+          <p className="adm-hero__sub">
+            {rows.length} trade{rows.length === 1 ? "" : "s"} in {status}
+          </p>
+        </div>
       </div>
 
       <div className="adm-chips">
@@ -56,21 +64,23 @@ export default function Trades() {
       </div>
 
       {loading ? (
-        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading trades…</span></div>
+        <div className="loading">
+          <Spinner size="md" tone="muted" />
+          <span>Loading trades…</span>
+        </div>
+      ) : error ? (
+        <div className="adm-state">{error}</div>
       ) : rows.length === 0 ? (
         <div className="adm-state">No {status} trades.</div>
       ) : (
-        <div className="adm-list adm-list--2col">
+        <div className="adm-rows">
           {rows.map((t) => (
-            <article className="adm-item" key={t.id}>
-              <header className="adm-item__head">
-                <span className="adm-item__email">{t.email}</span>
-                <span className={`adm-item__status adm-item__status--${t.status}`}>
-                  {t.status}
-                </span>
+            <article className="adm-trade" key={t.id}>
+              <header className="adm-trade__head">
+                <span className="adm-trade__email">{t.email}</span>
+                <span className={`adm-trade__status is-${t.status}`}>{t.status}</span>
               </header>
-
-              <div className="adm-item__grid">
+              <div className="adm-trade__grid">
                 <Field label="Market"   value={t.market} />
                 <Field label="Contract" value={t.contract} />
                 <Field label="Stake"    value={money(t.stake)} />
@@ -81,9 +91,8 @@ export default function Trades() {
                   value={new Date(t.openedAt).toLocaleTimeString()}
                 />
               </div>
-
               {t.status === "open" && (
-                <div className="adm-item__actions">
+                <div className="adm-trade__actions">
                   <button
                     className="adm-btn adm-btn--ok"
                     onClick={() => forceSettle(t, "won")}

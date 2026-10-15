@@ -1324,3 +1324,540 @@
   .ud-profile { flex-direction: column; align-items: flex-start; text-align: left; }
   .ud-profile__info { width: 100%; }
 }
+
+/* =============================================================
+   Admin — page shell, cards, users, trades, transactions, audit.
+   Appended after the original admin.css. New class prefix `adm-*`
+   to keep the shell classes (.adm__*) untouched.
+   ============================================================= */
+
+/* ---------- Page wrapper ---------- */
+.adm-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Hero header ---------- */
+.adm-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.adm-hero--compact { padding-bottom: 12px; }
+.adm-hero__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  margin: 0;
+}
+.adm-hero__sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.adm-hero__date {
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+}
+
+/* ---------- KPI grid ---------- */
+.adm-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.adm-kpi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-kpi__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.adm-kpi__icon--blue   { background: rgba(37, 99, 235, 0.12);  color: var(--blue); }
+.adm-kpi__icon--purple { background: rgba(168, 85, 247, 0.12); color: var(--purple); }
+.adm-kpi__icon--green  { background: rgba(34, 197, 94, 0.12);  color: var(--green); }
+.adm-kpi__icon--amber  { background: rgba(234, 179, 8, 0.14);  color: var(--yellow); }
+
+.adm-kpi__body { min-width: 0; display: flex; flex-direction: column; }
+.adm-kpi__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.adm-kpi__value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.adm-kpi__hint {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* ---------- Card ---------- */
+.adm-card {
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.adm-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text);
+  margin: 0;
+}
+.adm-card__hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.adm-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.adm-card__link:hover { color: var(--text); border-color: var(--border-2); }
+
+/* ---------- Two-column row ---------- */
+.adm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+/* ---------- Stats rows ---------- */
+.adm-stats { display: flex; flex-direction: column; }
+.adm-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.adm-stat + .adm-stat { border-top: 1px solid var(--border); }
+.adm-stat strong {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Activity feed ---------- */
+.adm-feed { display: flex; flex-direction: column; }
+.adm-feed__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.adm-feed__row + .adm-feed__row { border-top: 1px solid var(--border); }
+.adm-feed__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.adm-feed__icon.is-pos { background: rgba(34, 197, 94, 0.12);  color: var(--green); }
+.adm-feed__icon.is-neg { background: rgba(255, 45, 85, 0.12);  color: var(--red); }
+.adm-feed__body { flex: 1; min-width: 0; }
+.adm-feed__body strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.adm-feed__body span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-feed__amt {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.adm-feed__amt.is-pos { color: var(--green); }
+.adm-feed__amt.is-neg { color: var(--red); }
+
+/* ---------- Quick actions ---------- */
+.adm-quick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.adm-quick__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm-quick__card:hover {
+  border-color: var(--blue);
+  background: rgba(37, 99, 235, 0.04);
+}
+.adm-quick__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--blue);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.adm-quick__body { flex: 1; min-width: 0; }
+.adm-quick__body strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.adm-quick__body span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.adm-quick__caret { color: var(--text-3); font-size: 14px; flex-shrink: 0; }
+
+/* ---------- Search bar ---------- */
+.adm-searchbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-searchbar svg { color: var(--text-3); font-size: 16px; flex-shrink: 0; }
+.adm-searchbar input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+}
+.adm-searchbar input::placeholder { color: var(--text-3); }
+.adm-searchbar button {
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
+  background: var(--blue);
+  border: 0;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- Filter chips ---------- */
+.adm-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.adm-chip {
+  padding: 7px 14px;
+  border-radius: 50px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.adm-chip:hover { color: var(--text); border-color: var(--border-2); }
+.adm-chip.is-active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+/* ---------- Rows list ---------- */
+.adm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- User row ---------- */
+.adm-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm-user:hover { border-color: var(--blue); }
+.adm-user__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.adm-user__body { flex: 1; min-width: 0; }
+.adm-user__body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-user__body span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-user__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.adm-user__label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+}
+.adm-user__value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.adm-user__flag { color: var(--yellow); font-size: 15px; }
+
+/* ---------- Trade card ---------- */
+.adm-trade,
+.adm-tx,
+.adm-audit {
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-trade__head,
+.adm-tx__head,
+.adm-audit__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.adm-trade__email,
+.adm-tx__email,
+.adm-audit__actor {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-trade__status {
+  padding: 3px 9px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.adm-trade__status.is-open { background: rgba(37, 99, 235, 0.12); color: var(--blue); }
+.adm-trade__status.is-won  { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+.adm-trade__status.is-lost { background: rgba(255, 45, 85, 0.12); color: var(--red); }
+
+.adm-tx__amount { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.adm-tx__amount.is-pos { color: var(--green); }
+.adm-tx__amount.is-neg { color: var(--red); }
+
+.adm-audit__action {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 50px;
+  background: rgba(168, 85, 247, 0.12);
+  color: var(--purple);
+  text-transform: lowercase;
+}
+
+.adm-trade__grid,
+.adm-tx__grid,
+.adm-audit__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.adm-trade__actions,
+.adm-tx__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---------- Field ---------- */
+.adm-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.adm-field__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.adm-field__value {
+  font-size: 13px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Buttons ---------- */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm-btn:hover:not(:disabled) { border-color: var(--border-2); }
+.adm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.adm-btn--sm { padding: 7px 11px; font-size: 12px; }
+.adm-btn--ok {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: var(--green);
+}
+.adm-btn--ok:hover:not(:disabled) { background: rgba(34, 197, 94, 0.16); }
+.adm-btn--danger {
+  background: rgba(255, 45, 85, 0.1);
+  border-color: rgba(255, 45, 85, 0.3);
+  color: var(--red);
+}
+.adm-btn--danger:hover:not(:disabled) { background: rgba(255, 45, 85, 0.16); }
+
+/* ---------- States ---------- */
+.adm-state,
+.adm-empty {
+  padding: 32px 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .adm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .adm-page { padding: 16px 14px 40px; gap: 16px; }
+  .adm-hero__title { font-size: 20px; }
+  .adm-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .adm-kpi { padding: 12px; gap: 10px; }
+  .adm-kpi__icon { width: 34px; height: 34px; font-size: 16px; }
+  .adm-kpi__value { font-size: 17px; }
+  .adm-quick { grid-template-columns: 1fr; }
+  .adm-trade__grid,
+  .adm-tx__grid,
+  .adm-audit__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-card { padding: 14px; }
+  .adm-searchbar { flex-wrap: wrap; }
+}

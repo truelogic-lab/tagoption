@@ -1,27 +1,40 @@
 import React, { useState } from "react";
-import { Outlet, useNavigate, NavLink } from "react-router-dom";
+import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
   LuMenu, LuX, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
-  LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut,
+  LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuSettings,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
 
 const NAV = [
-  { to: "/admin",             label: "Dashboard",    icon: LuLayoutDashboard, end: true },
-  { to: "/admin/users",       label: "Users",        icon: LuUsers },
-  { to: "/admin/trades",      label: "Trades",       icon: LuActivity },
-  { to: "/admin/transactions",label: "Transactions", icon: LuDollarSign },
-  { to: "/admin/audit",       label: "Audit log",    icon: LuListChecks },
+  { to: "/admin",              label: "Dashboard",    icon: LuLayoutDashboard, end: true },
+  { to: "/admin/users",        label: "Users",        icon: LuUsers },
+  { to: "/admin/trades",       label: "Trades",       icon: LuActivity },
+  { to: "/admin/transactions", label: "Transactions", icon: LuDollarSign },
+  { to: "/admin/audit",        label: "Audit log",    icon: LuListChecks },
 ];
+
+const TITLES = {
+  "/admin":              "Dashboard",
+  "/admin/users":        "Users",
+  "/admin/trades":       "Trades",
+  "/admin/transactions": "Transactions",
+  "/admin/audit":        "Audit log",
+};
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const s = getSession();
   const admin = { name: s?.user?.name ?? "", email: s?.user?.email ?? "" };
   const initial = (admin.name?.[0] || admin.email?.[0] || "A").toUpperCase();
+
+  const title =
+    TITLES[pathname] ||
+    (pathname.startsWith("/admin/users/") ? "User detail" : "Admin");
 
   const logout = () => {
     clearSession();
@@ -39,12 +52,9 @@ export default function AdminLayout() {
 
   return (
     <div className="adm">
-      {/* Sidebar — desktop */}
       <aside className="adm__sidebar">
         <div className="adm__brand">
-          <span className="adm__brand-badge">
-            <LuShieldCheck />
-          </span>
+          <span className="adm__brand-badge"><LuShieldCheck /></span>
           <div className="adm__brand-text">
             <strong>TagOption</strong>
             <em>Admin Console</em>
@@ -65,22 +75,21 @@ export default function AdminLayout() {
                 `adm__nav-item ${isActive ? "is-active" : ""}`
               }
             >
-              <n.icon /> {n.label}
+              <n.icon /> <span>{n.label}</span>
             </NavLink>
           ))}
         </nav>
 
         <div className="adm__side-foot">
           <NavLink to="/trade" className="adm__nav-item">
-            <LuArrowLeft /> Back to site
+            <LuArrowLeft /> <span>Back to site</span>
           </NavLink>
           <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
-            <LuLogOut /> Log out
+            <LuLogOut /> <span>Log out</span>
           </button>
         </div>
       </aside>
 
-      {/* Top bar — mobile */}
       <header className="adm__top">
         <button
           className="adm__burger"
@@ -89,12 +98,11 @@ export default function AdminLayout() {
         >
           <LuMenu />
         </button>
-        <span className="adm__top-title">Dashboard</span>
+        <span className="adm__top-title">{title}</span>
         <GlobalSearch />
         <span className="adm__avatar">{initial}</span>
       </header>
 
-      {/* Mobile drawer */}
       {menuOpen && (
         <div className="adm__drawer" onClick={() => setMenuOpen(false)}>
           <div className="adm__drawer-panel" onClick={(e) => e.stopPropagation()}>
@@ -124,15 +132,19 @@ export default function AdminLayout() {
                   }
                   onClick={() => setMenuOpen(false)}
                 >
-                  <n.icon /> {n.label}
+                  <n.icon /> <span>{n.label}</span>
                 </NavLink>
               ))}
               <div className="adm__divider" />
-              <NavLink to="/trade" className="adm__nav-item" onClick={() => setMenuOpen(false)}>
-                <LuArrowLeft /> Back to site
+              <NavLink
+                to="/trade"
+                className="adm__nav-item"
+                onClick={() => setMenuOpen(false)}
+              >
+                <LuArrowLeft /> <span>Back to site</span>
               </NavLink>
               <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
-                <LuLogOut /> Log out
+                <LuLogOut /> <span>Log out</span>
               </button>
             </nav>
           </div>

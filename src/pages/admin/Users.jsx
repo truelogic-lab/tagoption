@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch, LuShieldAlert } from "react-icons/lu";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
 import AdjustModal from "../../components/admin/AdjustModal";
@@ -16,19 +16,22 @@ export default function Users() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
 
-  const load = async (q = "") => {
+  const load = useCallback(async (q = "") => {
     setLoading(true);
     setError("");
     try {
       const data = await adminApi.users(q ? { q } : {});
-      setRows(Array.isArray(data) ? data : []);
+      // Backend returns either an array or {rows: []}. Normalise.
+      const list = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+      setRows(list);
     } catch (e) {
-      setError(e.message || "Failed to load");
+      setError(e.message || "Failed to load users");
+      setRows([]);
     }
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const applyAdjust = async ({ amount, reason }) => {
     if (!editing) return;
@@ -45,15 +48,17 @@ export default function Users() {
 
   return (
     <div className="adm-page">
-      <div className="adm-page__head">
-        <h1 className="adm-page__title">Users</h1>
-        <p className="adm-page__sub">
-          {rows.length} account{rows.length === 1 ? "" : "s"} shown
-        </p>
+      <div className="adm-hero adm-hero--compact">
+        <div>
+          <h1 className="adm-hero__title">Users</h1>
+          <p className="adm-hero__sub">
+            {rows.length} account{rows.length === 1 ? "" : "s"} shown
+          </p>
+        </div>
       </div>
 
       <form
-        className="adm-search"
+        className="adm-searchbar"
         onSubmit={(e) => { e.preventDefault(); load(query); }}
       >
         <LuSearch />
@@ -63,7 +68,7 @@ export default function Users() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="submit" className="adm-search__btn">Search</button>
+        <button type="submit">Search</button>
       </form>
 
       {loading ? (
@@ -76,40 +81,38 @@ export default function Users() {
       ) : rows.length === 0 ? (
         <div className="adm-state">No users match.</div>
       ) : (
-        <div className="adm-list adm-list--2col">
+        <div className="adm-rows">
           {rows.map((u) => (
             <article
-              className="adm-item adm-item--clickable"
+              className="adm-user"
               key={u.id}
               onClick={() => navigate(`/admin/users/${u.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && navigate(`/admin/users/${u.id}`)}
             >
-              <header className="adm-item__head">
-                <span className="adm-item__email">{u.email}</span>
-                {u.winRateOverride != null && (
-                  <span className="adm-item__role adm-item__role--flag" title="Custom settings">
-                    ●
-                  </span>
-                )}
-              </header>
-
-              <div className="adm-item__grid">
-                <Field label="Name"    value={u.name || "—"} />
-                <Field label="Balance" value={money(u.balance)} />
-                <Field label="Volume"  value={money(u.volume)} />
-                <Field
-                  label="Joined"
-                  value={u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
-                />
+              <div className="adm-user__avatar">
+                {(u.name?.[0] || u.email?.[0] || "?").toUpperCase()}
               </div>
-
-              <div className="adm-item__actions">
-                <button
-                  className="adm-btn"
-                  onClick={(e) => { e.stopPropagation(); setEditing(u); }}
-                >
-                  Adjust balance
-                </button>
+              <div className="adm-user__body">
+                <strong>{u.name || "—"}</strong>
+                <span>{u.email}</span>
               </div>
+              <div className="adm-user__meta">
+                <span className="adm-user__label">Balance</span>
+                <strong className="adm-user__value">{money(u.balance)}</strong>
+              </div>
+              {u.winRateOverride != null && (
+                <span className="adm-user__flag" title="Custom win rate">
+                  <LuShieldAlert />
+                </span>
+              )}
+              <button
+                className="adm-btn adm-btn--sm"
+                onClick={(e) => { e.stopPropagation(); setEditing(u); }}
+              >
+                Adjust
+              </button>
             </article>
           ))}
         </div>
@@ -122,15 +125,6 @@ export default function Users() {
         onClose={() => !busy && setEditing(null)}
         onConfirm={applyAdjust}
       />
-    </div>
-  );
-}
-
-function Field({ label, value }) {
-  return (
-    <div className="adm-field">
-      <span className="adm-field__label">{label}</span>
-      <span className="adm-field__value">{value}</span>
     </div>
   );
 }

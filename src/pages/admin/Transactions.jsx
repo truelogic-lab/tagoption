@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../../lib/api";
 import Spinner from "../../components/ui/Spinner";
 
@@ -12,27 +12,57 @@ export default function Transactions() {
   const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await adminApi.transactions({ type, status, limit: 200 });
-        if (!cancelled) setRows(data);
-      } catch {}
-      if (!cancelled) setLoading(false);
-    })();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await adminApi.transactions({ type, status, limit: 200 });
+      const list = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+      setRows(list);
+    } catch (e) {
+      setError(e.message || "Failed to load transactions");
+      setRows([]);
+    }
+    setLoading(false);
   }, [type, status]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const credit = async (t) => {
+    if (!window.confirm(`Credit $${Math.abs(t.amount).toFixed(2)} for ${t.email}?`)) return;
+    setBusy(t.id);
+    try {
+      await adminApi.creditTransaction(t.id);
+      await load();
+    } catch (e) {
+      alert(e.message || "Failed to credit");
+    }
+    setBusy(null);
+  };
+
+  const approve = async (t) => {
+    if (!window.confirm(`Mark withdrawal of $${Math.abs(t.amount).toFixed(2)} as paid?`)) return;
+    setBusy(t.id);
+    try {
+      await adminApi.approveWithdraw(t.id);
+      await load();
+    } catch (e) {
+      alert(e.message || "Failed to approve");
+    }
+    setBusy(null);
+  };
 
   return (
     <div className="adm-page">
-      <div className="adm-page__head">
-        <h1 className="adm-page__title">Transactions</h1>
-        <p className="adm-page__sub">
-          {rows.length} record{rows.length === 1 ? "" : "s"}
-        </p>
+      <div className="adm-hero adm-hero--compact">
+        <div>
+          <h1 className="adm-hero__title">Transactions</h1>
+          <p className="adm-hero__sub">
+            {rows.length} record{rows.length === 1 ? "" : "s"}
+          </p>
+        </div>
       </div>
 
       <div className="adm-chips">
@@ -60,30 +90,33 @@ export default function Transactions() {
       </div>
 
       {loading ? (
-        <div className="loading"><Spinner size="md" tone="muted" /><span>Loading transactions…</span></div>
+        <div className="loading">
+          <Spinner size="md" tone="muted" />
+          <span>Loading transactions…</span>
+        </div>
+      ) : error ? (
+        <div className="adm-state">{error}</div>
       ) : rows.length === 0 ? (
         <div className="adm-state">Nothing matches these filters.</div>
       ) : (
-        <div className="adm-list adm-list--2col">
+        <div className="adm-rows">
           {rows.map((t) => (
-            <article className="adm-item" key={t.id}>
-              <header className="adm-item__head">
-                <span className="adm-item__email">{t.email}</span>
-                <span className={`adm-item__amount ${t.amount >= 0 ? "is-pos" : "is-neg"}`}>
+            <article className="adm-tx" key={t.id}>
+              <header className="adm-tx__head">
+                <span className="adm-tx__email">{t.email}</span>
+                <span className={`adm-tx__amount ${t.amount >= 0 ? "is-pos" : "is-neg"}`}>
                   {t.amount >= 0 ? "+" : "-"}{money(Math.abs(t.amount))}
                 </span>
               </header>
-
-              <div className="adm-item__grid">
+              <div className="adm-tx__grid">
                 <Field label="Type"   value={t.type} />
                 <Field label="Method" value={t.method || "—"} />
                 <Field label="Status" value={t.status} />
                 <Field label="Ref"    value={t.id.slice(-10)} />
                 <Field label="When"   value={new Date(t.at).toLocaleString()} />
               </div>
-
               {t.status === "pending" && (
-                <div className="adm-item__actions">
+                <div className="adm-tx__actions">
                   {t.type === "deposit" && (
                     <button
                       className="adm-btn adm-btn--ok"
