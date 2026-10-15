@@ -26,7 +26,6 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
   const [method, setMethod] = useState(METHODS[0]);
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +35,6 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
     setMethod(METHODS[0]);
     setAmount("");
     setPhone("");
-    setEmail("");
     setError("");
     setLoading(false);
   }, [open]);
@@ -71,7 +69,6 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
         amount: amountNum,
         method: method.label,
         phone: method.id === "M-Pesa" ? phone : undefined,
-        email: email || undefined,
         currency: "KES",
       });
 
@@ -194,20 +191,6 @@ export default function WalletModal({ open, balance, onClose, onCompleted }) {
               />
             </section>
           )}
-
-          <section className="deposit__section">
-            <label className="deposit__label" htmlFor="wallet-email">Email for receipt</label>
-            <input
-              id="wallet-email"
-              className="deposit__input"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </section>
 
           {error && (
             <div className="deposit__error" role="alert">
