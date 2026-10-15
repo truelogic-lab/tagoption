@@ -24,3 +24,10 @@ npm-debug.log*
 server/.env.bak
 **/.env.bak
 **/.env.bak
+
+# Django
+tagoption-django/venv/
+tagoption-django/db.sqlite3
+tagoption-django/staticfiles/
+**/__pycache__/
+**/*.pyc
