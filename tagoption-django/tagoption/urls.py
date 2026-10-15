@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from django.http import JsonResponse
 
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("wallet.urls")),
     path("", include("trading.urls")),
+    path("", include("markets.urls")),
 ]
