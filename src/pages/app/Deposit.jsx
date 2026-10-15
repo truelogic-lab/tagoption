@@ -1,69 +1,65 @@
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
-  LuSmartphone, LuCreditCard, LuExternalLink, LuCircleAlert,
+  LuSmartphone, LuCreditCard, LuCoins, LuExternalLink,
+  LuShieldCheck, LuTriangleAlert,
 } from "react-icons/lu";
 import { paymentsApi } from "../../lib/api";
 import { useFx } from "../../lib/useFx";
 
-const METHODS = [
-  { id: "M-Pesa", label: "M-Pesa",   desc: "Mobile money",     tone: "green", icon: "phone" },
-  { id: "Card",   label: "Card",     desc: "Visa / Mastercard", tone: "blue",  icon: "card"  },
-  { id: "USDT",   label: "USDT",     desc: "TRC20 wallet",      tone: "green", icon: "usdt"  },
-];
-
+const MIN_USD = 1;
 const QUICK_AMOUNTS = [5, 10, 25, 50, 100];
-const MIN_AMOUNT = 1;
 
-function MethodIcon({ icon }) {
-  if (icon === "usdt") return <span className="deposit__usdt">₮</span>;
-  if (icon === "card") return <LuCreditCard />;
-  return <LuSmartphone />;
-}
+/**
+ * Card deposits go through Pesapal's hosted page — raw card details never
+ * touch this app. USDT is disabled until a TRC20 deposit flow exists.
+ */
+const METHODS = [
+  { id: "mpesa", label: "M-Pesa", desc: "Mobile money",     tone: "green", Icon: LuSmartphone, enabled: true  },
+  { id: "card",  label: "Card",   desc: "Visa / Mastercard", tone: "blue",  Icon: LuCreditCard, enabled: true  },
+  { id: "usdt",  label: "USDT",   desc: "TRC20 wallet",      tone: "green", Icon: LuCoins,      enabled: false },
+];
 
 export default function Deposit() {
   const { store } = useOutletContext();
   const { rate, toKes } = useFx();
 
-  const [method, setMethod] = useState(METHODS[0]);
+  const [methodId, setMethodId] = useState("mpesa");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const method = METHODS.find((m) => m.id === methodId);
   const amountNum = Number(amount) || 0;
   const kesAmount = useMemo(() => toKes(amountNum), [amountNum, toKes]);
-  const showKes = amountNum >= MIN_AMOUNT;
+  const showKes = amountNum >= MIN_USD;
+
+  const phoneValid = method.id !== "mpesa" || /^\+?[0-9\s-]{9,}$/.test(phone.trim());
+  const canSubmit = !loading && showKes && phoneValid && method.enabled;
 
   const submit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!amountNum || amountNum < MIN_AMOUNT) {
-      setError(`Minimum deposit is $${MIN_AMOUNT}`);
-      return;
-    }
-    if (method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
-      setError("Enter a valid M-Pesa phone number");
-      return;
-    }
+    if (!amountNum || amountNum < MIN_USD) { setError(`Minimum deposit is $${MIN_USD}`); return; }
+    if (!phoneValid) { setError("Enter a valid M-Pesa phone number"); return; }
 
     setLoading(true);
     try {
       const res = await paymentsApi.startDeposit({
         amount: amountNum,
         method: method.label,
-        phone: method.id === "M-Pesa" ? phone : undefined,
+        phone: method.id === "mpesa" ? phone.trim() : undefined,
         email: email || undefined,
         currency: "KES",
       });
-
       const url = res?.redirectUrl || res?.redirect_url;
       if (!url) throw new Error("Payment provider did not return a redirect URL");
       window.location.href = url;
     } catch (err) {
-      setError(err.message || "Could not start the payment");
+      setError(err?.message || "Could not start the payment");
       setLoading(false);
     }
   };
@@ -81,19 +77,20 @@ export default function Deposit() {
         <section className="deposit__section">
           <label className="deposit__label">Payment method</label>
           <div className="deposit__methods">
-            {METHODS.map((m) => {
-              const active = method.id === m.id;
+            {METHODS.map(({ id, label, desc, tone, Icon, enabled }) => {
+              const active = methodId === id;
               return (
                 <button
                   type="button"
-                  key={m.id}
-                  className={`deposit__method deposit__method--${m.tone} ${active ? "is-active" : ""}`}
-                  onClick={() => setMethod(m)}
+                  key={id}
+                  className={`deposit__method deposit__method--${tone} ${active ? "is-active" : ""} ${!enabled ? "is-disabled" : ""}`}
+                  onClick={() => enabled && setMethodId(id)}
                   aria-pressed={active}
+                  disabled={!enabled}
                 >
-                  <span className="deposit__method-icon"><MethodIcon icon={m.icon} /></span>
-                  <strong>{m.label}</strong>
-                  <em>{m.desc}</em>
+                  <span className="deposit__method-icon"><Icon size={20} strokeWidth={2} /></span>
+                  <strong>{label}</strong>
+                  <em>{enabled ? desc : "Coming soon"}</em>
                 </button>
               );
             })}
@@ -101,7 +98,7 @@ export default function Deposit() {
         </section>
 
         <section className="deposit__section">
-          <label className="deposit__label" htmlFor="deposit-amount">Amount</label>
+          <label className="deposit__label" htmlFor="deposit-amount">Amount (USD)</label>
 
           <div className="deposit__amount">
             <span className="deposit__amount-cur">$</span>
@@ -109,7 +106,7 @@ export default function Deposit() {
               id="deposit-amount"
               type="number"
               inputMode="decimal"
-              min={MIN_AMOUNT}
+              min={MIN_USD}
               step="0.01"
               placeholder="10.00"
               value={amount}
@@ -140,7 +137,7 @@ export default function Deposit() {
           )}
         </section>
 
-        {method.id === "M-Pesa" && (
+        {method.id === "mpesa" && (
           <section className="deposit__section">
             <label className="deposit__label" htmlFor="deposit-phone">M-Pesa phone number</label>
             <input
@@ -173,28 +170,30 @@ export default function Deposit() {
 
         {error && (
           <div className="deposit__error" role="alert">
-            <LuCircleAlert />
+            <LuTriangleAlert size={16} strokeWidth={2} />
             <span>{error}</span>
           </div>
         )}
 
-        <button
-          type="submit"
-          className="deposit__submit"
-          disabled={loading || !showKes}
-        >
-          {loading ? (
-            "Opening secure checkout…"
-          ) : showKes ? (
-            <>Pay KSh {kesAmount.toLocaleString()} <LuExternalLink /></>
-          ) : (
-            <>Enter an amount <LuExternalLink /></>
-          )}
+        <button type="submit" className="deposit__submit" disabled={!canSubmit}>
+          {loading
+            ? "Preparing payment…"
+            : showKes
+              ? <>Continue to secure payment <LuExternalLink size={16} strokeWidth={2} /></>
+              : <>Enter an amount <LuExternalLink size={16} strokeWidth={2} /></>}
         </button>
 
-        <p className="deposit__note">
-          You'll finish the payment on Pesapal's secure page. Your balance updates automatically once confirmed.
-        </p>
+        <div className="deposit__secure">
+          <LuShieldCheck size={18} strokeWidth={2} />
+          <div>
+            <strong>Secure payment</strong>
+            <p>
+              You'll finish the deposit on Pesapal's hosted checkout. Card details
+              never touch this app, and your balance updates only after payment is
+              confirmed.
+            </p>
+          </div>
+        </div>
       </form>
     </div>
   );

@@ -999,3 +999,38 @@
   .withdraw__title { font-size: 24px; }
   .withdraw__balance-amount { font-size: 24px; }
 }
+
+/* Deposit — disabled method tile and secure notice (added for 3-tile grid) */
+
+.deposit__method.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--bg-2);
+}
+
+.deposit__secure {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.deposit__secure svg {
+  flex-shrink: 0;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.deposit__secure strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.deposit__secure p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
