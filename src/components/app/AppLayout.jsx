@@ -77,7 +77,7 @@ export default function AppLayout() {
   const clearBotResult = () => setBotResult(null);
 
   return (
-    <div className="app">
+    <div className="app" data-theme={isDark ? "dark" : "light"}>
       <AppTopBar
         onMenu={() => setDrawerOpen(true)}
         balance={balance}

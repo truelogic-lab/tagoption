@@ -11,11 +11,16 @@ function readInitial() {
   return "dark";
 }
 
+/**
+ * App-shell theme. The stored preference is read on mount and reflected
+ * back into localStorage on change, but the DOM attribute is *not* written
+ * here — it's applied to the `.app` root by AppLayout, so landing pages and
+ * the auth screen stay in the document's default light theme.
+ */
 export function useTheme() {
   const [theme, setTheme] = useState(readInitial);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem(KEY, theme); } catch {}
   }, [theme]);
 
