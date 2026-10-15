@@ -4,64 +4,116 @@ import { LuCheck, LuClock, LuX, LuArrowRight } from "react-icons/lu";
 import { paymentsApi } from "../../lib/api";
 import { celebrateDeposit } from "../../lib/celebrate";
 
+const MAX_ATTEMPTS = 20;
+const POLL_MS = 3000;
+
 export default function PaymentCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("pending");
   const [amount, setAmount] = useState(null);
+  const [reference, setReference] = useState(null);
 
-  const trackingId = params.get("OrderTrackingId") || params.get("orderTrackingId");
+  const trackingId =
+    params.get("OrderTrackingId") ||
+    params.get("orderTrackingId") ||
+    params.get("pesapal_transaction_tracking_id");
 
   useEffect(() => {
-    if (!trackingId) { setStatus("failed"); return; }
+    if (!trackingId) {
+      setStatus("failed");
+      return;
+    }
 
     let stopped = false;
     let attempts = 0;
-    const maxAttempts = 20;   // ~1 minute of polling
 
     const poll = async () => {
       if (stopped) return;
       try {
         const s = await paymentsApi.status(trackingId);
         if (stopped) return;
-        setAmount(s.amount ?? null);
-        setStatus(s.status);
-        if (s.status === "completed") {
+
+        setAmount(s?.amount ?? null);
+        setReference(s?.reference ?? null);
+        setStatus(s?.status || "pending");
+
+        if (s?.status === "completed") {
           celebrateDeposit({ amount: s.amount ?? 0, method: "Pesapal" });
           return;
         }
-        if (s.status === "failed") return;
-      } catch {}
+        if (s?.status === "failed") return;
+      } catch {
+        // Network blip — fall through to retry.
+      }
+
       attempts += 1;
-      if (attempts < maxAttempts) setTimeout(poll, 3000);
+      if (attempts < MAX_ATTEMPTS) setTimeout(poll, POLL_MS);
     };
+
     poll();
     return () => { stopped = true; };
   }, [trackingId]);
 
   const meta = {
-    completed: { Icon: LuCheck, tone: "ok", title: "Payment received", sub: "Your balance has been updated." },
-    failed:    { Icon: LuX,     tone: "err", title: "Payment failed",  sub: "Nothing was charged. Try again or contact support." },
-    pending:   { Icon: LuClock, tone: "wait", title: "Confirming payment", sub: "This can take a few seconds. Don't close the app." },
-  }[status];
+    completed: {
+      tone: "ok",
+      Icon: LuCheck,
+      title: "Deposit confirmed",
+      sub: "Your balance has been updated.",
+    },
+    failed: {
+      tone: "err",
+      Icon: LuX,
+      title: "Deposit failed",
+      sub: "Nothing was charged. Try again, or contact support if the issue persists.",
+    },
+    pending: {
+      tone: "wait",
+      Icon: LuClock,
+      title: "Confirming deposit",
+      sub: "This usually takes a few seconds. Keep this page open.",
+    },
+  }[status] || {
+    tone: "wait",
+    Icon: LuClock,
+    title: "Confirming deposit",
+    sub: "This usually takes a few seconds. Keep this page open.",
+  };
+
+  const { Icon } = meta;
 
   return (
-    <div className="callback">
-      <div className={`callback__icon callback__icon--${meta.tone}`}>
-        <meta.Icon />
+    <div className={`callback callback--${meta.tone}`}>
+      <div className="callback__icon">
+        <Icon />
       </div>
+
       <h1 className="callback__title">{meta.title}</h1>
       <p className="callback__sub">{meta.sub}</p>
 
       {amount != null && (
         <div className="callback__amount">
           <span>Amount</span>
-          <strong>${amount.toFixed(2)}</strong>
+          <strong>${Number(amount).toFixed(2)}</strong>
         </div>
       )}
 
-      <button className="btn btn-blue callback__btn" onClick={() => navigate("/trade")}>
+      {reference && (
+        <div className="callback__ref">
+          Reference <code>{reference}</code>
+        </div>
+      )}
+
+      <button className="callback__btn" onClick={() => navigate("/trade")}>
         Back to trading <LuArrowRight />
+      </button>
+
+      <button
+        className="callback__secondary"
+        onClick={() => navigate("/history")}
+      >
+        View in history
       </button>
     </div>
   );
