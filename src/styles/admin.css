@@ -2264,3 +2264,23 @@
   border-radius: 9px;
   font-size: 16px;
 }
+
+/* -------------------------------------------------------------
+   Brand mark — logo presentation
+   The uploaded logo is clipped to a circle so it reads as a
+   distinct mark rather than a floating square image. `cover`
+   ensures the image fills the frame when it isn't square; if
+   you upload a wide wordmark, replace `cover` with `contain`
+   and drop the border-radius to 8px.
+   ------------------------------------------------------------- */
+
+.brand-mark__img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
