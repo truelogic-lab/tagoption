@@ -756,3 +756,41 @@
   .hero__disclaimer { font-size: 11px; }
   .hero__bg-image { width: 100%; max-width: 320px; }
 }
+
+/* -------------------------------------------------------------
+   Typewriter — animated text, looping type/hold/erase.
+   Used in the hero headline.
+   ------------------------------------------------------------- */
+
+.tw {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.tw__caret {
+  display: inline-block;
+  width: 3px;
+  height: 0.9em;
+  background: currentColor;
+  translate: 0 0.05em;
+  animation: tw-caret 1s steps(1, end) infinite;
+}
+
+@keyframes tw-caret {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw__caret { display: none; }
+}
+
+/* Reserve width for the animated clause so the headline doesn't
+   reflow when the typewriter erases. 12ch covers "More Clarity." */
+.hero__title .accent {
+  display: inline-block;
+  min-width: 12ch;
+  min-height: 1em;
+  vertical-align: bottom;
+}

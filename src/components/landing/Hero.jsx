@@ -2,13 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { LuArrowRight, LuSparkles } from "react-icons/lu";
 import Reveal from "../ui/Reveal";
+import Typewriter from "../ui/Typewriter";
 import heroImg from "../../assets/hero.png";
 
 /**
- * Landing hero. The illustration is a decorative background on the right —
- * it bleeds off the viewport edge and fades out behind the copy so the text
- * stays readable without an overlay. On mobile it drops below the text and
- * shrinks, since the copy needs the full width.
+ * Landing hero. The illustration bleeds off the right edge behind the copy.
+ * The headline's second clause types itself in and cycles.
  */
 export default function Hero() {
   return (
@@ -26,7 +25,10 @@ export default function Hero() {
 
           <Reveal delay={80}>
             <h1 className="hero__title">
-              Trade With <span className="accent">More Clarity.</span>
+              Trade With{" "}
+              <span className="accent">
+                <Typewriter text="More Clarity." speed={100} holdMs={2200} />
+              </span>
             </h1>
           </Reveal>
 
