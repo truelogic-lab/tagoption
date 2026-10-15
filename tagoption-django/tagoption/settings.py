@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "fx",
     "ops",
     "payments",
+    "adminapi",
     "trading",
     "wallet",
 ]

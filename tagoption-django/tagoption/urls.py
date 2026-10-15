@@ -16,4 +16,5 @@ urlpatterns = [
     path("", include("markets.urls")),
     path("", include("fx.urls")),
     path("", include("payments.urls")),
+    path("", include("adminapi.urls")),
 ]
