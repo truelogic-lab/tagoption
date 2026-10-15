@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LuChartLine, LuClock, LuZap } from "react-icons/lu";
+import { LuChartCandlestick, LuClock, LuZap } from "react-icons/lu";
 
 export default function AppBottomNav({ onAi, positionCount = 0 }) {
   return (
@@ -9,7 +9,7 @@ export default function AppBottomNav({ onAi, positionCount = 0 }) {
         to="/trade"
         className={({ isActive }) => `bottomnav__btn ${isActive ? "is-active" : ""}`}
       >
-        <LuChartLine />
+        <LuChartCandlestick size={28} strokeWidth={2} />
         <span>Trade</span>
       </NavLink>
 
