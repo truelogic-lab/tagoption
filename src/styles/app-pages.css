@@ -1034,3 +1034,28 @@
   line-height: 1.6;
   color: var(--text-2);
 }
+
+/* Deposit — developer credit with typewriter effect */
+.deposit__credit {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  letter-spacing: 0.3px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  min-height: 16px;
+}
+.deposit__credit-caret {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--blue);
+  animation: deposit-caret 1s steps(1, end) infinite;
+}
+@keyframes deposit-caret {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deposit__credit-caret { display: none; }
+}
