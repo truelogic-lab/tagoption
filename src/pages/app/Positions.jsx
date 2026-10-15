@@ -1,15 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import {
-  LuArrowUp, LuArrowDown, LuRefreshCw, LuTarget, LuClock,
+  LuActivity, LuCircleCheckBig, LuReceiptText, LuArrowUp, LuArrowDown,
+  LuRefreshCw, LuTarget, LuClock, LuCircleAlert,
 } from "react-icons/lu";
-import { isLive, tradeApi } from "../../lib/api";
+import { isLive } from "../../lib/api";
 import { on } from "../../lib/events";
+import { loadConfig } from "../../lib/configCache";
+
+const TAB_ICON_SIZE = 16;
+const TAB_ICON_STROKE = 2;
 
 const TABS = [
-  { id: "open",   label: "Open" },
-  { id: "closed", label: "Closed" },
-  { id: "tx",     label: "Transactions" },
+  { id: "open",   label: "Open",         Icon: LuActivity     },
+  { id: "closed", label: "Closed",       Icon: LuCircleCheckBig },
+  { id: "tx",     label: "Transactions", Icon: LuReceiptText  },
 ];
 
 const FILTERS = [
@@ -17,6 +22,8 @@ const FILTERS = [
   { id: "auto",   label: "Auto" },
   { id: "manual", label: "Manual" },
 ];
+
+const MANUAL_MS_FALLBACK = 60_000;
 
 function money(n) {
   return `$${Number(n || 0).toFixed(2)}`;
@@ -31,6 +38,13 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function fmtCountdown(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
 export default function Positions() {
   const { store } = useOutletContext();
   const navigate = useNavigate();
@@ -38,17 +52,60 @@ export default function Positions() {
   const [tab, setTab] = useState("open");
   const [filter, setFilter] = useState("all");
   const [stoppingIds, setStoppingIds] = useState(() => new Set());
+  const [firstLoadDone, setFirstLoadDone] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [manualMs, setManualMs] = useState(MANUAL_MS_FALLBACK);
+  const [, setTickNow] = useState(0);
+
   const pollRef = useRef(null);
+  const manualRef = useRef(MANUAL_MS_FALLBACK);
+
+  // Fetch the trade window once. The cache helper shares the promise with
+  // Trade.jsx, so no extra round-trip if the user has been to Trade already.
+  useEffect(() => {
+    let cancelled = false;
+    loadConfig()
+      .then((c) => {
+        if (cancelled) return;
+        const ms = Number(c?.manualTradeMs);
+        if (Number.isFinite(ms) && ms > 0) {
+          manualRef.current = ms;
+          setManualMs(ms);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Repaint once per second so the countdown on open positions advances
+  // without needing a store update.
+  useEffect(() => {
+    if (tab !== "open") return;
+    const id = setInterval(() => setTickNow((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [tab]);
 
   useEffect(() => {
-    if (!isLive()) return;
+    if (!isLive()) {
+      setFirstLoadDone(true);
+      return;
+    }
 
     let stopped = false;
     const tick = async () => {
       if (stopped || document.visibilityState !== "visible") return;
       try {
         await store.refreshInFlight();
-      } catch {}
+        if (!stopped) {
+          setLoadError(null);
+          setFirstLoadDone(true);
+        }
+      } catch (e) {
+        if (!stopped) {
+          if (!firstLoadDone) setLoadError(e?.message || "Unable to load positions");
+          setFirstLoadDone(true);
+        }
+      }
     };
 
     tick();
@@ -64,14 +121,13 @@ export default function Positions() {
       clearInterval(pollRef.current);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [store]);
+  }, [store, firstLoadDone]);
 
   useEffect(() => {
     const markStopping = ({ id }) => {
       if (!id) return;
       setStoppingIds((prev) => new Set(prev).add(id));
     };
-
     const clearStopping = ({ id }) => {
       if (!id) return;
       setStoppingIds((prev) => {
@@ -80,14 +136,8 @@ export default function Positions() {
         return next;
       });
     };
-
-    const refreshNow = () => {
-      store.refreshInFlight();
-    };
-
-    const refreshEverything = () => {
-      store.refresh();
-    };
+    const refreshNow = () => { store.refreshInFlight(); };
+    const refreshEverything = () => { store.refresh(); };
 
     const offPlaced = on("trade:placed", refreshNow);
     const offStopping = on("trade:stopping", markStopping);
@@ -108,19 +158,19 @@ export default function Positions() {
     };
   }, [store]);
 
-  const matchesFilter = (t) => {
+  const matchesFilter = useCallback((t) => {
     if (filter === "auto") return Boolean(t.auto);
     if (filter === "manual") return !t.auto;
     return true;
-  };
+  }, [filter]);
 
   const open = useMemo(
     () => (store.positions || []).filter(matchesFilter),
-    [store.positions, filter]
+    [store.positions, matchesFilter]
   );
   const closed = useMemo(
     () => (store.closed || []).filter(matchesFilter),
-    [store.closed, filter]
+    [store.closed, matchesFilter]
   );
   const tx = store.tx || [];
 
@@ -135,7 +185,7 @@ export default function Positions() {
     return { wins, losses, pnl };
   }, [store.closed]);
 
-  const hasNothing = open.length === 0 && closed.length === 0 && tx.length === 0;
+  const showSkeleton = !firstLoadDone;
 
   return (
     <div className="positions">
@@ -145,13 +195,17 @@ export default function Positions() {
             t.id === "open" ? open.length :
             t.id === "closed" ? closed.length :
             tx.length;
+          const active = tab === t.id;
           return (
             <button
               key={t.id}
-              className={`positions__tab ${tab === t.id ? "is-active" : ""}`}
+              type="button"
+              className={`positions__tab ${active ? "is-active" : ""}`}
               onClick={() => setTab(t.id)}
+              aria-pressed={active}
             >
-              {t.label}
+              <t.Icon size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} />
+              <span>{t.label}</span>
               {count > 0 && <span className="positions__count">{count}</span>}
             </button>
           );
@@ -163,12 +217,31 @@ export default function Positions() {
           {FILTERS.map((f) => (
             <button
               key={f.id}
+              type="button"
               className={`positions__filter ${filter === f.id ? "is-active" : ""}`}
               onClick={() => setFilter(f.id)}
+              aria-pressed={filter === f.id}
             >
               {f.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {loadError && firstLoadDone && (
+        <div className="positions__error" role="alert">
+          <LuCircleAlert size={18} strokeWidth={2} />
+          <div>
+            <strong>Unable to load positions</strong>
+            <span>Check your connection and try again.</span>
+          </div>
+          <button
+            type="button"
+            className="positions__retry"
+            onClick={() => { setLoadError(null); store.refreshInFlight().catch(() => {}); }}
+          >
+            <LuRefreshCw size={14} strokeWidth={2} /> Retry
+          </button>
         </div>
       )}
 
@@ -192,9 +265,11 @@ export default function Positions() {
       )}
 
       {tab === "open" && (
-        open.length === 0 ? (
+        showSkeleton ? (
+          <SkeletonList />
+        ) : open.length === 0 ? (
           <Empty
-            icon={<LuRefreshCw />}
+            icon={<LuRefreshCw size={28} strokeWidth={2} />}
             title={filter === "all" ? "No open positions" : `No ${filter} positions`}
             sub="Trades you place will appear here while they run."
           />
@@ -202,6 +277,8 @@ export default function Positions() {
           <div className="positions__list">
             {open.map((p) => {
               const stopping = stoppingIds.has(p.id);
+              const openedAt = new Date(p.openedAt).getTime();
+              const remaining = Math.max(0, manualRef.current - (Date.now() - openedAt));
               return (
                 <article className="position" key={p.id}>
                   <header className="position__head">
@@ -225,7 +302,8 @@ export default function Positions() {
                   <footer className="position__foot">
                     <span>{timeAgo(p.openedAt)}</span>
                     <span className={`position__live ${stopping ? "is-stopping" : ""}`}>
-                      <LuRefreshCw /> {stopping ? "Stopping…" : "Running"}
+                      <LuClock size={14} strokeWidth={2} />
+                      {stopping ? "Stopping…" : `Settles in ${fmtCountdown(remaining)}`}
                     </span>
                   </footer>
                 </article>
@@ -236,9 +314,11 @@ export default function Positions() {
       )}
 
       {tab === "closed" && (
-        closed.length === 0 ? (
+        showSkeleton ? (
+          <SkeletonList />
+        ) : closed.length === 0 ? (
           <Empty
-            icon={<LuTarget />}
+            icon={<LuTarget size={28} strokeWidth={2} />}
             title={filter === "all" ? "No closed positions yet" : `No ${filter} positions`}
             sub="Settled trades will appear here."
           />
@@ -251,7 +331,9 @@ export default function Positions() {
                 <article className="history" key={p.id}>
                   <div className="history__left">
                     <span className={`history__icon history__icon--${won ? "won" : "lost"}`}>
-                      {won ? <LuArrowUp /> : <LuArrowDown />}
+                      {won
+                        ? <LuArrowUp size={16} strokeWidth={2} />
+                        : <LuArrowDown size={16} strokeWidth={2} />}
                     </span>
                     <div>
                       <strong>{p.market}</strong>
@@ -272,8 +354,24 @@ export default function Positions() {
       )}
 
       {tab === "tx" && (
-        <TxList items={tx} onDeposit={() => navigate("/deposit")} />
+        showSkeleton
+          ? <SkeletonList />
+          : <TxList items={tx} onDeposit={() => navigate("/deposit")} />
       )}
+    </div>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <div className="positions__list" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div className="positions__skeleton" key={i}>
+          <div className="positions__skeleton-line positions__skeleton-line--lg" />
+          <div className="positions__skeleton-line positions__skeleton-line--md" />
+          <div className="positions__skeleton-line positions__skeleton-line--sm" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -292,7 +390,9 @@ function TxList({ items, onDeposit }) {
   if (!items.length) {
     return (
       <div className="positions__empty">
-        <div className="positions__empty-icon"><LuClock /></div>
+        <div className="positions__empty-icon">
+          <LuClock size={28} strokeWidth={2} />
+        </div>
         <h3>No activity yet</h3>
         <p>Deposits, withdrawals, and settled trades appear here.</p>
         <button className="btn btn-blue positions__empty-cta" onClick={onDeposit}>
@@ -321,7 +421,9 @@ function TxList({ items, onDeposit }) {
         return (
           <article className="tx-row" key={t.id ?? `${t.type}-${t.at}`}>
             <span className={`tx-row__icon tx-row__icon--${isPos ? "in" : "out"}`}>
-              {isPos ? <LuArrowUp /> : <LuArrowDown />}
+              {isPos
+                ? <LuArrowUp size={16} strokeWidth={2} />
+                : <LuArrowDown size={16} strokeWidth={2} />}
             </span>
             <div className="tx-row__body">
               <strong>{label}</strong>

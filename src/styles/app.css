@@ -437,7 +437,7 @@
   padding: 15px 0;
   font-size: 13px; font-weight: 600;
   color: var(--text-2);
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
 }
 .positions__tab.is-active {
   color: var(--blue);
@@ -3214,7 +3214,7 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-2);
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   transition: color .15s, border-color .15s;
   display: inline-flex;
   align-items: center;
