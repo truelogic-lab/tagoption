@@ -11,9 +11,17 @@ function pct(n) {
 
 export default function EntryScanner({ open, onClose, onLoadBot }) {
   const { markets, loading } = useMarkets();
+
+  // Only scan markets the platform currently offers. Disabled markets still
+  // exist in the DB and would otherwise be picked and surfaced to the user.
+  const enabledMarkets = React.useMemo(
+    () => markets.filter((m) => m.active),
+    [markets]
+  );
+
   const {
     running, progress, total, currentMarket, result, error, start, reset,
-  } = useScanner(markets);
+  } = useScanner(enabledMarkets);
 
   if (!open) return null;
 
@@ -24,6 +32,10 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
     onLoadBot?.({
       market: result.market,
       signal: result.signal,
+      // The scanner reports a distribution, not a prediction. `ratio` is the
+      // share of the sample that landed on the picked side — the banner
+      // shows it as "N% in sample", never as "confidence".
+      ratio: result.signal === "Even" ? result.evenRatio : result.oddRatio,
       category: "evenodd",
     });
     close();
@@ -45,7 +57,7 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
         </div>
 
         <p className="scanner__intro">
-          Reads the last 60 ticks of every market and ranks them by how far
+          Reads the last 60 ticks of every active market and ranks them by how far
           their Even/Odd split has drifted from 50/50. The numbers below are the
           actual statistics — you make the call.
         </p>
@@ -117,7 +129,7 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
         <button
           className="btn btn-blue scanner__scan"
           onClick={start}
-          disabled={running || loading || !markets.length}
+          disabled={running || loading || !enabledMarkets.length}
         >
           {running
             ? <><LuRefreshCw className="scanner__spin" /> Scanning…</>

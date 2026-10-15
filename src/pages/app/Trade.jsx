@@ -291,7 +291,7 @@ export default function Trade() {
     setBotBanner({
       market: botResult.market,
       signal: botResult.signal,
-      confidence: botResult.confidence,
+      ratio: botResult.ratio,
       preset,
     });
 
@@ -416,8 +416,9 @@ export default function Trade() {
           <div className="bot-banner__body">
             <strong>Scanner picked {botBanner.market?.name}</strong>
             <span>
-              {botBanner.signal} · {botBanner.confidence}% · preset{" "}
-              {botBanner.preset.count} trades · ${botBanner.preset.stake}/trade
+              {botBanner.signal}
+              {Number.isFinite(botBanner.ratio) ? ` · ${(botBanner.ratio * 100).toFixed(1)}% in sample` : ""}
+              {` · preset ${botBanner.preset.count} trades · $${botBanner.preset.stake}/trade`}
             </span>
           </div>
           <button className="bot-banner__dismiss" onClick={() => setBotBanner(null)} aria-label="Dismiss">
