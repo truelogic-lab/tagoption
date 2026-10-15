@@ -27,9 +27,9 @@
 /* ---------- Theme: light ---------- */
 :root[data-theme="light"] {
   --bg: #ffffff;
-  --bg-2: #f8f9fb;
+  --bg-2: #f8fafc;
   --card: #ffffff;
-  --border: #e5e7eb;
+  --border: #e2e8f0;
   --border-2: #d1d5db;
 
   --text: #0f172a;
