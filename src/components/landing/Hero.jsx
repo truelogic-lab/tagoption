@@ -1,44 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { LuArrowRight, LuSparkles } from "react-icons/lu";
 
 import Reveal from "../ui/Reveal";
 import Typewriter from "../ui/Typewriter";
-import { useScrollProgress } from "../../lib/useScrollProgress";
 import heroImg from "../../assets/hero.png";
 
-const ROLL_RANGE_PX = 700;
-
 export default function Hero() {
-  const [entered, setEntered] = useState(false);
-  const progress = useScrollProgress(ROLL_RANGE_PX);
-
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setEntered(true);
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      setEntered(true);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-  const enterX = entered || reducedMotion ? 0 : -110;
-  const scrollX = reducedMotion ? 0 : -progress * 110;
-
   return (
-    <section
-      className={`hero ${
-        progress > 0 && !reducedMotion ? "is-scrolling" : ""
-      }`}
-    >
+    <section className="hero hero--cinematic">
       <div className="container hero__inner">
         <div className="hero__content">
           <Reveal delay={40}>
@@ -50,7 +20,6 @@ export default function Hero() {
           <Reveal delay={80}>
             <h1 className="hero__title">
               <span className="hero__title-lead">Trade With</span>
-
               <span className="hero__title-accent">
                 <Typewriter
                   text="More Clarity."
@@ -96,17 +65,15 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="hero__bg" aria-hidden="true">
-        <img
-          src={heroImg}
-          alt=""
-          className="hero__bg-image"
-          style={{
-            "--enter-x": `${enterX}%`,
-            "--scroll-x": `${scrollX}%`,
-          }}
-          draggable="false"
-        />
+      <div className="hero__bg hero__bg--cinematic" aria-hidden="true">
+        <div className="hero__visual">
+          <img
+            src={heroImg}
+            alt=""
+            className="hero__bg-image"
+            draggable="false"
+          />
+        </div>
 
         <span className="hero__bg-fade" />
       </div>

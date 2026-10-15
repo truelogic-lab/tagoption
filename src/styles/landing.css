@@ -1255,3 +1255,221 @@
     transform: none;
   }
 }
+
+/* =========================================================
+   TAGOPTION — CINEMATIC HERO IMAGE
+   3D roll-in, depth, motion blur, and ambient floating.
+   ========================================================= */
+
+.hero--cinematic {
+  isolation: isolate;
+  perspective: 1400px;
+  perspective-origin: 72% 48%;
+}
+
+.hero--cinematic .hero__bg--cinematic {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero--cinematic .hero__visual {
+  position: absolute;
+  top: 50%;
+  right: -3%;
+  width: 65%;
+  max-width: 900px;
+  transform: translateY(-50%);
+  transform-style: preserve-3d;
+  animation: hero-visual-float 6s ease-in-out 2s infinite;
+  will-change: transform;
+}
+
+.hero--cinematic .hero__bg-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  top: auto;
+  right: auto;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+
+  animation: hero-cinematic-roll 1.8s
+    cubic-bezier(0.18, 0.78, 0.22, 1) 0.15s forwards;
+}
+
+/* Cinematic entrance: emerge from depth, roll, and settle. */
+@keyframes hero-cinematic-roll {
+  0% {
+    opacity: 0;
+    transform:
+      translate3d(115%, 4%, -420px)
+      rotateY(-68deg)
+      rotateZ(-9deg)
+      scale(0.68);
+    filter: blur(12px) brightness(1.3);
+  }
+
+  35% {
+    opacity: 0.8;
+    transform:
+      translate3d(30%, 0, -100px)
+      rotateY(-30deg)
+      rotateZ(4deg)
+      scale(0.88);
+    filter: blur(5px) brightness(1.12);
+  }
+
+  68% {
+    opacity: 1;
+    transform:
+      translate3d(-3%, 0, 20px)
+      rotateY(7deg)
+      rotateZ(-1.5deg)
+      scale(1.025);
+    filter: blur(0) brightness(1.04);
+  }
+
+  84% {
+    transform:
+      translate3d(1%, 0, 0)
+      rotateY(-2deg)
+      rotateZ(0.5deg)
+      scale(0.995);
+    filter: blur(0) brightness(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform:
+      translate3d(0, 0, 0)
+      rotateY(0)
+      rotateZ(0)
+      scale(1);
+    filter: blur(0) brightness(1);
+  }
+}
+
+/* Slow ambient motion after the entrance has completed. */
+@keyframes hero-visual-float {
+  0%, 100% {
+    transform: translate3d(0, -50%, 0);
+  }
+
+  50% {
+    transform: translate3d(0, calc(-50% - 12px), 0);
+  }
+}
+
+/* Keep the illustration behind the headline. */
+.hero--cinematic .hero__inner {
+  position: relative;
+  z-index: 2;
+}
+
+.hero--cinematic .hero__content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero--cinematic .hero__bg-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    var(--bg) 0%,
+    var(--bg) 30%,
+    rgba(255, 255, 255, 0) 65%
+  );
+}
+
+/* Tablet layout. */
+@media (max-width: 900px) {
+  .hero--cinematic {
+    perspective: none;
+  }
+
+  .hero--cinematic .hero__bg--cinematic {
+    position: relative;
+    inset: auto;
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+    margin-top: 30px;
+  }
+
+  .hero--cinematic .hero__visual {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 90%;
+    max-width: 500px;
+    transform: none;
+    animation: none;
+  }
+
+  .hero--cinematic .hero__bg-image {
+    animation-name: hero-mobile-roll;
+    animation-duration: 1.4s;
+    animation-delay: 0.1s;
+  }
+
+  .hero--cinematic .hero__bg-fade {
+    display: none;
+  }
+
+  @keyframes hero-mobile-roll {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 80px, 0) rotate(-8deg) scale(0.82);
+      filter: blur(8px);
+    }
+
+    70% {
+      opacity: 1;
+      transform: translate3d(0, -5px, 0) rotate(1deg) scale(1.02);
+      filter: blur(0);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotate(0) scale(1);
+      filter: blur(0);
+    }
+  }
+}
+
+/* Small phones. */
+@media (max-width: 520px) {
+  .hero--cinematic .hero__bg--cinematic {
+    margin-top: 24px;
+  }
+
+  .hero--cinematic .hero__visual {
+    width: 100%;
+    max-width: 350px;
+  }
+}
+
+/* Accessibility: no cinematic movement when reduced motion is requested. */
+@media (prefers-reduced-motion: reduce) {
+  .hero--cinematic .hero__visual {
+    animation: none;
+    transform: none;
+  }
+
+  .hero--cinematic .hero__bg-image {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    will-change: auto;
+  }
+}
