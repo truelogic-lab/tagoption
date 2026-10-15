@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
-  LuSmartphone, LuCreditCard, LuCoins, LuExternalLink,
-  LuShieldCheck, LuTriangleAlert,
+  LuSmartphone, LuCreditCard, LuCoins, LuExternalLink, LuTriangleAlert,
 } from "react-icons/lu";
 import { paymentsApi } from "../../lib/api";
 import { useFx } from "../../lib/useFx";
@@ -15,10 +14,54 @@ const QUICK_AMOUNTS = [5, 10, 25, 50, 100];
  * touch this app. USDT is disabled until a TRC20 deposit flow exists.
  */
 const METHODS = [
-  { id: "mpesa", label: "M-Pesa", desc: "Mobile money",     tone: "green", Icon: LuSmartphone, enabled: true  },
+  { id: "mpesa", label: "M-Pesa", desc: "Mobile money",      tone: "green", Icon: LuSmartphone, enabled: true  },
   { id: "card",  label: "Card",   desc: "Visa / Mastercard", tone: "blue",  Icon: LuCreditCard, enabled: true  },
   { id: "usdt",  label: "USDT",   desc: "TRC20 wallet",      tone: "green", Icon: LuCoins,      enabled: false },
 ];
+
+const CREDIT_TEXT = "Developed by Warren";
+
+/**
+ * Type, hold, erase, repeat. Falls back to static text under
+ * prefers-reduced-motion so the credit is never animated for users who
+ * opted out at the OS level.
+ */
+function Typewriter({ text, speed = 90, holdMs = 1800, eraseMs = 55, gapMs = 500 }) {
+  const [visible, setVisible] = useState(text);
+  const [phase, setPhase] = useState("hold");
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(text);
+      return;
+    }
+
+    let timer;
+    if (phase === "hold") {
+      timer = setTimeout(() => setPhase("erase"), holdMs);
+    } else if (phase === "erase") {
+      timer = setTimeout(
+        () => (visible.length ? setVisible(visible.slice(0, -1)) : setPhase("type")),
+        visible.length ? eraseMs : gapMs
+      );
+    } else if (phase === "type") {
+      timer = setTimeout(
+        () => (visible.length < text.length
+          ? setVisible(text.slice(0, visible.length + 1))
+          : setPhase("hold")),
+        speed
+      );
+    }
+    return () => clearTimeout(timer);
+  }, [visible, phase, text, speed, holdMs, eraseMs, gapMs]);
+
+  return (
+    <span aria-hidden="true">
+      {visible}
+      <span className="deposit__credit-caret">|</span>
+    </span>
+  );
+}
 
 export default function Deposit() {
   const { store } = useOutletContext();
@@ -166,19 +209,11 @@ export default function Deposit() {
               ? <>Continue to secure payment <LuExternalLink size={16} strokeWidth={2} /></>
               : <>Enter an amount <LuExternalLink size={16} strokeWidth={2} /></>}
         </button>
-
-        <div className="deposit__secure">
-          <LuShieldCheck size={18} strokeWidth={2} />
-          <div>
-            <strong>Secure payment</strong>
-            <p>
-              You'll finish the deposit on Pesapal's hosted checkout. Card details
-              never touch this app, and your balance updates only after payment is
-              confirmed.
-            </p>
-          </div>
-        </div>
       </form>
+
+      <p className="deposit__credit" aria-label={CREDIT_TEXT}>
+        <Typewriter text={CREDIT_TEXT} />
+      </p>
     </div>
   );
 }
