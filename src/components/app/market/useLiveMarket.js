@@ -4,11 +4,12 @@ import { isLive, tradeApi } from "../../../lib/api";
 /**
  * Live market hook — pulls ticks from the server.
  *
- * Server:  GET /markets/:id/price → { price, change, lastDigit, history[], updatedAt }
- * Client:  polls every `interval` ms, keeps the last `windowSize` points.
+ * Server:  GET /markets/:id/price → { price, change, lastDigit, history[] }
+ * Client:  polls every `interval` ms, keeps the last `windowSize` raw points.
  *
- * No local simulation when the API is live. If the API is offline, the hook
- * returns whatever was last cached and stops — no fabricated ticks.
+ * The series is raw prices. Chart is responsible for scaling to the viewport;
+ * pre-normalizing here caused the visible jump when windowSize changed,
+ * because the same tick data was rescaled against a different min/max.
  */
 export function useLiveMarket({
   marketId = "R_10",
@@ -19,7 +20,7 @@ export function useLiveMarket({
   const [price, setPrice] = useState(basePrice);
   const [change, setChange] = useState(0);
   const [lastDigit, setLastDigit] = useState(0);
-  const [history, setHistory] = useState(() => Array(windowSize).fill(basePrice));
+  const [history, setHistory] = useState([]);
   const [error, setError] = useState(null);
 
   const cancelled = useRef(false);
@@ -37,17 +38,12 @@ export function useLiveMarket({
         setChange(tick.change);
         setLastDigit(tick.lastDigit);
 
-        // Normalize history values to 0..1 range for the chart
         const values = Array.isArray(tick.history) && tick.history.length
           ? tick.history
           : [tick.price];
 
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const range = max - min || 1;
-        const normalized = values.map((v) => (v - min) / range);
-
-        setHistory(normalized.slice(-windowSize));
+        // Keep the raw prices. Cap the buffer so it does not grow forever.
+        setHistory(values.slice(-320));
         setError(null);
       } catch (e) {
         if (!cancelled.current) setError(e.message || "Failed to load price");
@@ -60,9 +56,9 @@ export function useLiveMarket({
       cancelled.current = true;
       clearInterval(id);
     };
-  }, [marketId, interval, windowSize]);
+  }, [marketId, interval]);
 
-  // When zoom changes, refill the visible window from the last fetched full history
+  // Zoom selects a window; the raw buffer is trimmed to that window here.
   const series = history.slice(-windowSize);
 
   return { price, change, series, lastDigit, error };
@@ -70,12 +66,9 @@ export function useLiveMarket({
 
 /**
  * Digit distribution — how often each last-digit has appeared in recent ticks.
- * Derived from the actual tick history returned by the server.
  */
 export function useDigitDistribution(recentDigits = []) {
-  const [dist, setDist] = useState(() =>
-    Array.from({ length: 10 }, () => 10)
-  );
+  const [dist, setDist] = useState(() => Array.from({ length: 10 }, () => 10));
 
   useEffect(() => {
     if (!recentDigits.length) return;

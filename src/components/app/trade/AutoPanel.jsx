@@ -1,5 +1,5 @@
 import React from "react";
-import { LuMinus, LuPlus, LuPlay, LuSquare, LuRefreshCw } from "react-icons/lu";
+import { LuMinus, LuPlus, LuPlay, LuSquare, LuRefreshCw, LuTriangleAlert } from "react-icons/lu";
 
 function Stepper({ value, onChange, min = 1, max = Infinity, prefix = "", step = 1, disabled }) {
   return (
@@ -100,8 +100,11 @@ export default function AutoPanel({
           className="btn btn-blue auto__action"
           onClick={onStart}
           disabled={insufficient}
+          title={insufficient ? "Deposit to start auto-trading" : "Start auto-trading"}
         >
-          <LuPlay /> {insufficient ? "Insufficient balance" : "Start Auto Trading"}
+          {insufficient
+            ? <><LuTriangleAlert /> Insufficient balance</>
+            : <><LuPlay /> Start Auto Trading</>}
         </button>
       ) : (
         <button className="btn btn-primary auto__action" onClick={onStop}>

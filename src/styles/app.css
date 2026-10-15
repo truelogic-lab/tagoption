@@ -909,7 +909,23 @@
   padding: 14px;
   font-size: 14px;
 }
-.auto__action:disabled { opacity: .55; cursor: not-allowed; }
+/*
+ * Insufficient balance is a real, actionable state — the user needs to know
+ * why the button is dead and what to do about it. A plain opacity dim reads
+ * as "loading" or "broken"; an amber warning reads as "you need to act".
+ */
+.auto__action:disabled {
+  background: rgba(234, 179, 8, 0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
+.auto__action:disabled:hover {
+  background: rgba(234, 179, 8, 0.12);
+  color: var(--yellow);
+}
 
 /* =============================================================
    Digit strip — single highlight, alternates red/green

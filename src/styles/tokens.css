@@ -197,3 +197,46 @@ textarea,
   -webkit-user-select: text;
   -webkit-touch-callout: default;
 }
+
+/* ---------- Buttons: disabled ---------- */
+
+/*
+ * Base buttons had no disabled styling, so a `disabled` btn-blue on a light
+ * background was rendering as near-invisible blue text on blue. The rules
+ * below cover every variant — the variant colours are overridden by a single
+ * muted palette so the disabled state reads the same on all of them.
+ */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--bg-2);
+  color: var(--text-3);
+  border-color: var(--border);
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.btn:disabled:hover,
+.btn[aria-disabled="true"]:hover {
+  background: var(--bg-2);
+  color: var(--text-3);
+  border-color: var(--border);
+}
+
+.btn-blue:disabled,
+.btn-primary:disabled {
+  background: var(--bg-2);
+  color: var(--text-3);
+}
+
+/*
+ * AutoPanel's insufficient-balance button is a real call to action — the user
+ * needs to see that it's blocked and know what to do about it. Tint it as a
+ * warning rather than a plain disabled button, so it stands out on the panel.
+ */
+.auto__action:disabled {
+  background: rgba(234, 179, 8, 0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  font-weight: 700;
+}
