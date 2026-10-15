@@ -1955,3 +1955,92 @@
   .adm-metrics__label { font-size: 9.5px; }
   .adm-metrics__value { font-size: 13.5px; }
 }
+
+/* =============================================================
+   Markets, Withdrawals, Config
+   ============================================================= */
+
+/* Market row */
+.adm-market {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.adm-market__body { flex: 1; min-width: 0; }
+.adm-market__body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-market__id {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-top: 2px;
+}
+.adm-market__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 72px;
+}
+.adm-market__stat strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.adm-market__stat strong.is-pos { color: var(--green); }
+.adm-market__stat strong.is-neg { color: var(--red); }
+.adm-market__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.adm-market__actions .adm-btn--sm {
+  padding: 7px 10px;
+  font-size: 11.5px;
+}
+
+@media (max-width: 700px) {
+  .adm-market { flex-wrap: wrap; gap: 10px; }
+  .adm-market__body { flex-basis: 100%; }
+  .adm-market__stat { min-width: 0; }
+  .adm-market__actions { margin-left: auto; }
+}
+
+/* Config meta + messages */
+.adm-config__meta {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.adm-config__msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+}
+.adm-config__msg--ok {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  color: var(--green);
+}
+.adm-config__msg--err {
+  background: rgba(255, 45, 85, 0.08);
+  border: 1px solid rgba(255, 45, 85, 0.28);
+  color: var(--red);
+}
