@@ -62,7 +62,7 @@ def _open_trade(user, market, contract, stake_cents, profit_cents, win_rate):
             status=Trade.STATUS_OPEN,
             auto=True,
             win_rate_applied=win_rate,
-            payout_mult_applied=DEFAULT_PAYOUT_MULT,
+            payout_mult_applied=effective_payout_mult(),
         )
 
         _log(user, "trade-open", -stake_cents, reference=trade.id)
