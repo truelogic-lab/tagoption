@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 
 /* Authed app shell */
 import RequireAuth from "./components/guards/RequireAuth";
+import RequireAdmin from "./components/guards/RequireAdmin";
 import AppLayout from "./components/app/AppLayout";
 import Trade from "./pages/app/Trade";
 import Positions from "./pages/app/Positions";
@@ -52,13 +53,13 @@ export default function App() {
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* ---------- Admin (own shell, auth required) ---------- */}
+        {/* ---------- Admin (own shell, admin required) ---------- */}
         <Route
           path="/admin"
           element={
-            <RequireAuth>
+            <RequireAdmin>
               <AdminLayout />
-            </RequireAuth>
+            </RequireAdmin>
           }
         >
           <Route index element={<Overview />} />
