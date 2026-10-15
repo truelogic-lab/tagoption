@@ -1,20 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* =============================================================
-   Themes
-   Light is the document default — marketing pages, auth, and any
-   public surface render in light regardless of the user's app
-   preference. Dark mode applies only inside the app shell, which
-   carries [data-theme="dark"] on its own root element.
-   ============================================================= */
-
-/* ---------- Light (default) ---------- */
+/* ---------- Theme: dark (default) ---------- */
 :root {
   --bg: #ffffff;
   --bg-2: #f8fafc;
   --card: #ffffff;
   --border: #e2e8f0;
-  --border-2: #cbd5e1;
+  --border-2: #d1d5db;
 
   --text: #0f172a;
   --text-2: #556070;
@@ -26,14 +18,9 @@
   --purple: #7c3aed;
   --green: #16a34a;
   --yellow: #ca8a04;
-  --danger: #dc2626;
 
-  --overlay: rgba(15, 23, 42, 0.35);
-  --header-blur: rgba(255, 255, 255, 0.85);
-
-  --hover-bg: rgba(15, 23, 42, 0.04);
-  --hover-bg-2: rgba(15, 23, 42, 0.06);
-  --skeleton: #eef2f7;
+  --overlay: rgba(15,23,42,.35);
+  --header-blur: rgba(255,255,255,.85);
 }
 
 /* ---------- Dark (app shell only) ---------- */
@@ -54,19 +41,13 @@
   --purple: #a855f7;
   --green: #22c55e;
   --yellow: #eab308;
-  --danger: #ef4444;
 
-  --overlay: rgba(0, 0, 0, 0.6);
-  --header-blur: rgba(10, 10, 15, 0.85);
-
-  --hover-bg: rgba(255, 255, 255, 0.06);
-  --hover-bg-2: rgba(255, 255, 255, 0.09);
-  --skeleton: #1c1c28;
+  --overlay: rgba(0,0,0,.6);
+  --header-blur: rgba(10,10,15,.85);
 }
 
-/* =============================================================
-   Shared scale
-   ============================================================= */
+
+/* ---------- Shared ---------- */
 :root {
   --r-sm: 8px;
   --r-md: 12px;
@@ -74,40 +55,156 @@
   --page-max: 1280px;
   --page-pad: 24px;
   --header-h: 68px;
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
-/* =============================================================
-   Button base
-   ============================================================= */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+img, svg { display: block; max-width: 100%; }
+ul { list-style: none; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+
+.container {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+.section-title {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+}
+.accent { color: var(--red); }
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 12px 24px;
   border-radius: var(--r-sm);
-  border: 0;
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color .2s, border-color .2s, color .2s;
 }
 .btn-primary { background: var(--red); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--red-2); }
+.btn-primary:hover { background: var(--red-2); }
+.btn-ghost { border: 1px solid var(--border-2); color: var(--text); }
+.btn-ghost:hover { border-color: var(--red); color: var(--red); }
 .btn-blue { background: var(--blue); color: #fff; }
-.btn-blue:hover:not(:disabled) { background: #3b82f6; }
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-2);
-}
-.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--border-2); }
+.btn-blue:hover { background: #3b82f6; }
 
-/* ---------- Disabled ---------- */
+/* Reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--reveal-y, 16px));
+  transition: opacity .6s ease, transform .6s ease;
+  will-change: opacity, transform;
+}
+.reveal.is-in { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- Extended theme tokens ---------- */
+:root {
+  --hover-bg:    rgba(15,23,42,.05);
+  --hover-bg-2:  rgba(15,23,42,.03);
+  --skeleton:    rgba(15,23,42,.06);
+  --grid-line:   rgba(15,23,42,.08);
+  --danger:      #dc2626;
+}
+.app[data-theme="dark"] {
+  --hover-bg:    rgba(255,255,255,.06);
+  --hover-bg-2:  rgba(255,255,255,.04);
+  --skeleton:    rgba(255,255,255,.08);
+  --grid-line:   rgba(148,163,184,.10);
+  --danger:      #ef4444;
+}
+
+/* -------------------------------------------------------------
+   No text selection on UI chrome (prevents the Android
+   copy/paste popup on long-press / double-tap)
+   ------------------------------------------------------------- */
+button,
+[role="button"],
+.stake__value,
+.settings__row,
+.auto__value,
+.chips__chip,
+.tabs__tab,
+.mode__btn,
+.bottomnav__btn,
+.topbar__wallet,
+.topbar__icon,
+.drawer__row,
+.drawer__subrow,
+.digits,
+.digits__cell,
+.chart__market,
+.chart__zoom button,
+.positions__tab,
+.history-filters__chip,
+.account__trigger,
+.refer-card__copy,
+.card-link,
+.paylist__row,
+.reward-row,
+.nav-link,
+.header__nav-link,
+.header__login,
+.header__cta,
+.header__burger,
+.mobile__trigger,
+.mobile__sub a,
+.mobile__actions .btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection where it matters */
+input,
+textarea,
+[contenteditable],
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Keep the referral link selectable (users may want to copy manually) */
+.refer-card__code--link {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* ---------- Buttons: disabled ---------- */
+
+/*
+ * Base buttons had no disabled styling, so a `disabled` btn-blue on a light
+ * background was rendering as near-invisible blue text on blue. The rules
+ * below cover every variant — the variant colours are overridden by a single
+ * muted palette so the disabled state reads the same on all of them.
+ */
 .btn:disabled,
 .btn[aria-disabled="true"] {
   background: var(--bg-2);
@@ -117,18 +214,25 @@
   opacity: 1;
   box-shadow: none;
 }
+
 .btn:disabled:hover,
 .btn[aria-disabled="true"]:hover {
   background: var(--bg-2);
   color: var(--text-3);
   border-color: var(--border);
 }
+
 .btn-blue:disabled,
 .btn-primary:disabled {
   background: var(--bg-2);
   color: var(--text-3);
 }
 
+/*
+ * AutoPanel's insufficient-balance button is a real call to action — the user
+ * needs to see that it's blocked and know what to do about it. Tint it as a
+ * warning rather than a plain disabled button, so it stands out on the panel.
+ */
 .auto__action:disabled {
   background: rgba(234, 179, 8, 0.12);
   color: var(--yellow);
