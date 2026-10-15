@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { LuTriangleAlert, LuBot, LuX } from "react-icons/lu";
+import { LuBot, LuX } from "react-icons/lu";
 
 import MarketLoader from "../../components/app/trade/MarketLoader";
 import CategoryTabs from "../../components/app/trade/CategoryTabs";
@@ -13,12 +13,15 @@ import StakeChips from "../../components/app/trade/StakeChips";
 import SettingsRow from "../../components/app/trade/SettingsRow";
 import TradeButtons from "../../components/app/trade/TradeButtons";
 import AutoPanel from "../../components/app/trade/AutoPanel";
+import TradeErrorBanner from "../../components/app/trade/TradeErrorBanner";
 import { useAutoTrade } from "../../components/app/trade/useAutoTrade";
 import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
+import { tradeApi } from "../../lib/api";
 import { profitOf } from "../../lib/tradeEngine";
 import { emit } from "../../lib/events";
 import { getApiError } from "../../lib/apiError";
+import { loadConfig } from "../../lib/configCache";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -39,9 +42,14 @@ export default function Trade() {
   const { markets, loading: marketsLoading, error: marketsError } = useMarkets();
 
   const [activeId, setActiveId] = useState(null);
-  const activeMarket = markets.find((m) => m.id === activeId)
-    ?? markets.find((m) => m.active)
-    ?? markets[0];
+  const activeMarket = useMemo(
+    () =>
+      markets.find((m) => m.id === activeId) ??
+      markets.find((m) => m.active) ??
+      markets[0] ??
+      null,
+    [markets, activeId]
+  );
 
   useEffect(() => {
     if (!activeId && activeMarket) setActiveId(activeMarket.id);
@@ -54,11 +62,15 @@ export default function Trade() {
     windowSize,
   });
 
+  // Keyed on price, not on lastDigit. If two consecutive ticks end in the
+  // same digit, the digit value does not change and React would skip the
+  // update — dropping the repeat from the strip. Price changes every tick.
   const [recentDigits, setRecentDigits] = useState([]);
   useEffect(() => {
     if (lastDigit == null) return;
     setRecentDigits((prev) => [...prev.slice(-99), lastDigit]);
-  }, [lastDigit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [price]);
 
   const [category, setCategory] = useState("evenodd");
   const [mode, setMode] = useState("manual");
@@ -84,15 +96,19 @@ export default function Trade() {
 
   const payout = +(stake + profitOf(stake)).toFixed(2);
 
+  const handleAutoTick = useCallback(() => {
+    store.refreshInFlight();
+    emit("trade:refresh");
+  }, [store]);
+
+  const handleAutoFinish = useCallback(() => {
+    store.refresh();
+    emit("auto:stopped");
+  }, [store]);
+
   const auto = useAutoTrade({
-    onTick: () => {
-      store.refreshInFlight();
-      emit("trade:refresh");
-    },
-    onFinish: () => {
-      store.refresh();
-      emit("auto:stopped");
-    },
+    onTick: handleAutoTick,
+    onFinish: handleAutoFinish,
   });
 
   const canZoomIn = windowSize > ZOOM_MIN;
@@ -100,32 +116,22 @@ export default function Trade() {
   const zoomIn  = () => { if (canZoomIn)  setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
 
+  // /config is fetched once per session and shared. The hook keeps local
+  // state so the page can render even if the request is slow or fails.
   useEffect(() => {
-    const controller = new AbortController();
-
-    (async () => {
-      setConfigError(null);
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE || ""}/config`,
-          { signal: controller.signal }
+    let cancelled = false;
+    loadConfig()
+      .then((config) => {
+        if (cancelled) return;
+        if (Number.isFinite(config?.manualTradeMs)) setManualMs(config.manualTradeMs);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setConfigError(
+          getApiError(error, "Could not load trade settings. The default duration will be used.")
         );
-
-        if (!response.ok) {
-          throw new Error(`Config request failed with status ${response.status}`);
-        }
-
-        const config = await response.json();
-        if (!controller.signal.aborted && Number.isFinite(config?.manualTradeMs)) {
-          setManualMs(config.manualTradeMs);
-        }
-      } catch (error) {
-        if (error.name === "AbortError") return;
-        setConfigError(getApiError(error, "Could not load trade settings. The default duration will be used."));
-      }
-    })();
-
-    return () => controller.abort();
+      });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -233,6 +239,20 @@ export default function Trade() {
     });
 
     clearCountdown();
+    setRunState("stopping");
+
+    try {
+      // The server decides the outcome; the client cannot influence it.
+      // This just asks for settlement now instead of waiting for the reaper.
+      await tradeApi.settle(activePositionId);
+      store.refreshInFlight();
+    } catch (error) {
+      // If settlement fails the reaper will still close the trade when the
+      // window expires, so we surface the error without resetting run state.
+      setTradeError(getApiError(error, "Could not stop the trade. It will settle automatically."));
+      setRunState("running");
+      emit("trade:error", { message: getApiError(error, "Stop failed") });
+    }
   };
 
   useEffect(() => {
@@ -321,10 +341,6 @@ export default function Trade() {
       count: autoCount,
       stake,
     });
-
-    if (auto.error) {
-      setTradeError(getApiError(auto.error, "Auto-trade could not be started."));
-    }
   };
 
   const handleAutoStop = () => {
@@ -337,13 +353,14 @@ export default function Trade() {
   if (showMarketLoader && marketsError) {
     return (
       <div className="trade">
-        <div className="trade-error" role="alert">
-          <LuTriangleAlert />
-          <div>
-            <strong>Markets could not load</strong>
-            <span>{getApiError(marketsError, "Check your connection and try again.")}</span>
-          </div>
-        </div>
+        <TradeErrorBanner
+          sources={[
+            {
+              label: "Markets could not load",
+              message: getApiError(marketsError, "Check your connection and try again."),
+            },
+          ]}
+        />
       </div>
     );
   }
@@ -352,36 +369,18 @@ export default function Trade() {
     return <MarketLoader />;
   }
 
+  const errorSources = [
+    { label: "Trade problem", message: tradeError, clear: () => setTradeError(null) },
+    { label: "Auto-trade problem", message: auto.error },
+    { label: "Notice", message: configError, clear: () => setConfigError(null) },
+    { label: "Market problem", message: marketsError },
+  ];
+
   return (
     <div className="trade">
       <CategoryTabs value={category} onChange={setCategory} />
 
-      {(tradeError || configError || marketsError || auto.error) && (
-        <div className="trade-error" role="alert">
-          <LuTriangleAlert />
-          <div>
-            <strong>
-              {tradeError ? "Trade problem" : marketsError ? "Market problem" : "Notice"}
-            </strong>
-            <span>
-              {getApiError(
-                tradeError || marketsError || auto.error || configError,
-                "Something went wrong. Try again."
-              )}
-            </span>
-          </div>
-          <button
-            className="trade-error__dismiss"
-            onClick={() => {
-              setTradeError(null);
-              setConfigError(null);
-            }}
-            aria-label="Dismiss error"
-          >
-            <LuX />
-          </button>
-        </div>
-      )}
+      <TradeErrorBanner sources={errorSources} />
 
       <div className="trade__chart-wrap">
         <Chart

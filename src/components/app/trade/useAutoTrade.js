@@ -4,11 +4,15 @@ import { tradeApi } from "../../../lib/api";
 /**
  * Client wrapper around the server auto-run.
  *
- * Server settles every ~1.4s, so we poll every 600ms — fast enough that the
- * UI reads as live, without hammering the API. Polling stops when the tab is
- * hidden and resumes the moment it comes back.
+ * The server settles each trade in ~1.4s, so polling at 1.5s reads as live
+ * without over-fetching. Polling only runs while a run is active. The mount
+ * check hits the API once to resume an in-flight run after a refresh.
+ *
+ * onTick and onFinish are held in refs so callers can pass inline functions
+ * without re-triggering the mount effect on every parent render. Before this,
+ * a price tick every 900ms was causing a fresh autoStatus() call every time.
  */
-const POLL_MS = 600;
+const POLL_MS = 1500;
 
 export function useAutoTrade({ onTick, onFinish }) {
   const [running, setRunning] = useState(false);
@@ -19,13 +23,19 @@ export function useAutoTrade({ onTick, onFinish }) {
 
   const pollRef = useRef(null);
   const wasRunning = useRef(false);
+  const onTickRef = useRef(onTick);
+  const onFinishRef = useRef(onFinish);
 
-  const stopPolling = () => {
+  // Keep latest callbacks without retriggering effects.
+  useEffect(() => { onTickRef.current = onTick; }, [onTick]);
+  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
+
+  const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
-  };
+  }, []);
 
   const poll = useCallback(async () => {
     if (document.visibilityState !== "visible") return;
@@ -38,17 +48,17 @@ export function useAutoTrade({ onTick, onFinish }) {
       if (typeof s.pnl === "number") setPnl(s.pnl);
       if (s.error) setError(s.error);
 
-      onTick?.();
+      onTickRef.current?.();
 
       if (wasRunning.current && !s.running) {
-        onFinish?.();
+        onFinishRef.current?.();
         stopPolling();
       }
       wasRunning.current = Boolean(s.running);
     } catch {
-      // silent retry next tick
+      // Silent — next tick retries.
     }
-  }, [onTick, onFinish]);
+  }, [stopPolling]);
 
   const start = useCallback(async ({ count, stake, targetProfit, stopLoss, market }) => {
     setError(null);
@@ -69,13 +79,14 @@ export function useAutoTrade({ onTick, onFinish }) {
       setError(e.message || "Failed to start auto trade");
       setRunning(false);
     }
-  }, [poll]);
+  }, [poll, stopPolling]);
 
   const stop = useCallback(async () => {
     try { await tradeApi.autoStop(); } catch {}
   }, []);
 
-  // Resume an in-flight run on mount (survives refresh / navigation)
+  // One-time check on mount to resume an in-flight run after a refresh.
+  // Intentionally runs once — deps are stable refs and stable callbacks.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -87,6 +98,7 @@ export function useAutoTrade({ onTick, onFinish }) {
           setProgress(s.progress ?? { done: 0, total: 0, wins: 0, losses: 0 });
           setPnl(s.pnl ?? 0);
           wasRunning.current = true;
+          stopPolling();
           pollRef.current = setInterval(poll, POLL_MS);
         }
       } catch {}
@@ -95,9 +107,9 @@ export function useAutoTrade({ onTick, onFinish }) {
       cancelled = true;
       stopPolling();
     };
-  }, [poll]);
+  }, [poll, stopPolling]);
 
-  // Fast re-poll on tab focus
+  // Immediate re-poll when the tab comes back into view.
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === "visible" && wasRunning.current) poll();
@@ -106,7 +118,7 @@ export function useAutoTrade({ onTick, onFinish }) {
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [poll]);
 
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => () => stopPolling(), [stopPolling]);
 
   return { running, progress, pnl, error, runId, start, stop };
 }
