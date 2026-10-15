@@ -16,7 +16,6 @@ import { useAutoTrade } from "../../components/app/trade/useAutoTrade";
 import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
-import { tradeApi } from "../../lib/api";
 import { emit } from "../../lib/events";
 
 const BOT_PRESETS = {
@@ -30,6 +29,7 @@ const ZOOM_MIN = 20;
 const ZOOM_MAX = 320;
 const ZOOM_STEP = 1.4;
 const RESULT_FLASH_MS = 1600;
+const MANUAL_MS_DEFAULT = 60_000;
 
 export default function Trade() {
   const { store, botResult, clearBotResult } = useOutletContext();
@@ -70,8 +70,11 @@ export default function Trade() {
   const [activeSide, setActiveSide] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [activePositionId, setActivePositionId] = useState(null);
+  const [manualMs, setManualMs] = useState(MANUAL_MS_DEFAULT);
+  const [secondsLeft, setSecondsLeft] = useState(null);
 
   const resultTimer = useRef(null);
+  const countdownTimer = useRef(null);
 
   const payout = +(stake + profitOf(stake)).toFixed(2);
 
@@ -84,6 +87,26 @@ export default function Trade() {
   const canZoomOut = windowSize < ZOOM_MAX;
   const zoomIn  = () => { if (canZoomIn)  setWindowSize((w) => Math.max(ZOOM_MIN, Math.round(w / ZOOM_STEP))); };
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE || ""}/config`
+        ).then((r) => r.json());
+        if (!cancelled && res?.manualTradeMs) setManualMs(res.manualTradeMs);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+      if (resultTimer.current) clearTimeout(resultTimer.current);
+    };
+  }, []);
 
   const handleManualPlace = async (side) => {
     if (!activeMarket || activeSide) return;
@@ -98,6 +121,20 @@ export default function Trade() {
       });
       setActivePositionId(position?.id ?? null);
       setRunState("running");
+
+      const total = Math.round(manualMs / 1000);
+      setSecondsLeft(total);
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+      countdownTimer.current = setInterval(() => {
+        setSecondsLeft((s) => {
+          if (s == null || s <= 1) {
+            clearInterval(countdownTimer.current);
+            countdownTimer.current = null;
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
     } catch (e) {
       setActiveSide(null);
       setRunState("idle");
@@ -113,17 +150,11 @@ export default function Trade() {
     }
 
     emit("trade:stopping", { id: activePositionId });
-
-    try {
-      await tradeApi.settle(activePositionId, Math.random() < 0.5 ? "won" : "lost");
-      await store.refreshInFlight();
-    } catch {}
-
-    setActivePositionId(null);
-    setActiveSide(null);
-    setRunState("idle");
-
-    emit("trade:stopped", { id: activePositionId });
+    if (countdownTimer.current) {
+      clearInterval(countdownTimer.current);
+      countdownTimer.current = null;
+    }
+    setSecondsLeft(null);
   };
 
   useEffect(() => {
@@ -138,6 +169,14 @@ export default function Trade() {
     setActivePositionId(null);
     setActiveSide(null);
     setRunState("idle");
+    setSecondsLeft(null);
+
+    if (countdownTimer.current) {
+      clearInterval(countdownTimer.current);
+      countdownTimer.current = null;
+    }
+
+    emit("trade:stopped", { id: settled.id });
 
     if (resultTimer.current) clearTimeout(resultTimer.current);
     resultTimer.current = setTimeout(() => setLastResult(null), RESULT_FLASH_MS);
@@ -239,6 +278,7 @@ export default function Trade() {
             runState={runState}
             activeSide={activeSide}
             lastResult={lastResult}
+            secondsLeft={secondsLeft}
           />
         </>
       ) : (

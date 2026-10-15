@@ -1,4 +1,5 @@
 import { getConfig } from "../lib/settlement.js";
+import { MANUAL_MS } from "../lib/manualWindow.js";
 
 export default async function configRoutes(fastify) {
   fastify.get("/config", async () => {
@@ -8,6 +9,7 @@ export default async function configRoutes(fastify) {
       payoutMultiplier: payoutMult,
       winRate,
       houseEdge: edge,
+      manualTradeMs: MANUAL_MS,
     };
   });
 }

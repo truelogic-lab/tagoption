@@ -1,28 +1,28 @@
-/**
- * Settles orphaned open trades.
- * Runs every 30s. Any trade open for > 60s is force-settled so escrow
- * doesn't get stuck. Result uses the same 95.2% win chance.
- */
 import { pushNotification } from "./notify.js";
-
 import { rollOutcome, effectiveWinRate } from "./settlement.js";
+import { MANUAL_MS } from "./manualWindow.js";
 
-const STALE_MS = 1_500;
+const TICK_MS = 2_000;
+
+function newId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export function startReaper(sql) {
   const tick = async () => {
     try {
       const stale = await sql`
-        select id, user_id, stake_cents, profit_cents, status
+        select id, user_id, market, contract, stake_cents, profit_cents, auto
         from trades
         where status = 'open'
-          and opened_at < now() - interval '60 seconds'
+          and opened_at < now() - (${MANUAL_MS}::bigint * interval '1 millisecond')
       `;
 
       for (const trade of stale) {
         const { rate } = await effectiveWinRate(trade.user_id);
         const result = rollOutcome(rate);
         const won = result === "won";
+
         const stakeCents = Number(trade.stake_cents);
         const profitCents = Number(trade.profit_cents);
 
@@ -33,13 +33,11 @@ export function startReaper(sql) {
           `;
           const bal = balRows[0];
           if (!bal) return;
+          if (Number(bal.escrow_cents) < stakeCents) return;
 
           let balance = Number(bal.balance_cents);
           let platform = Number(bal.platform_cents);
-          let escrow = Number(bal.escrow_cents);
-
-          if (escrow < stakeCents) return;
-          escrow -= stakeCents;
+          let escrow = Number(bal.escrow_cents) - stakeCents;
 
           let creditCents = 0;
           if (won) {
@@ -65,33 +63,30 @@ export function startReaper(sql) {
 
           await tx`
             insert into transactions (id, user_id, type, amount_cents, reference)
-            values (
-              ${`t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`},
-              ${trade.user_id},
-              'trade-settle',
-              ${creditCents},
-              ${trade.id}
-            )
+            values (${newId("t")}, ${trade.user_id}, 'trade-settle', ${creditCents}, ${trade.id})
           `;
         });
 
-        // Deduped notification — safe if the reaper runs twice
+        const amountWon = profitCents / 100;
+        const amountLost = stakeCents / 100;
+        const market = trade.market || "market";
+
         await pushNotification(sql, {
           userId: trade.user_id,
           type: "trade",
-          title: won ? "Trade won" : "Trade lost",
+          title: won ? `Won $${amountWon.toFixed(2)}` : `Lost $${amountLost.toFixed(2)}`,
           body: won
-            ? `+$${(profitCents / 100).toFixed(2)} profit credited.`
-            : `-$${(stakeCents / 100).toFixed(2)} stake lost.`,
+            ? `${trade.contract} on ${market} settled in your favour`
+            : `${trade.contract} on ${market} did not settle your way`,
           reference: `trade:${trade.id}`,
         });
       }
     } catch (e) {
-      console.error("[reaper] error:", e.message);
+      console.error("[reaper]", e.message);
     }
   };
 
-  const id = setInterval(tick, 800);
+  const id = setInterval(tick, TICK_MS);
   tick();
   return () => clearInterval(id);
 }

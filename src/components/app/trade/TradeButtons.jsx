@@ -1,6 +1,13 @@
 import React from "react";
 import { LuSquare, LuRefreshCw } from "react-icons/lu";
 
+function fmtCountdown(seconds) {
+  if (seconds == null || seconds <= 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export default function TradeButtons({
   onPlace,
   onStop,
@@ -8,6 +15,7 @@ export default function TradeButtons({
   runState,
   activeSide,
   lastResult,
+  secondsLeft,
 }) {
   const isStarting = runState === "starting";
   const isRunning  = runState === "running";
@@ -31,7 +39,10 @@ export default function TradeButtons({
               <LuRefreshCw className="actions__spin" /> Starting…
             </span>
           ) : (
-            <span className="actions__name"><LuSquare /> STOP</span>
+            <>
+              <span className="actions__name"><LuSquare /> STOP</span>
+              <span className="actions__countdown">{fmtCountdown(secondsLeft)}</span>
+            </>
           )}
         </button>
       );
