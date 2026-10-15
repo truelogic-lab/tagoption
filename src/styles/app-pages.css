@@ -785,3 +785,217 @@
   .callback__icon { width: 76px; height: 76px; font-size: 34px; }
   .callback__title { font-size: 20px; }
 }
+
+/* =============================================================
+   Withdraw — single-method, M-Pesa only
+   ============================================================= */
+
+.withdraw {
+  padding: 24px 20px 40px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.withdraw__head { margin-bottom: 18px; }
+.withdraw__title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.withdraw__sub {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
+.withdraw__balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px;
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+.withdraw__balance-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.withdraw__balance-amount {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.withdraw__balance-note {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.withdraw__section { margin-bottom: 18px; }
+.withdraw__section-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  letter-spacing: 0.1px;
+}
+
+.withdraw__method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.withdraw__method.is-active { border-color: var(--blue); }
+
+.withdraw__method-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
+.withdraw__method-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.withdraw__method-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.withdraw__method-body span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.withdraw__method-caret { color: var(--text-3); flex-shrink: 0; }
+
+.withdraw__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.withdraw__field { display: flex; flex-direction: column; gap: 8px; }
+.withdraw__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.withdraw__input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s ease;
+}
+.withdraw__input:focus-within { border-color: var(--blue); }
+.withdraw__cur {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.withdraw__input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.withdraw__input input::placeholder { color: var(--text-3); font-weight: 500; }
+
+.withdraw__text {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.withdraw__text:focus { border-color: var(--blue); }
+.withdraw__text::placeholder { color: var(--text-3); }
+
+.withdraw__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 45, 85, 0.08);
+  border: 1px solid rgba(255, 45, 85, 0.28);
+  color: var(--red);
+  font-size: 12.5px;
+}
+
+.withdraw__submit {
+  padding: 15px;
+  border-radius: var(--r-md);
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.withdraw__submit:hover:not(:disabled) { background: #3b82f6; }
+.withdraw__submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.withdraw__note {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.withdraw__note svg { color: var(--text-3); flex-shrink: 0; margin-top: 2px; }
+.withdraw__note strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.withdraw__note p {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .withdraw { padding: 18px 16px 32px; }
+  .withdraw__title { font-size: 24px; }
+  .withdraw__balance-amount { font-size: 24px; }
+}
