@@ -12,10 +12,10 @@ function readInitial() {
 }
 
 /**
- * App-shell theme. The stored preference is read on mount and reflected
- * back into localStorage on change, but the DOM attribute is *not* written
- * here — it's applied to the `.app` root by AppLayout, so landing pages and
- * the auth screen stay in the document's default light theme.
+ * App-shell theme. The preference is read on mount and written back to
+ * localStorage on change, but the DOM attribute is not touched here — the
+ * app shell applies [data-theme] to its own root, so landing pages and the
+ * auth screen stay on the document's light default.
  */
 export function useTheme() {
   const [theme, setTheme] = useState(readInitial);
