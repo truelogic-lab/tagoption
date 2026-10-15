@@ -5,10 +5,6 @@ import Reveal from "../ui/Reveal";
 import Typewriter from "../ui/Typewriter";
 import heroImg from "../../assets/hero.png";
 
-/**
- * Landing hero. The illustration bleeds off the right edge behind the copy.
- * The headline's second clause types itself in and cycles.
- */
 export default function Hero() {
   return (
     <section className="hero">
@@ -25,8 +21,8 @@ export default function Hero() {
 
           <Reveal delay={80}>
             <h1 className="hero__title">
-              Trade With{" "}
-              <span className="accent">
+              <span className="hero__title-lead">Trade With</span>
+              <span className="hero__title-accent">
                 <Typewriter text="More Clarity." speed={100} holdMs={2200} />
               </span>
             </h1>
