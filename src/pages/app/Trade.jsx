@@ -85,8 +85,14 @@ export default function Trade() {
   const payout = +(stake + profitOf(stake)).toFixed(2);
 
   const auto = useAutoTrade({
-    onTick: () => store.refreshInFlight(),
-    onFinish: () => store.refresh(),
+    onTick: () => {
+      store.refreshInFlight();
+      emit("trade:refresh");
+    },
+    onFinish: () => {
+      store.refresh();
+      emit("auto:stopped");
+    },
   });
 
   const canZoomIn = windowSize > ZOOM_MIN;
@@ -176,6 +182,16 @@ export default function Trade() {
       setActivePositionId(position.id);
       setRunState("running");
 
+      emit("trade:placed", {
+        id: position.id,
+        marketId: activeMarket.id,
+        market: activeMarket.name,
+        contract: side,
+        stake,
+      });
+
+      store.refreshInFlight();
+
       const total = Math.max(1, Math.round(manualMs / 1000));
       setSecondsLeft(total);
 
@@ -196,6 +212,7 @@ export default function Trade() {
       setRunState("idle");
       clearCountdown();
       setTradeError(getApiError(error, "Your trade could not be placed."));
+      emit("trade:error", { message: getApiError(error, "Trade failed") });
     }
   };
 
@@ -209,7 +226,12 @@ export default function Trade() {
       return;
     }
 
-    emit("trade:stopping", { id: activePositionId });
+    emit("trade:stopping", {
+      id: activePositionId,
+      marketId: activeMarket?.id,
+      side: activeSide,
+    });
+
     clearCountdown();
   };
 
@@ -229,6 +251,7 @@ export default function Trade() {
     clearCountdown();
 
     emit("trade:stopped", { id: settled.id });
+    store.refresh();
 
     if (resultTimer.current) clearTimeout(resultTimer.current);
     resultTimer.current = setTimeout(() => setLastResult(null), RESULT_FLASH_MS);
@@ -292,9 +315,21 @@ export default function Trade() {
       market: botBanner?.market?.name ?? activeMarket?.name ?? "Volatility 10",
     });
 
+    emit("auto:started", {
+      marketId: activeMarket.id,
+      market: activeMarket.name,
+      count: autoCount,
+      stake,
+    });
+
     if (auto.error) {
       setTradeError(getApiError(auto.error, "Auto-trade could not be started."));
     }
+  };
+
+  const handleAutoStop = () => {
+    auto.stop();
+    emit("auto:stopping");
   };
 
   const showMarketLoader = marketsLoading || !activeMarket;
@@ -423,7 +458,7 @@ export default function Trade() {
           pnl={auto.pnl}
           error={auto.error}
           onStart={handleAutoStart}
-          onStop={auto.stop}
+          onStop={handleAutoStop}
         />
       )}
     </div>

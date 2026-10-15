@@ -40,9 +40,6 @@ export default function Positions() {
   const [stoppingIds, setStoppingIds] = useState(() => new Set());
   const pollRef = useRef(null);
 
-  /* ---------------- polling ----------------
-     Ask the backend for fresh balances + trades every 2 seconds.
-     Stops when the tab is hidden. Fires once immediately. */
   useEffect(() => {
     if (!isLive()) return;
 
@@ -57,7 +54,9 @@ export default function Positions() {
     tick();
     pollRef.current = setInterval(tick, 2000);
 
-    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
@@ -67,22 +66,48 @@ export default function Positions() {
     };
   }, [store]);
 
-  /* ---------------- listen for stop signals from the trade screen ---------------- */
   useEffect(() => {
-    const off1 = on("trade:stopping", ({ id }) => {
+    const markStopping = ({ id }) => {
+      if (!id) return;
       setStoppingIds((prev) => new Set(prev).add(id));
-    });
-    const off2 = on("trade:stopped", ({ id }) => {
+    };
+
+    const clearStopping = ({ id }) => {
+      if (!id) return;
       setStoppingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-    });
-    return () => { off1(); off2(); };
-  }, []);
+    };
 
-  /* ---------------- filter + summary ---------------- */
+    const refreshNow = () => {
+      store.refreshInFlight();
+    };
+
+    const refreshEverything = () => {
+      store.refresh();
+    };
+
+    const offPlaced = on("trade:placed", refreshNow);
+    const offStopping = on("trade:stopping", markStopping);
+    const offStopped = on("trade:stopped", clearStopping);
+    const offRefresh = on("trade:refresh", refreshNow);
+    const offAutoStart = on("auto:started", refreshNow);
+    const offAutoStopping = on("auto:stopping", refreshNow);
+    const offAutoStopped = on("auto:stopped", refreshEverything);
+
+    return () => {
+      offPlaced();
+      offStopping();
+      offStopped();
+      offRefresh();
+      offAutoStart();
+      offAutoStopping();
+      offAutoStopped();
+    };
+  }, [store]);
+
   const matchesFilter = (t) => {
     if (filter === "auto") return Boolean(t.auto);
     if (filter === "manual") return !t.auto;
@@ -110,7 +135,6 @@ export default function Positions() {
     return { wins, losses, pnl };
   }, [store.closed]);
 
-  /* ---------------- early return only when there's nothing at all ---------------- */
   const hasNothing = open.length === 0 && closed.length === 0 && tx.length === 0;
 
   return (
@@ -167,7 +191,6 @@ export default function Positions() {
         </div>
       )}
 
-      {/* ---------- Open ---------- */}
       {tab === "open" && (
         open.length === 0 ? (
           <Empty
@@ -212,7 +235,6 @@ export default function Positions() {
         )
       )}
 
-      {/* ---------- Closed ---------- */}
       {tab === "closed" && (
         closed.length === 0 ? (
           <Empty
@@ -249,15 +271,12 @@ export default function Positions() {
         )
       )}
 
-      {/* ---------- Transactions ---------- */}
       {tab === "tx" && (
         <TxList items={tx} onDeposit={() => navigate("/deposit")} />
       )}
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
 
 function Empty({ icon, title, sub }) {
   return (
