@@ -58,3 +58,48 @@ def admin_config(request):
         metadata={"winRate": win_rate, "payoutMult": payout},
     )
     return Response(_config_payload())
+
+
+# ---------- Site config (name, logo, favicon, support email) ----------
+
+from .models import SiteConfig
+
+
+def _site_payload():
+    row = SiteConfig.objects.filter(id=1).first()
+    return {
+        "name": row.name if row else "",
+        "logoUrl": row.logo_url if row else "",
+        "faviconUrl": row.favicon_url if row else "",
+        "supportEmail": row.support_email if row else "",
+    }
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def site_config(request):
+    """Public. The client fetches this once per session to brand the UI."""
+    return Response(_site_payload())
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def admin_site_config(request):
+    if request.method == "GET":
+        return Response(_site_payload())
+
+    row, _ = SiteConfig.objects.get_or_create(id=1)
+
+    if "name" in request.data:
+        row.name = str(request.data["name"]).strip()[:60]
+    if "logoUrl" in request.data:
+        row.logo_url = str(request.data["logoUrl"]).strip()[:400]
+    if "faviconUrl" in request.data:
+        row.favicon_url = str(request.data["faviconUrl"]).strip()[:400]
+    if "supportEmail" in request.data:
+        row.support_email = str(request.data["supportEmail"]).strip()[:254]
+
+    row.save()
+    record(request.user, "site.update", metadata=_site_payload())
+    return Response(_site_payload())
