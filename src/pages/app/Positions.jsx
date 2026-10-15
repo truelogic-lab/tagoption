@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import {
-  LuTarget, LuArrowUp, LuArrowDown, LuRefreshCw, LuBot, LuHand,
-  LuChevronDown, LuFilter,
+  LuArrowUp, LuArrowDown, LuRefreshCw, LuTarget, LuClock,
 } from "react-icons/lu";
-import { isLive } from "../../lib/api";
+import { isLive, tradeApi } from "../../lib/api";
 import { on } from "../../lib/events";
 
 const TABS = [
@@ -19,7 +18,12 @@ const FILTERS = [
   { id: "manual", label: "Manual" },
 ];
 
+function money(n) {
+  return `$${Number(n || 0).toFixed(2)}`;
+}
+
 function timeAgo(iso) {
+  if (!iso) return "";
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -29,242 +33,231 @@ function timeAgo(iso) {
 
 export default function Positions() {
   const { store } = useOutletContext();
-  const [tab, setTab] = useState("open");
-  const [stoppingIds, setStoppingIds] = useState(() => new Set());
-  const [filter, setFilter] = useState("all");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Poll the server every 2 seconds while visible
+  const [tab, setTab] = useState("open");
+  const [filter, setFilter] = useState("all");
+  const [stoppingIds, setStoppingIds] = useState(() => new Set());
+  const pollRef = useRef(null);
+
+  /* ---------------- polling ----------------
+     Ask the backend for fresh balances + trades every 2 seconds.
+     Stops when the tab is hidden. Fires once immediately. */
   useEffect(() => {
     if (!isLive()) return;
 
-    let cancelled = false;
+    let stopped = false;
     const tick = async () => {
-      if (cancelled) return;
-      if (document.visibilityState !== "visible") return;
-      try { await store.refreshInFlight(); } catch {}
+      if (stopped || document.visibilityState !== "visible") return;
+      try {
+        await store.refreshInFlight();
+      } catch {}
     };
 
     tick();
-    const id = setInterval(tick, 2000);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") tick();
-    };
+    pollRef.current = setInterval(tick, 2000);
+
+    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      cancelled = true;
-      clearInterval(id);
+      stopped = true;
+      clearInterval(pollRef.current);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [store]);
 
+  /* ---------------- listen for stop signals from the trade screen ---------------- */
+  useEffect(() => {
+    const off1 = on("trade:stopping", ({ id }) => {
+      setStoppingIds((prev) => new Set(prev).add(id));
+    });
+    const off2 = on("trade:stopped", ({ id }) => {
+      setStoppingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    });
+    return () => { off1(); off2(); };
+  }, []);
+
+  /* ---------------- filter + summary ---------------- */
   const matchesFilter = (t) => {
-    if (filter === "all") return true;
     if (filter === "auto") return Boolean(t.auto);
-    return !t.auto;
+    if (filter === "manual") return !t.auto;
+    return true;
   };
 
-  const open = useMemo(() => (store.positions || []).filter(matchesFilter), [store.positions, filter]);
-  const closed = useMemo(() => (store.closed || []).filter(matchesFilter), [store.closed, filter]);
+  const open = useMemo(
+    () => (store.positions || []).filter(matchesFilter),
+    [store.positions, filter]
+  );
+  const closed = useMemo(
+    () => (store.closed || []).filter(matchesFilter),
+    [store.closed, filter]
+  );
   const tx = store.tx || [];
 
-  const totals = useMemo(() => {
-    const closedAll = store.closed || [];
-    const wins = closedAll.filter((t) => t.result === "won").length;
-    const losses = closedAll.filter((t) => t.result === "lost").length;
-    const pnl = closedAll.reduce((sum, t) => {
-      if (t.result === "won") return sum + (t.payout ?? 0);
-      return sum - t.stake;
+  const stats = useMemo(() => {
+    const all = store.closed || [];
+    const wins = all.filter((t) => t.result === "won").length;
+    const losses = all.filter((t) => t.result === "lost").length;
+    const pnl = all.reduce((sum, t) => {
+      if (t.result === "won") return sum + Number(t.payout || 0);
+      return sum - Number(t.stake || 0);
     }, 0);
     return { wins, losses, pnl };
   }, [store.closed]);
 
+  /* ---------------- early return only when there's nothing at all ---------------- */
+  const hasNothing = open.length === 0 && closed.length === 0 && tx.length === 0;
+
   return (
     <div className="positions">
       <nav className="positions__tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={`positions__tab ${tab === t.id ? "is-active" : ""}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-            {t.id === "open" && open.length > 0 && ` (${open.length})`}
-            {t.id === "closed" && closed.length > 0 && ` (${closed.length})`}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const count =
+            t.id === "open" ? open.length :
+            t.id === "closed" ? closed.length :
+            tx.length;
+          return (
+            <button
+              key={t.id}
+              className={`positions__tab ${tab === t.id ? "is-active" : ""}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+              {count > 0 && <span className="positions__count">{count}</span>}
+            </button>
+          );
+        })}
       </nav>
 
-      {(tab === "open" || tab === "closed") && (
+      {tab !== "tx" && (
         <div className="positions__filters">
-          <button
-            className={`positions__filter ${filterOpen ? "is-open" : ""}`}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <LuFilter />
-            {FILTERS.find((f) => f.id === filter)?.label}
-            <LuChevronDown className={`positions__filter-caret ${filterOpen ? "is-open" : ""}`} />
-          </button>
-
-          {filterOpen && (
-            <div className="positions__filter-menu">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  className={`positions__filter-option ${filter === f.id ? "is-active" : ""}`}
-                  onClick={() => { setFilter(f.id); setFilterOpen(false); }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              className={`positions__filter ${filter === f.id ? "is-active" : ""}`}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       )}
 
-      {tab === "closed" && (totals.wins + totals.losses) > 0 && (
-        <div className="positions__summary">
-          <div className="positions__summary-item">
-            <strong>{totals.wins}</strong>
+      {tab === "closed" && (stats.wins + stats.losses) > 0 && (
+        <div className="positions__stats">
+          <div className="positions__stat">
             <span>Won</span>
+            <strong className="is-pos">{stats.wins}</strong>
           </div>
-          <div className="positions__summary-item">
-            <strong>{totals.losses}</strong>
+          <div className="positions__stat">
             <span>Lost</span>
+            <strong className="is-neg">{stats.losses}</strong>
           </div>
-          <div className="positions__summary-item">
-            <strong className={totals.pnl >= 0 ? "is-pos" : "is-neg"}>
-              {totals.pnl >= 0 ? "+" : ""}${Math.abs(totals.pnl).toFixed(2)}
+          <div className="positions__stat">
+            <span>Net P&amp;L</span>
+            <strong className={stats.pnl >= 0 ? "is-pos" : "is-neg"}>
+              {stats.pnl >= 0 ? "+" : "-"}{money(Math.abs(stats.pnl))}
             </strong>
-            <span>Net P/L</span>
           </div>
         </div>
       )}
 
+      {/* ---------- Open ---------- */}
       {tab === "open" && (
         open.length === 0 ? (
           <Empty
             icon={<LuRefreshCw />}
-            title="No open positions"
-            sub="Trades you place will show here while they run."
+            title={filter === "all" ? "No open positions" : `No ${filter} positions`}
+            sub="Trades you place will appear here while they run."
           />
         ) : (
           <div className="positions__list">
-            {open.map((p) => (
-              <div className="position" key={p.id}>
-                <div className="position__head">
-                  <span className="position__market">
-                    {p.auto && <LuBot className="position__badge-icon" title="Auto" />}
-                    {!p.auto && <LuHand className="position__badge-icon" title="Manual" />}
-                    {p.market}
-                  </span>
-                  <span className={`position__contract position__contract--${p.contract.toLowerCase()}`}>
-                    {p.contract}
-                  </span>
-                </div>
-                <div className="position__row">
-                  <span>Stake</span>
-                  <strong>${p.stake.toFixed(2)}</strong>
-                </div>
-                <div className="position__row">
-                  <span>Payout if win</span>
-                  <strong className="position__win">
-                    ${(p.stake + (p.payout ?? 0)).toFixed(2)}
-                  </strong>
-                </div>
-                <div className="position__foot">
-                  <span>{timeAgo(p.openedAt)}</span>
-                  <span className={`position__live ${stoppingIds.has(p.id) ? "is-stopping" : ""}`}>
-                    <LuRefreshCw /> {stoppingIds.has(p.id) ? "Stopping…" : "Running"}
-                  </span>
-                </div>
-              </div>
-            ))}
+            {open.map((p) => {
+              const stopping = stoppingIds.has(p.id);
+              return (
+                <article className="position" key={p.id}>
+                  <header className="position__head">
+                    <span className="position__market">{p.market}</span>
+                    <span className={`position__contract position__contract--${String(p.contract || "").toLowerCase()}`}>
+                      {p.contract}
+                    </span>
+                  </header>
+
+                  <div className="position__row">
+                    <span>Stake</span>
+                    <strong>{money(p.stake)}</strong>
+                  </div>
+                  <div className="position__row">
+                    <span>Payout if win</span>
+                    <strong className="position__win">
+                      {money(Number(p.stake || 0) + Number(p.payout || 0))}
+                    </strong>
+                  </div>
+
+                  <footer className="position__foot">
+                    <span>{timeAgo(p.openedAt)}</span>
+                    <span className={`position__live ${stopping ? "is-stopping" : ""}`}>
+                      <LuRefreshCw /> {stopping ? "Stopping…" : "Running"}
+                    </span>
+                  </footer>
+                </article>
+              );
+            })}
           </div>
         )
       )}
 
+      {/* ---------- Closed ---------- */}
       {tab === "closed" && (
         closed.length === 0 ? (
           <Empty
             icon={<LuTarget />}
-            title="No closed positions yet"
-            sub="Once a trade settles it will appear here."
+            title={filter === "all" ? "No closed positions yet" : `No ${filter} positions`}
+            sub="Settled trades will appear here."
           />
         ) : (
           <div className="positions__list">
             {closed.map((p) => {
               const won = p.result === "won";
-              const net = won ? (p.payout ?? 0) : -p.stake;
+              const net = won ? Number(p.payout || 0) : -Number(p.stake || 0);
               return (
-                <div className="history" key={p.id}>
+                <article className="history" key={p.id}>
                   <div className="history__left">
                     <span className={`history__icon history__icon--${won ? "won" : "lost"}`}>
                       {won ? <LuArrowUp /> : <LuArrowDown />}
                     </span>
                     <div>
-                      <strong>
-                        {p.auto && <LuBot className="history__badge-icon" title="Auto" />}
-                        {!p.auto && <LuHand className="history__badge-icon" title="Manual" />}
-                        {p.market}
-                      </strong>
-                      <span>
-                        {p.contract} · {timeAgo(p.closedAt)}
-                      </span>
+                      <strong>{p.market}</strong>
+                      <span>{p.contract} · {timeAgo(p.closedAt)}</span>
                     </div>
                   </div>
                   <div className="history__right">
                     <strong className={won ? "history__win" : "history__loss"}>
-                      {net >= 0 ? "+" : "-"}${Math.abs(net).toFixed(2)}
+                      {net >= 0 ? "+" : "-"}{money(Math.abs(net))}
                     </strong>
-                    <span className="history__stake">
-                      stake ${p.stake.toFixed(2)}
-                    </span>
+                    <span className="history__stake">stake {money(p.stake)}</span>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )
       )}
 
+      {/* ---------- Transactions ---------- */}
       {tab === "tx" && (
-        tx.length === 0 ? (
-          <Empty title="No transactions yet" sub="Deposits, withdrawals, and settled trades will appear here" />
-        ) : (
-          <div className="positions__list">
-            {tx.map((t) => {
-              const amount = Number(t.amount) || 0;
-              const isPos = amount >= 0;
-              const label =
-                t.type === "deposit" ? "Deposit"
-                : t.type === "withdraw" ? "Withdrawal"
-                : t.type === "trade-open" ? "Trade opened"
-                : t.type === "trade-settle" ? "Trade settled"
-                : (t.type || "Transaction");
-
-              return (
-                <div className="tx" key={t.id ?? `${t.type}-${t.at}`}>
-                  <span className={`tx__icon tx__icon--${isPos ? "deposit" : "withdraw"}`}>
-                    {isPos ? <LuArrowDown /> : <LuArrowUp />}
-                  </span>
-                  <div className="tx__body">
-                    <strong>{label}</strong>
-                    <span>{t.method || t.market || "—"} · {timeAgo(t.at || t.closedAt || t.openedAt)}</span>
-                  </div>
-                  <span className={`tx__amount tx__amount--${isPos ? "pos" : "neg"}`}>
-                    {amount === 0 ? "—" : `${isPos ? "+" : "-"}$${Math.abs(amount).toFixed(2)}`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )
+        <TxList items={tx} onDeposit={() => navigate("/deposit")} />
       )}
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
 
 function Empty({ icon, title, sub }) {
   return (
@@ -272,6 +265,57 @@ function Empty({ icon, title, sub }) {
       <div className="positions__empty-icon">{icon}</div>
       <h3>{title}</h3>
       <p>{sub}</p>
+    </div>
+  );
+}
+
+function TxList({ items, onDeposit }) {
+  if (!items.length) {
+    return (
+      <div className="positions__empty">
+        <div className="positions__empty-icon"><LuClock /></div>
+        <h3>No activity yet</h3>
+        <p>Deposits, withdrawals, and settled trades appear here.</p>
+        <button className="btn btn-blue positions__empty-cta" onClick={onDeposit}>
+          Make a deposit
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="positions__list">
+      {items.map((t) => {
+        const amount = Number(t.amount) || 0;
+        const isPos = amount >= 0;
+        const label =
+          t.type === "deposit" ? "Deposit" :
+          t.type === "withdraw" ? "Withdrawal" :
+          t.type === "trade-open" ? "Stake" :
+          t.type === "trade-settle" ? "Closed" :
+          (t.type || "Transaction");
+        const sub =
+          t.method ? `${t.method} · ${timeAgo(t.at)}` :
+          t.market ? `${t.contract || ""} ${t.market} · ${timeAgo(t.at)}` :
+          timeAgo(t.at);
+
+        return (
+          <article className="tx-row" key={t.id ?? `${t.type}-${t.at}`}>
+            <span className={`tx-row__icon tx-row__icon--${isPos ? "in" : "out"}`}>
+              {isPos ? <LuArrowUp /> : <LuArrowDown />}
+            </span>
+            <div className="tx-row__body">
+              <strong>{label}</strong>
+              <span>{sub}</span>
+            </div>
+            <div className="tx-row__right">
+              <strong className={isPos ? "is-pos" : "is-neg"}>
+                {amount === 0 ? "—" : `${isPos ? "+" : "-"}${money(Math.abs(amount))}`}
+              </strong>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
