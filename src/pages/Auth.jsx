@@ -27,7 +27,6 @@ export default function Auth() {
     setTouched({});
   };
 
-  // Field-level validation
   const errors = {
     name:
       !isLogin && touched.name && form.name.trim().length < 2
@@ -89,7 +88,7 @@ export default function Auth() {
           <p className="auth__subtitle">
             {isLogin
               ? "Welcome back. Pick up where you left off."
-              : "Takes less than a minute. No paperwork, no waiting."}
+              : "Takes less than a minute."}
           </p>
         </div>
 
@@ -177,16 +176,6 @@ export default function Auth() {
             )}
           </label>
 
-          {isLogin && (
-            <div className="auth__row">
-              <label className="auth__check">
-                <input type="checkbox" />
-                <span>Keep me signed in</span>
-              </label>
-              <a href="#" className="auth__link">Forgot password?</a>
-            </div>
-          )}
-
           {error && (
             <div className="auth__error">
               <LuTriangleAlert />
@@ -196,7 +185,7 @@ export default function Auth() {
 
           <button
             type="submit"
-            className="btn btn-primary auth__submit"
+            className="auth__submit"
             disabled={loading}
           >
             {loading ? (
@@ -233,13 +222,13 @@ export default function Auth() {
 
       <aside className="auth__aside">
         <div className="auth__aside-inner">
-          <span className="auth__aside-tag">Built for traders</span>
+          <span className="auth__aside-tag">TagOption</span>
           <h2 className="auth__aside-title">
             Trade volatility indices with clarity.
           </h2>
           <p className="auth__aside-text">
-            Real-time charts, fast execution, and payouts that land when they say
-            they will. Fund with M-Pesa, card, or crypto.
+            Real-time charts, fast execution, and payouts you can see happen.
+            Fund with M-Pesa, card, or crypto.
           </p>
 
           <ul className="auth__perks">
@@ -249,20 +238,10 @@ export default function Auth() {
             <li><LuCheck /> Withdraw anytime</li>
           </ul>
 
-          <div className="auth__aside-stats">
-            <div className="auth__aside-stat">
-              <strong>150+</strong>
-              <span>Markets</span>
-            </div>
-            <div className="auth__aside-stat">
-              <strong>24/7</strong>
-              <span>Hours</span>
-            </div>
-            <div className="auth__aside-stat">
-              <strong>99.9%</strong>
-              <span>Uptime</span>
-            </div>
-          </div>
+          <p className="auth__aside-foot">
+            Trading binary options carries risk. Only trade with funds you can
+            afford to lose.
+          </p>
         </div>
       </aside>
     </div>
