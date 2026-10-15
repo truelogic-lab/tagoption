@@ -1,11 +1,54 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
-  LuSmartphone, LuShieldCheck, LuTriangleAlert, LuChevronRight,
+  LuSmartphone, LuChevronRight, LuTriangleAlert,
 } from "react-icons/lu";
 import { celebrateWithdraw } from "../../lib/celebrate";
 
 const MIN_WITHDRAW = 1;
+const CREDIT_TEXT = "Developed by Warren";
+
+/**
+ * Type, hold, erase, repeat. Falls back to static text under
+ * prefers-reduced-motion so the credit is never animated for users who
+ * opted out at the OS level.
+ */
+function Typewriter({ text, speed = 90, holdMs = 1800, eraseMs = 55, gapMs = 500 }) {
+  const [visible, setVisible] = useState(text);
+  const [phase, setPhase] = useState("hold");
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(text);
+      return;
+    }
+
+    let timer;
+    if (phase === "hold") {
+      timer = setTimeout(() => setPhase("erase"), holdMs);
+    } else if (phase === "erase") {
+      timer = setTimeout(
+        () => (visible.length ? setVisible(visible.slice(0, -1)) : setPhase("type")),
+        visible.length ? eraseMs : gapMs
+      );
+    } else if (phase === "type") {
+      timer = setTimeout(
+        () => (visible.length < text.length
+          ? setVisible(text.slice(0, visible.length + 1))
+          : setPhase("hold")),
+        speed
+      );
+    }
+    return () => clearTimeout(timer);
+  }, [visible, phase, text, speed, holdMs, eraseMs, gapMs]);
+
+  return (
+    <span aria-hidden="true">
+      {visible}
+      <span className="deposit__credit-caret">|</span>
+    </span>
+  );
+}
 
 export default function Withdraw() {
   const { store } = useOutletContext();
@@ -128,16 +171,9 @@ export default function Withdraw() {
         </button>
       </form>
 
-      <aside className="withdraw__note">
-        <LuShieldCheck size={18} strokeWidth={2} />
-        <div>
-          <strong>Before you withdraw</strong>
-          <p>
-            Withdrawals are reviewed before release. Make sure your phone number
-            is correct — funds sent to the wrong number cannot be recovered.
-          </p>
-        </div>
-      </aside>
+      <p className="deposit__credit" aria-label={CREDIT_TEXT}>
+        <Typewriter text={CREDIT_TEXT} />
+      </p>
     </div>
   );
 }
