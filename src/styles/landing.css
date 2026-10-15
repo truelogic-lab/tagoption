@@ -589,3 +589,170 @@
 @media (max-width: 360px) {
   .explore__grid { grid-template-columns: 1fr; }
 }
+
+/* =============================================================
+   Hero — illustration as a right-side background bleeding off
+   the viewport, text stays on the left. Text takes priority;
+   the image fades out where the two would overlap.
+   ============================================================= */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 96px 0 88px;
+}
+
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero__bg-image {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  transform: translateY(-50%);
+  width: 62%;
+  max-width: 860px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+/* Soft fade on the left edge so the illustration never competes
+   with the text column. */
+.hero__bg-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    var(--bg) 0%,
+    var(--bg) 34%,
+    rgba(255, 255, 255, 0) 58%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
+/* Dark mode variant — the .hero sits inside the light document default
+   now, so this is here for completeness if you ever embed a hero inside
+   the app shell. */
+.app[data-theme="dark"] .hero__bg-fade {
+  background: linear-gradient(
+    100deg,
+    var(--bg) 0%,
+    var(--bg) 34%,
+    rgba(10, 10, 15, 0) 58%,
+    rgba(10, 10, 15, 0) 100%
+  );
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 520px) 1fr;
+  gap: 40px;
+  align-items: center;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+
+.hero__content {
+  max-width: 560px;
+}
+
+.hero__title {
+  font-size: 62px;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 20px;
+}
+
+.hero__subtitle {
+  max-width: 520px;
+  margin-bottom: 30px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+
+.hero__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero__btn { padding: 13px 24px; }
+
+.hero__disclaimer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1100px) {
+  .hero__bg-image {
+    width: 70%;
+    right: -14%;
+    opacity: 0.6;
+  }
+  .hero__bg-fade {
+    background: linear-gradient(
+      100deg,
+      var(--bg) 0%,
+      var(--bg) 46%,
+      rgba(255, 255, 255, 0) 72%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  .hero__title { font-size: 52px; letter-spacing: -1.4px; }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    padding: 64px 0 72px;
+  }
+  .hero__inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  /* On narrow screens the illustration stops being background — it
+     sits below the copy at low opacity so it doesn't interfere with
+     the headline. */
+  .hero__bg {
+    position: relative;
+    margin-top: 40px;
+    padding-inline: var(--page-pad);
+    display: flex;
+    justify-content: center;
+  }
+  .hero__bg-image {
+    position: static;
+    transform: none;
+    width: 90%;
+    max-width: 480px;
+    right: auto;
+    top: auto;
+    opacity: 1;
+  }
+  .hero__bg-fade { display: none; }
+  .hero__title { font-size: 42px; letter-spacing: -1px; }
+  .hero__subtitle { font-size: 15px; }
+}
+
+@media (max-width: 520px) {
+  .hero { padding: 40px 0 48px; }
+  .hero__title { font-size: 30px; letter-spacing: -0.6px; }
+  .hero__subtitle { font-size: 13.5px; margin-bottom: 24px; }
+  .hero__btn { padding: 11px 18px; font-size: 13px; }
+  .hero__disclaimer { font-size: 11px; }
+  .hero__bg-image { width: 100%; max-width: 320px; }
+}
