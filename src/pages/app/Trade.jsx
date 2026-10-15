@@ -22,6 +22,7 @@ import { profitOf } from "../../lib/tradeEngine";
 import { emit } from "../../lib/events";
 import { getApiError } from "../../lib/apiError";
 import { loadConfig } from "../../lib/configCache";
+import { play as playSound } from "../../lib/sound";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -196,6 +197,8 @@ export default function Trade() {
         stake,
       });
 
+      playSound("place");
+
       store.refreshInFlight();
 
       const total = Math.max(1, Math.round(manualMs / 1000));
@@ -263,6 +266,8 @@ export default function Trade() {
 
     const won = settled.result === "won";
     const amount = won ? Number(settled.payout || 0) : Number(settled.stake || 0);
+
+    playSound(won ? "win" : "loss");
 
     setLastResult({ result: settled.result, amount, side: activeSide });
     setActivePositionId(null);

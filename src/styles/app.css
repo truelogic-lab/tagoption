@@ -3703,3 +3703,13 @@
   background: transparent;
   border: 0;
 }
+
+/* Topbar sound toggle — muted state reads as dimmed, not hidden. */
+.topbar__icon.is-off {
+  color: var(--text-3);
+  opacity: 0.7;
+}
+.topbar__icon.is-off:hover {
+  color: var(--text-2);
+  opacity: 1;
+}

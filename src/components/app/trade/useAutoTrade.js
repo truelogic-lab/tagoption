@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tradeApi } from "../../../lib/api";
+import { play as playSound } from "../../../lib/sound";
 
 /**
  * Client wrapper around the server auto-run.
@@ -67,6 +68,7 @@ export function useAutoTrade({ onTick, onFinish }) {
       if (res?.status !== "running") throw new Error(res?.error || "Auto trade failed to start");
 
       setRunId(res.runId);
+      playSound("auto-start");
       setRunning(true);
       setPnl(0);
       setProgress({ done: 0, total: count, wins: 0, losses: 0 });
@@ -83,6 +85,7 @@ export function useAutoTrade({ onTick, onFinish }) {
 
   const stop = useCallback(async () => {
     try { await tradeApi.autoStop(); } catch {}
+    playSound("auto-stop");
   }, []);
 
   // One-time check on mount to resume an in-flight run after a refresh.
