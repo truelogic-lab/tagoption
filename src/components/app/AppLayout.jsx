@@ -107,8 +107,7 @@ export default function AppLayout() {
         onToggleDark={toggleTheme}
       />
       <WalletModal
-        open={wallet !== null}
-        mode={wallet || "deposit"}
+        open={wallet === "deposit"}
         balance={balance}
         onClose={() => setWallet(null)}
         onCompleted={() => store.refresh()}

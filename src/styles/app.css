@@ -3495,3 +3495,70 @@
   .bot-banner__body > span { font-size: 11.5px; }
   .bot-banner__dismiss { width: 26px; height: 26px; font-size: 14px; }
 }
+
+/* =============================================================
+   Wallet modal — deposit-only, single-screen.
+   Reuses .deposit__* from the standalone page so both share a
+   single visual contract; only the modal shell differs.
+   ============================================================= */
+
+.wallet-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wallet-modal__title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  text-align: left;
+  margin: 0;
+}
+
+.wallet-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.wallet-modal__close:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--hover-bg);
+}
+.wallet-modal__close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wallet-modal__balance {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 16px;
+}
+.wallet-modal__balance strong {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The modal panel already provides its own background and border; the
+   deposit card does not need to re-draw them inside. */
+.deposit__card--modal {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}

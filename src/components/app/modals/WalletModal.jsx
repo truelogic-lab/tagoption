@@ -1,89 +1,56 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  LuX, LuArrowLeft, LuSmartphone, LuCreditCard, LuArrowUpRight,
-  LuTriangleAlert, LuCircleCheck, LuLoaderCircle, LuExternalLink,
+  LuX, LuSmartphone, LuCreditCard, LuExternalLink, LuCircleAlert,
 } from "react-icons/lu";
 import { paymentsApi } from "../../../lib/api";
-import { celebrateDeposit } from "../../../lib/celebrate";
 import { useFx } from "../../../lib/useFx";
 
 const MIN_USD = 1;
+const QUICK_AMOUNTS = [5, 10, 25, 50, 100];
 
 const METHODS = [
-  { id: "M-Pesa",       label: "M-Pesa",       desc: "Instant mobile money",   tone: "blue",  icon: "phone" },
-  { id: "Card",         label: "Card",         desc: "Visa, Mastercard",       tone: "blue",  icon: "card"  },
-  { id: "USDT (TRC20)", label: "USDT (TRC20)", desc: "Cryptocurrency",         tone: "green", icon: "usdt"  },
+  { id: "M-Pesa", label: "M-Pesa", desc: "Mobile money",     tone: "green", icon: "phone" },
+  { id: "Card",   label: "Card",   desc: "Visa / Mastercard", tone: "blue",  icon: "card"  },
+  { id: "USDT",   label: "USDT",   desc: "TRC20 wallet",      tone: "green", icon: "usdt"  },
 ];
 
-export default function WalletModal({ open, mode, balance, onClose, onCompleted }) {
-  const isDeposit = mode === "deposit";
-  const [step, setStep] = useState("method"); // method | amount | redirecting | waiting | done
-  const [method, setMethod] = useState(null);
+function MethodIcon({ icon }) {
+  if (icon === "usdt") return <span className="deposit__usdt">₮</span>;
+  if (icon === "card") return <LuCreditCard />;
+  return <LuSmartphone />;
+}
+
+export default function WalletModal({ open, balance, onClose, onCompleted }) {
+  const { rate, toKes } = useFx();
+
+  const [method, setMethod] = useState(METHODS[0]);
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [trackingId, setTrackingId] = useState(null);
-  const [status, setStatus] = useState(null);
 
-  const pollRef = useRef(null);
-  const { rate, toKes } = useFx();
-
+  // Reset on every open so a second open never carries stale input.
   useEffect(() => {
-    if (open) {
-      setStep("method");
-      setMethod(null);
-      setAmount("");
-      setPhone("");
-      setEmail("");
-      setError("");
-      setLoading(false);
-      setTrackingId(null);
-      setStatus(null);
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-    }
-  }, [open, mode]);
+    if (!open) return;
+    setMethod(METHODS[0]);
+    setAmount("");
+    setPhone("");
+    setEmail("");
+    setError("");
+    setLoading(false);
+  }, [open]);
 
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+  const amountNum = Number(amount) || 0;
+  const kesAmount = useMemo(() => toKes(amountNum), [amountNum, toKes]);
+  const showKes = amountNum >= MIN_USD;
 
   if (!open) return null;
 
   const close = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (loading) return;
     onClose();
   };
-
-  const pick = (m) => {
-    setMethod(m);
-    setStep("amount");
-    setError("");
-  };
-
-  const startPolling = (id) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const s = await paymentsApi.status(id);
-        setStatus(s.status);
-        if (s.status === "completed") {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-          setStep("done");
-          celebrateDeposit({ amount: s.amount ?? 0, method: method?.label ?? "" });
-          onCompleted?.();
-        } else if (s.status === "failed") {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-          setStep("done");
-        }
-      } catch {}
-    }, 3000);
-  };
-
-  const amountNum = Number(amount) || 0;
-  const kesAmount = toKes(amountNum);
-  const showKes = amountNum >= MIN_USD;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -93,12 +60,8 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
       setError(`Minimum deposit is $${MIN_USD}`);
       return;
     }
-    if (!isDeposit && amountNum > balance) {
-      setError("Amount exceeds your balance");
-      return;
-    }
-    if (isDeposit && method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
-      setError("Enter a valid phone number");
+    if (method.id === "M-Pesa" && phone.replace(/\D/g, "").length < 9) {
+      setError("Enter a valid M-Pesa phone number");
       return;
     }
 
@@ -107,195 +70,168 @@ export default function WalletModal({ open, mode, balance, onClose, onCompleted 
       const res = await paymentsApi.startDeposit({
         amount: amountNum,
         method: method.label,
-        phone: phone || undefined,
+        phone: method.id === "M-Pesa" ? phone : undefined,
         email: email || undefined,
+        currency: "KES",
       });
-      if (!res?.redirectUrl) throw new Error("Payment could not be started. Try again.");
 
-      setTrackingId(res.orderTrackingId);
+      const url = res?.redirectUrl || res?.redirect_url;
+      if (!url) throw new Error("Payment provider did not return a redirect URL");
 
-      // Save the pending deposit so the callback page knows what to check
-      sessionStorage.setItem("tagoption.pendingPayment", JSON.stringify({
-        trackingId: res.orderTrackingId,
-        amount: amountNum,
-        method: method.label,
-      }));
+      if (res?.orderTrackingId) {
+        sessionStorage.setItem(
+          "tagoption.pendingPayment",
+          JSON.stringify({
+            trackingId: res.orderTrackingId,
+            amount: amountNum,
+            method: method.label,
+          })
+        );
+      }
 
-      // Full-page redirect — no iframe. User leaves the app briefly,
-      // completes payment, and lands on /payments/callback which
-      // checks status and shows the result.
-      window.location.href = res.redirectUrl;
-    } catch (e) {
-      setError(e.message || "Something went wrong");
+      onCompleted?.();
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message || "Could not start the payment");
       setLoading(false);
     }
   };
 
-  /* ------------------------- */
-
   return (
     <div className="modal" onClick={close}>
       <div className="modal__panel" onClick={(e) => e.stopPropagation()}>
-        <div className="modal__head">
-          {step === "amount" ? (
-            <button className="modal__back" onClick={() => setStep("method")} aria-label="Back">
-              <LuArrowLeft />
-            </button>
-          ) : <span className="modal__spacer" />}
-          <h3 className="modal__title">{isDeposit ? "Deposit Funds" : "Withdraw Funds"}</h3>
-          <button className="modal__close" onClick={close} aria-label="Close"><LuX /></button>
-        </div>
+        <header className="wallet-modal__head">
+          <h3 className="wallet-modal__title">Deposit</h3>
+          <button
+            className="wallet-modal__close"
+            onClick={close}
+            disabled={loading}
+            aria-label="Close"
+          >
+            <LuX />
+          </button>
+        </header>
 
-        {step === "method" && (
-          <>
-            <p className="modal__lead">Balance: <strong>${balance.toFixed(2)}</strong></p>
-            <div className="paylist">
+        <p className="wallet-modal__balance">
+          Balance <strong>${Number(balance || 0).toFixed(2)}</strong>
+        </p>
+
+        <form className="deposit__card deposit__card--modal" onSubmit={submit}>
+          <section className="deposit__section">
+            <label className="deposit__label">Payment method</label>
+            <div className="deposit__methods">
               {METHODS.map((m) => {
-                const Icon = m.icon === "usdt"
-                  ? () => <span className="paylist__usdt">₮</span>
-                  : m.icon === "card" ? LuCreditCard : LuSmartphone;
+                const active = method.id === m.id;
                 return (
-                  <button key={m.id} className="paylist__row" onClick={() => pick(m)} type="button">
-                    <span className={`paylist__icon paylist__icon--${m.tone}`}><Icon /></span>
-                    <div>
-                      <strong>{m.label}</strong>
-                      <em>{isDeposit ? m.desc : `Withdraw to ${m.label.toLowerCase()}`}</em>
-                    </div>
-                    <LuArrowUpRight className="paylist__arrow" />
+                  <button
+                    type="button"
+                    key={m.id}
+                    className={`deposit__method deposit__method--${m.tone} ${active ? "is-active" : ""}`}
+                    onClick={() => setMethod(m)}
+                    aria-pressed={active}
+                  >
+                    <span className="deposit__method-icon"><MethodIcon icon={m.icon} /></span>
+                    <strong>{m.label}</strong>
+                    <em>{m.desc}</em>
                   </button>
                 );
               })}
             </div>
-            <div className="modal__trust">
-              <span><i className="dot dot--blue" /> Secure</span>
-              <span><i className="dot dot--blue" /> Instant</span>
-              <span><i className="dot dot--blue" /> 24/7 Support</span>
-            </div>
-          </>
-        )}
+          </section>
 
-        {step === "amount" && method && (
-          <form className="wallet-form" onSubmit={submit}>
-            <div className="wallet-form__chosen">
-              <span className={`paylist__icon paylist__icon--${method.tone}`}>
-                {method.icon === "usdt"
-                  ? <span className="paylist__usdt">₮</span>
-                  : method.icon === "card" ? <LuCreditCard /> : <LuSmartphone />}
-              </span>
-              <div>
-                <strong>{method.label}</strong>
-                <em>{method.desc}</em>
-              </div>
+          <section className="deposit__section">
+            <label className="deposit__label" htmlFor="wallet-amount">Amount</label>
+            <div className="deposit__amount">
+              <span className="deposit__amount-cur">$</span>
+              <input
+                id="wallet-amount"
+                type="number"
+                inputMode="decimal"
+                min={MIN_USD}
+                step="0.01"
+                placeholder="10.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                autoFocus
+                required
+              />
             </div>
 
-            <label className="wallet-form__field">
-              <span>Amount (USD)</span>
-              <div className="wallet-form__input">
-                <span className="wallet-form__cur">$</span>
-                <input
-                  type="number" inputMode="decimal" step="0.01" min={MIN_USD}
-                  placeholder="1.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  autoFocus required
-                />
-              </div>
-            </label>
+            <div className="deposit__chips">
+              {QUICK_AMOUNTS.map((v) => (
+                <button
+                  type="button"
+                  key={v}
+                  className={`deposit__chip ${amountNum === v ? "is-active" : ""}`}
+                  onClick={() => setAmount(String(v))}
+                >
+                  ${v}
+                </button>
+              ))}
+            </div>
 
             {showKes && (
-              <div className="fx-preview">
-                <div className="fx-preview__row">
-                  <span>You'll be charged</span>
-                  <strong>KSh {kesAmount.toLocaleString()}</strong>
-                </div>
-                <div className="fx-preview__meta">
-                  Wallet credit: ${amountNum.toFixed(2)} · Rate: 1 USD = {rate.toFixed(2)} KES
-                </div>
+              <div className="deposit__kes">
+                You pay <strong>KSh {kesAmount.toLocaleString()}</strong>
+                <span>at 1 USD = {rate.toFixed(2)} KES</span>
               </div>
             )}
+          </section>
 
-            {method.id === "M-Pesa" && (
-              <label className="wallet-form__field">
-                <span>Phone number</span>
-                <input
-                  type="tel" inputMode="tel" autoComplete="tel"
-                  placeholder="2547XXXXXXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="wallet-form__input-text"
-                  required
-                />
-              </label>
-            )}
-
-            <label className="wallet-form__field">
-              <span>Email (receipt)</span>
+          {method.id === "M-Pesa" && (
+            <section className="deposit__section">
+              <label className="deposit__label" htmlFor="wallet-phone">M-Pesa phone number</label>
               <input
-                type="email" inputMode="email" autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="wallet-form__input-text"
+                id="wallet-phone"
+                className="deposit__input"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="2547XXXXXXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
               />
-            </label>
+            </section>
+          )}
 
-            {error && (
-              <div className="auth__error">
-                <LuTriangleAlert /> {error}
-              </div>
-            )}
+          <section className="deposit__section">
+            <label className="deposit__label" htmlFor="wallet-email">Email for receipt</label>
+            <input
+              id="wallet-email"
+              className="deposit__input"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </section>
 
-            <button type="submit" className="btn btn-blue wallet-form__submit" disabled={loading}>
-              {loading
-                ? "Preparing…"
-                : showKes
-                  ? `Pay KSh ${kesAmount.toLocaleString()} ($${amountNum.toFixed(2)})`
-                  : `Deposit $${amount || 0}`}
-            </button>
+          {error && (
+            <div className="deposit__error" role="alert">
+              <LuCircleAlert />
+              <span>{error}</span>
+            </div>
+          )}
 
-            <p className="wallet-form__note">
-              You'll be redirected to a secure payment page. Your balance updates automatically.
-            </p>
-          </form>
-        )}
+          <button
+            type="submit"
+            className="deposit__submit"
+            disabled={loading || !showKes}
+          >
+            {loading
+              ? "Opening secure checkout…"
+              : showKes
+                ? <>Pay KSh {kesAmount.toLocaleString()} <LuExternalLink /></>
+                : <>Enter an amount <LuExternalLink /></>}
+          </button>
 
-        {step === "waiting" && (
-          <div className="wallet-waiting">
-            <LuLoaderCircle className="wallet-waiting__spin" />
-            <h4 className="wallet-waiting__title">Waiting for confirmation</h4>
-            <p className="wallet-waiting__text">
-              Complete the payment. Your balance will update here automatically.
-            </p>
-            <button
-              type="button"
-              className="btn btn-ghost wallet-waiting__check"
-              onClick={() => trackingId && startPolling(trackingId)}
-            >
-              Check status now
-            </button>
-          </div>
-        )}
-
-        {step === "done" && (
-          <div className="wallet-waiting">
-            {status === "completed" ? (
-              <>
-                <LuCircleCheck className="wallet-waiting__icon wallet-waiting__icon--ok" />
-                <h4 className="wallet-waiting__title">Payment received</h4>
-                <p className="wallet-waiting__text">Your balance has been updated.</p>
-              </>
-            ) : (
-              <>
-                <LuTriangleAlert className="wallet-waiting__icon wallet-waiting__icon--err" />
-                <h4 className="wallet-waiting__title">Payment failed</h4>
-                <p className="wallet-waiting__text">Nothing was charged. You can try again.</p>
-              </>
-            )}
-            <button type="button" className="btn btn-blue wallet-waiting__check" onClick={close}>
-              Done
-            </button>
-          </div>
-        )}
+          <p className="deposit__note">
+            You'll finish the payment on Pesapal's secure page.
+          </p>
+        </form>
       </div>
     </div>
   );
