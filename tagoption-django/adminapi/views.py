@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction as db_transaction
-from django.db.models import Q, Sum
+from django.db.models import BigIntegerField, Case, Count, F, Q, Sum, When
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -525,3 +525,207 @@ def search(request):
         "trades": [_trade_row(t) for t in trades],
         "transactions": [_tx_row(t) for t in txs],
     })
+
+
+# ---- Fastify-compatible additions ----
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def overview(request):
+    users_total = User.objects.count()
+    balances = Balance.objects.aggregate(
+        total_user_balance=Sum("balance_cents"),
+        total_platform=Sum("platform_cents"),
+        total_escrow=Sum("escrow_cents"),
+        total_volume=Sum("volume_cents"),
+    )
+    trades = Trade.objects.aggregate(
+        total=Count("id"),
+        open=Count("id", filter=Q(status=Trade.STATUS_OPEN)),
+        won=Count("id", filter=Q(status=Trade.STATUS_WON)),
+        lost=Count("id", filter=Q(status=Trade.STATUS_LOST)),
+    )
+    tx = Transaction.objects.aggregate(
+        deposits=Count("id", filter=Q(type="deposit", status="completed")),
+        withdrawals=Count("id", filter=Q(type="withdraw", status="completed")),
+        pending=Count("id", filter=Q(status="pending")),
+    )
+
+    total_settled = (trades["won"] or 0) + (trades["lost"] or 0)
+    win_rate = (trades["won"] / total_settled) if total_settled else 0
+    volume = (balances["total_volume"] or 0) / 100
+    platform = (balances["total_platform"] or 0) / 100
+    edge = (platform / volume) if volume > 0 else 0
+
+    return Response({
+        "users": users_total,
+        "totalUserBalance": (balances["total_user_balance"] or 0) / 100,
+        "totalPlatform": platform,
+        "totalEscrow": (balances["total_escrow"] or 0) / 100,
+        "totalVolume": volume,
+        "trades": trades,
+        "transactions": tx,
+        "winRate": win_rate,
+        "edge": edge,
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def pnl(request):
+    try:
+        days = min(90, max(1, int(request.query_params.get("days", 14))))
+    except (TypeError, ValueError):
+        days = 14
+
+    since = timezone.now() - timezone.timedelta(days=days)
+    qs = (
+        Trade.objects
+        .filter(closed_at__gte=since, status__in=[Trade.STATUS_WON, Trade.STATUS_LOST])
+        .extra(select={"day": "date_trunc('day', closed_at)"})
+        .values("day")
+        .annotate(
+            pnl_cents=Sum(
+                Case(
+                    When(status=Trade.STATUS_WON, then=-F("profit_cents")),
+                    default=F("stake_cents"),
+                    output_field=BigIntegerField(),
+                )
+            ),
+            wins=Count("id", filter=Q(status=Trade.STATUS_WON)),
+            losses=Count("id", filter=Q(status=Trade.STATUS_LOST)),
+        )
+        .order_by("day")
+    )
+
+    return Response([
+        {
+            "day": row["day"],
+            "pnl": (row["pnl_cents"] or 0) / 100,
+            "wins": row["wins"],
+            "losses": row["losses"],
+        }
+        for row in qs
+    ])
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def adjust_user(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+    amount = request.data.get("amount")
+    reason = (request.data.get("reason") or "").strip()
+
+    if amount is None:
+        return Response({"error": "amount is required"}, status=400)
+    try:
+        amount = float(amount)
+    except (TypeError, ValueError):
+        return Response({"error": "Invalid amount"}, status=400)
+    if not reason:
+        return Response({"error": "reason is required"}, status=400)
+
+    cents = int(round(amount * 100))
+
+    with db_transaction.atomic():
+        bal = Balance.objects.select_for_update().get_or_create(user=user)[0]
+        bal.balance_cents += cents
+        bal.save()
+
+        Transaction.objects.create(
+            id=new_id("t"),
+            user=user,
+            type="deposit" if cents >= 0 else "withdraw",
+            amount_cents=abs(cents),
+            method="admin",
+            reference=f"admin:{request.user.id}",
+            status="completed",
+        )
+
+        Notification.objects.create(
+            user=user,
+            type="wallet",
+            title="Balance credited" if cents >= 0 else "Balance adjusted",
+            body=f"{'+' if cents >= 0 else ''}${amount:.2f} · {reason}",
+            reference=f"admin-adjust:{request.user.id}",
+        )
+
+    record(
+        request.user, "user.adjust",
+        target_type="user", target_id=user.id, reason=reason,
+        metadata={"amount": amount},
+    )
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def credit_transaction(request, tx_id):
+    with db_transaction.atomic():
+        try:
+            tx = Transaction.objects.select_for_update().get(id=tx_id)
+        except Transaction.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+
+        if tx.status == "completed":
+            return Response({"error": "Already credited"}, status=409)
+
+        tx.status = "completed"
+        tx.save(update_fields=["status"])
+
+        bal = Balance.objects.select_for_update().get_or_create(user=tx.user)[0]
+        bal.balance_cents += tx.amount_cents
+        bal.save()
+
+        Notification.objects.create(
+            user=tx.user,
+            type="wallet",
+            title="Deposit received",
+            body=f"${tx.amount_cents / 100:.2f} · manual approval",
+            reference=f"deposit:{tx.id}",
+        )
+
+    record(
+        request.user, "tx.manual_credit",
+        target_type="transaction", target_id=tx.id,
+        metadata={"amount": tx.amount_cents / 100},
+    )
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@require_admin
+def approve_withdraw(request, tx_id):
+    provider_ref = (request.data.get("providerRef") or "").strip()
+
+    with db_transaction.atomic():
+        try:
+            tx = Transaction.objects.select_for_update().get(id=tx_id)
+        except Transaction.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+
+        if tx.type != "withdraw":
+            return Response({"error": "Not a withdrawal"}, status=400)
+        if tx.status == "completed":
+            return Response({"error": "Already approved"}, status=409)
+
+        tx.status = "completed"
+        if provider_ref:
+            tx.reference = provider_ref
+        tx.save(update_fields=["status", "reference"])
+
+    record(
+        request.user, "tx.withdraw_approved",
+        target_type="transaction", target_id=tx.id,
+        metadata={"providerRef": provider_ref},
+    )
+    return Response({"ok": True})

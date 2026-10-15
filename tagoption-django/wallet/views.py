@@ -15,6 +15,72 @@ def get_balance(user):
     return balance
 
 
+def _create_withdrawal(user, amount, method, destination):
+    """
+    Hold the funds by moving them out of the spendable balance and into escrow.
+    If the withdrawal is rejected, the admin reverses this. Shared by the
+    POST /wallet/withdraw and POST /wallet/withdrawals paths.
+    """
+    with db_transaction.atomic():
+        Balance.objects.get_or_create(user=user)
+        bal = Balance.objects.select_for_update().get(user=user)
+        amount_cents = int(round(amount * 100))
+        if bal.balance_cents < amount_cents:
+            return None, "Insufficient balance"
+
+        bal.balance_cents -= amount_cents
+        bal.escrow_cents += amount_cents
+        bal.save()
+
+        w = Withdrawal.objects.create(
+            user=user,
+            amount_cents=amount_cents,
+            method=method,
+            destination=destination,
+        )
+
+        Transaction.objects.create(
+            id=new_id("t"),
+            user=user,
+            type="withdrawal-request",
+            amount_cents=-amount_cents,
+            method=method,
+            reference=w.id,
+            status="pending",
+        )
+
+        Notification.objects.create(
+            user=user,
+            type="wallet",
+            title=f"Withdrawal requested: ${amount:.2f}",
+            body=f"Pending review. Reference {w.id}.",
+            reference=f"withdrawal:{w.id}",
+        )
+
+    return w, None
+
+
+def _parse_withdrawal_body(request, require_destination):
+    amount = request.data.get("amount")
+    method = (request.data.get("method") or "").strip()
+    destination = (request.data.get("destination") or "").strip()
+
+    if not amount or not method:
+        return None, None, None, "amount and method are required"
+    if require_destination and not destination:
+        return None, None, None, "destination is required"
+
+    try:
+        amount = float(amount)
+    except (TypeError, ValueError):
+        return None, None, None, "Invalid amount"
+
+    if amount <= 0:
+        return None, None, None, "Invalid amount"
+
+    return amount, method, destination or method, None
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def balance(request):
@@ -35,58 +101,30 @@ def withdrawals(request):
         qs = Withdrawal.objects.filter(user=request.user)[:100]
         return Response(WithdrawalSerializer(qs, many=True).data)
 
-    amount = request.data.get("amount")
-    method = (request.data.get("method") or "").strip()
-    destination = (request.data.get("destination") or "").strip()
+    amount, method, destination, err = _parse_withdrawal_body(request, require_destination=True)
+    if err:
+        return Response({"error": err}, status=400)
 
-    if not amount or not method or not destination:
-        return Response({"error": "amount, method, and destination are required"}, status=400)
+    w, err = _create_withdrawal(request.user, amount, method, destination)
+    if err:
+        return Response({"error": err}, status=400)
 
-    try:
-        amount = float(amount)
-    except (TypeError, ValueError):
-        return Response({"error": "Invalid amount"}, status=400)
+    return Response(WithdrawalSerializer(w).data, status=201)
 
-    if amount <= 0:
-        return Response({"error": "Invalid amount"}, status=400)
 
-    amount_cents = int(round(amount * 100))
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def withdraw(request):
+    """
+    Client-facing path. Same semantics as POST /wallet/withdrawals but
+    destination is optional (the client only sends amount and method).
+    """
+    amount, method, destination, err = _parse_withdrawal_body(request, require_destination=False)
+    if err:
+        return Response({"error": err}, status=400)
 
-    with db_transaction.atomic():
-        Balance.objects.get_or_create(user=request.user)
-        bal = Balance.objects.select_for_update().get(user=request.user)
-        if bal.balance_cents < amount_cents:
-            return Response({"error": "Insufficient balance"}, status=400)
-
-        # Hold the funds by moving them out of the spendable balance and into
-        # escrow. If the withdrawal is rejected, the admin reverses this.
-        bal.balance_cents -= amount_cents
-        bal.escrow_cents += amount_cents
-        bal.save()
-
-        w = Withdrawal.objects.create(
-            user=request.user,
-            amount_cents=amount_cents,
-            method=method,
-            destination=destination,
-        )
-
-        Transaction.objects.create(
-            id=new_id("t"),
-            user=request.user,
-            type="withdrawal-request",
-            amount_cents=-amount_cents,
-            method=method,
-            reference=w.id,
-            status="pending",
-        )
-
-        Notification.objects.create(
-            user=request.user,
-            type="wallet",
-            title=f"Withdrawal requested: ${amount:.2f}",
-            body=f"Pending review. Reference {w.id}.",
-            reference=f"withdrawal:{w.id}",
-        )
+    w, err = _create_withdrawal(request.user, amount, method, destination)
+    if err:
+        return Response({"error": err}, status=400)
 
     return Response(WithdrawalSerializer(w).data, status=201)

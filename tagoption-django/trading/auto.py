@@ -16,7 +16,7 @@ from accounts.notifications import Notification
 from wallet.models import Balance, Transaction
 
 from .models import AutoRun, Trade
-from .settlement import DEFAULT_PAYOUT_MULT, effective_win_rate, roll_outcome
+from .settlement import effective_payout_mult, effective_win_rate, roll_outcome
 
 SETTLE_SECONDS = 1.4
 INTER_TRADE_SECONDS = 0.15
@@ -131,7 +131,7 @@ def _run_loop(run_pk):
             stake = run.stake_cents / 100
             stake_cents = run.stake_cents
             win_rate, _ = effective_win_rate(user)
-            profit_cents = int(round(stake_cents * float(DEFAULT_PAYOUT_MULT)))
+            profit_cents = int(round(stake_cents * float(effective_payout_mult())))
             contract = "Even" if run.done % 2 == 0 else "Odd"
 
             try:

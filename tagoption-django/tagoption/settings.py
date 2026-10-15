@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "ops",
     "payments",
     "adminapi",
+    "config_api",
+    "account",
     "trading",
     "wallet",
 ]

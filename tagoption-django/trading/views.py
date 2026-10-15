@@ -12,7 +12,7 @@ from .models import Trade
 from .serializers import TradeSerializer
 from .auto import start_auto, stop_auto, get_run
 from .settlement import (
-    DEFAULT_PAYOUT_MULT,
+    effective_payout_mult,
     effective_win_rate,
     from_cents,
     profit_cents,
@@ -106,7 +106,7 @@ def _place(request):
 
     stake_cents = to_cents(stake)
     win_rate, _ = effective_win_rate(request.user)
-    profit = profit_cents(stake_cents, DEFAULT_PAYOUT_MULT)
+    profit = profit_cents(stake_cents, effective_payout_mult())
 
     with db_transaction.atomic():
         # get_or_create + select_for_update in the same atomic block guarantees
@@ -131,7 +131,7 @@ def _place(request):
             status=Trade.STATUS_OPEN,
             auto=False,
             win_rate_applied=win_rate,
-            payout_mult_applied=DEFAULT_PAYOUT_MULT,
+            payout_mult_applied=effective_payout_mult(),
         )
 
         _log_transaction(request.user, "trade-open", -stake_cents, reference=trade.id)
@@ -241,3 +241,27 @@ def auto_status(request):
     if not run:
         return Response({"running": False, "progress": None})
     return Response(run)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def trades_history(request):
+    """
+    Closed-trade history for the client's History page. Same data as
+    GET /trades?status=closed but accepts extra filters (from, to, limit).
+    """
+    qs = Trade.objects.filter(
+        user=request.user,
+        status__in=[Trade.STATUS_WON, Trade.STATUS_LOST],
+    ).order_by("-closed_at")
+
+    limit = request.query_params.get("limit")
+    if limit:
+        try:
+            qs = qs[:max(1, min(500, int(limit)))]
+        except (TypeError, ValueError):
+            qs = qs[:200]
+    else:
+        qs = qs[:200]
+
+    return Response(TradeSerializer(qs, many=True).data)
