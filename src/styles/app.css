@@ -637,101 +637,33 @@
 .wallet-form__submit { padding: 14px; font-size: 14.5px; }
 
 /* ---------- Entry Scanner ---------- */
-.scanner__head-left { display: flex; align-items: center; gap: 12px; }
-.scanner__badge {
-  width: 40px; height: 40px;
-  display: grid; place-items: center;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2563eb, #a855f7);
-  color: #fff;
-  font-size: 16px;
-}
-.scanner__intro {
-  padding: 14px;
-  margin-bottom: 16px;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1px solid var(--border);
-  font-size: 12.5px;
-  line-height: 1.7;
-  color: var(--text-2);
-}
-.scanner__intro strong { color: var(--text); font-weight: 600; }
 
-.scanner__field { display: block; margin-bottom: 16px; }
-.scanner__label {
-  display: block;
-  font-size: 12.5px; font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 8px;
-}
-.scanner__select {
-  position: relative;
-  display: flex; align-items: center;
-  padding: 12px 14px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-.scanner__select select {
-  flex: 1;
-  appearance: none; -webkit-appearance: none;
-  border: 0; background: transparent;
-  color: var(--text);
-  font-size: 14px; font-weight: 600;
-  outline: none;
-}
-.scanner__caret { color: var(--text-3); font-size: 12px; pointer-events: none; }
 
-.scanner__progress { margin-bottom: 16px; }
-.scanner__progress-head {
-  display: flex; justify-content: space-between;
-  font-size: 12px; color: var(--text-2);
-  margin-bottom: 6px;
-}
-.scanner__progress-head span:last-child { color: var(--text); font-weight: 700; }
-.scanner__bar {
-  height: 4px; border-radius: 2px;
-  background: var(--card);
-  overflow: hidden;
-}
-.scanner__bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #2563eb, #a855f7);
-  transition: width .18s linear;
-}
 
-.scanner__result {
-  padding: 14px; margin-bottom: 16px;
-  border-radius: var(--r-md);
-  background: rgba(37,99,235,.08);
-  border: 1px solid rgba(37,99,235,.25);
-}
-.scanner__result-row {
-  display: flex; justify-content: space-between;
-  padding: 4px 0;
-  font-size: 12.5px; color: var(--text-2);
-}
-.scanner__result-row strong { color: var(--text); font-weight: 700; }
-.scanner__result-signal { color: var(--green); }
 
-.scanner__scan {
-  width: 100%; padding: 14px;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-.scanner__scan:disabled { opacity: .7; cursor: wait; }
 
-.scanner__bot {
-  width: 100%; padding: 12px;
-  border-radius: var(--r-sm);
-  font-size: 13px; font-weight: 600;
-  color: var(--text-2);
-  background: transparent;
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.scanner__bot:hover { color: var(--text); border-color: var(--border-2); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ---------- Drawer ---------- */
 .drawer {
@@ -2499,48 +2431,17 @@
   opacity: .6;
 }
 
-.scanner__result-row strong.is-pos { color: var(--green); }
-.scanner__result-row strong.is-neg { color: var(--danger); }
 
-.scanner__result-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid rgba(148,163,184,.12);
-}
-.scanner__result-head strong {
-  font-size: 14px;
-  font-weight: 700;
-}
-.scanner__result-head span {
-  font-size: 11px;
-  color: var(--text-3);
-}
 
-.scanner__note {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: rgba(37,99,235,.06);
-  border: 1px solid rgba(37,99,235,.2);
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--text-2);
-}
-.scanner__note strong { color: var(--text); font-weight: 700; }
 
-.scanner__error {
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  font-size: 12.5px;
-  background: rgba(239,68,68,.08);
-  border: 1px solid rgba(239,68,68,.3);
-  color: var(--danger);
-  margin-bottom: 12px;
-}
+
+
+
+
+
+
+
+
 
 /* Auto panel — live spinning indicator while a run is active */
 .auto__progress-live {

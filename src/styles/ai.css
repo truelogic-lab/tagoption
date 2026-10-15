@@ -1,71 +1,38 @@
 /* =============================================================
-   AI page — scanner + features
+   Scanner modal — reachable from AppBottomNav (AI tab).
+   All scanner styles live here. Do not add scanner rules elsewhere.
    ============================================================= */
 
-.ai-page { padding-bottom: 80px; }
+/* ---------- Head ---------- */
+.scanner__head-left { display: flex; align-items: center; gap: 12px; }
 
-/* ---------- Scanner panel ---------- */
-.scanner-panel {
-  padding: 32px;
-  border-radius: var(--r-lg);
-  background: var(--card);
-  border: 1px solid var(--border);
-  max-width: 720px;
-}
-
-.scanner-panel__intro { margin-bottom: 22px; }
-.scanner-panel__title {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  margin-bottom: 8px;
-}
-.scanner-panel__text {
-  font-size: 13.5px;
-  color: var(--text-2);
-  line-height: 1.7;
-  max-width: 540px;
-}
-
-/* Select */
-.scan-field { display: block; margin-bottom: 20px; }
-.scan-field__label {
-  display: block;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 8px;
-}
-.scan-field__select {
-  position: relative;
-  display: flex;
+.scanner__badge {
+  display: inline-flex;
   align-items: center;
-  padding: 12px 14px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: var(--r-sm);
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-}
-.scan-field__select select {
-  flex: 1;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-  outline: none;
-  cursor: pointer;
-}
-.scan-field__caret {
-  color: var(--text-3);
-  font-size: 12px;
-  pointer-events: none;
+  color: var(--blue);
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  font-size: 15px;
 }
 
-/* Progress */
-.scan-progress { margin-bottom: 20px; }
-.scan-progress__head {
+/* ---------- Intro ---------- */
+.scanner__intro {
+  margin: 6px 0 18px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-2);
+  max-width: 52ch;
+}
+.scanner__intro strong { color: var(--text); font-weight: 600; }
+
+/* ---------- Progress ---------- */
+.scanner__progress { margin-bottom: 18px; }
+
+.scanner__progress-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -73,147 +40,204 @@
   font-size: 12.5px;
   color: var(--text-2);
 }
-.scan-progress__head span:last-child { color: var(--text); font-weight: 700; }
-.scan-progress__bar {
+.scanner__progress-head span:last-child {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scanner__bar {
   height: 5px;
   border-radius: 3px;
   background: var(--bg-2);
   overflow: hidden;
 }
-.scan-progress__fill {
+.scanner__bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--red), var(--purple));
-  transition: width .18s linear;
+  background: var(--blue);
+  transition: width 0.18s linear;
 }
 
-/* Result */
-.scan-result {
-  padding: 18px;
-  border-radius: var(--r-md);
-  background: rgba(37,99,235,.06);
-  border: 1px solid rgba(37,99,235,.22);
-  margin-bottom: 20px;
-}
-.scan-result__head { margin-bottom: 12px; }
-.scan-result__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 50px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .4px;
-  text-transform: uppercase;
-  color: var(--blue);
-  background: rgba(37,99,235,.12);
-  border: 1px solid rgba(37,99,235,.28);
-}
-.scan-result__row {
+.scanner__current {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.scan-result__row strong { color: var(--text); font-weight: 700; }
-.scan-result__signal { color: var(--green) !important; }
-
-.scan-result__alts {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(148,163,184,.15);
-}
-.scan-result__alts-title {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .6px;
-  text-transform: uppercase;
-  color: var(--text-3);
-  margin-bottom: 8px;
-}
-.scan-result__alt {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
+  gap: 8px;
+  margin-top: 10px;
   font-size: 12.5px;
   color: var(--text-2);
 }
-.scan-result__alt span:last-child { color: var(--text); font-weight: 600; }
+.scanner__current span { color: var(--text); font-weight: 600; }
 
-/* Actions */
-.scanner-panel__actions { display: flex; gap: 10px; }
-.scanner-panel__scan { flex: 1; padding: 14px; font-size: 14px; }
-.scanner-panel__scan:disabled { opacity: .7; cursor: wait; }
-.scanner-panel__reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 14px 20px;
-  border-radius: var(--r-sm);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text-2);
-  background: transparent;
-  border: 1px solid var(--border);
+.scanner__spin {
+  animation: scanner-spin 0.9s linear infinite;
+  color: var(--blue);
 }
-.scanner-panel__reset:hover { color: var(--text); border-color: var(--border-2); }
+@keyframes scanner-spin {
+  to { transform: rotate(360deg); }
+}
 
-/* ---------- AI features ---------- */
-.ai-features {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-.ai-feature {
-  padding: 24px;
+/* ---------- Result ---------- */
+.scanner__result {
+  padding: 16px 18px;
   border-radius: var(--r-md);
-  background: var(--card);
+  background: var(--bg-2);
   border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-left-color: var(--border-2);
+  margin-bottom: 18px;
+  transition: border-left-color 0.2s ease;
 }
-.ai-feature__icon {
-  font-size: 20px;
-  color: var(--red);
+
+/* Tint the result block by which side the data leans toward. */
+.scanner__result--even { border-left-color: var(--green); }
+.scanner__result--odd  { border-left-color: var(--red); }
+
+.scanner__result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
 }
-.ai-feature__title {
-  font-size: 15.5px;
+.scanner__result-head strong {
+  font-size: 14.5px;
   font-weight: 700;
-  margin-bottom: 6px;
+  color: var(--text);
+  letter-spacing: -0.2px;
 }
-.ai-feature__desc {
-  font-size: 13.5px;
+.scanner__result-head span {
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.scanner__result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  font-size: 13px;
   color: var(--text-2);
-  line-height: 1.7;
+}
+.scanner__result-row strong {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.scanner__result-row strong.is-pos { color: var(--green); }
+.scanner__result-row strong.is-neg { color: var(--red); }
+
+/* Even/Odd split bar — under the ratio row, shows the shape of the split. */
+.scanner__split {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 2px 0 12px;
+  background: var(--bg);
+}
+.scanner__split-even {
+  background: var(--green);
+  transition: width 0.25s ease;
+}
+.scanner__split-odd {
+  background: var(--red);
+  transition: width 0.25s ease;
+}
+
+/* Streak badge — inline pill next to the streak row. */
+.scanner__streak {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-variant-numeric: tabular-nums;
+}
+.scanner__streak--even {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+.scanner__streak--odd {
+  color: var(--red);
+  background: rgba(255, 45, 85, 0.12);
+  border: 1px solid rgba(255, 45, 85, 0.28);
+}
+
+/* Note under the result — plain, honest, not a disclaimer banner. */
+.scanner__note {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+.scanner__note strong { color: var(--text-2); font-weight: 700; }
+
+/* ---------- Error ---------- */
+.scanner__error {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 45, 85, 0.08);
+  border: 1px solid rgba(255, 45, 85, 0.22);
+  color: var(--red);
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
+
+/* ---------- Actions ---------- */
+.scanner__scan {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.scanner__scan:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.scanner__bot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: not-allowed;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.scanner__bot:disabled { opacity: 0.75; }
+
+.scanner__bot--active {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.35);
+  cursor: pointer;
+}
+.scanner__bot--active:hover {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.55);
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .ai-page { padding-bottom: 60px; }
-  .scanner-panel { padding: 24px; }
-  .scanner-panel__title { font-size: 18px; }
-}
-
 @media (max-width: 520px) {
-  .ai-page { padding-bottom: 48px; }
-  .scanner-panel { padding: 20px; border-radius: var(--r-md); }
-  .scanner-panel__title { font-size: 17px; }
-  .scanner-panel__text { font-size: 13px; }
-  .scan-field__select { padding: 10px 12px; }
-  .scan-field__select select { font-size: 13px; }
-  .scan-result { padding: 14px; }
-  .scanner-panel__actions { flex-direction: column; }
-  .scanner-panel__scan { padding: 13px; font-size: 13.5px; }
-  .scanner-panel__reset { width: 100%; justify-content: center; padding: 12px; }
-  .ai-features { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .ai-feature { padding: 16px; }
-  .ai-feature__icon { font-size: 17px; margin-bottom: 10px; }
-  .ai-feature__title { font-size: 13px; }
-  .ai-feature__desc { font-size: 11.5px; line-height: 1.6; }
-}
-
-@media (max-width: 360px) {
-  .ai-features { grid-template-columns: 1fr; }
+  .scanner__badge { width: 28px; height: 28px; font-size: 14px; }
+  .scanner__intro { font-size: 12.5px; margin-bottom: 16px; }
+  .scanner__result { padding: 14px; border-radius: var(--r-sm); }
+  .scanner__result-head strong { font-size: 14px; }
+  .scanner__result-row { font-size: 12.5px; padding: 6px 0; }
+  .scanner__scan { padding: 13px; font-size: 13.5px; }
+  .scanner__bot { padding: 12px; font-size: 13px; }
 }

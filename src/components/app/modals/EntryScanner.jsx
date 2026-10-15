@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  LuX, LuSearch, LuSparkles, LuBot, LuRefreshCw, LuTrendingUp, LuTrendingDown,
+  LuX, LuSearch, LuSparkles, LuBot, LuRefreshCw,
 } from "react-icons/lu";
 import { useMarkets } from "../../../lib/useMarkets";
 import { useScanner } from "../../ai/useScanner";
@@ -28,6 +28,10 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
     });
     close();
   };
+
+  const signalClass = result
+    ? result.signal === "Even" ? "scanner__result--even" : "scanner__result--odd"
+    : "";
 
   return (
     <div className="modal" onClick={close}>
@@ -66,7 +70,7 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
         </div>
 
         {result && (
-          <div className="scanner__result">
+          <div className={`scanner__result ${signalClass}`}>
             <div className="scanner__result-head">
               <strong>{result.market?.name}</strong>
               <span>{result.sample} ticks analysed</span>
@@ -76,14 +80,24 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
               <span>Even / Odd</span>
               <strong>{pct(result.evenRatio)} / {pct(result.oddRatio)}</strong>
             </div>
+
+            <div className="scanner__split" aria-hidden="true">
+              <div className="scanner__split-even" style={{ width: pct(result.evenRatio) }} />
+              <div className="scanner__split-odd"  style={{ width: pct(result.oddRatio) }} />
+            </div>
+
             <div className="scanner__result-row">
               <span>Current streak</span>
-              <strong>{result.streak}× {result.streakType}</strong>
+              <span className={`scanner__streak scanner__streak--${result.streakType.toLowerCase()}`}>
+                {result.streak}× {result.streakType}
+              </span>
             </div>
+
             <div className="scanner__result-row">
               <span>Volatility</span>
               <strong>{result.volatility.toFixed(3)}%</strong>
             </div>
+
             <div className="scanner__result-row">
               <span>Momentum</span>
               <strong className={result.momentum >= 0 ? "is-pos" : "is-neg"}>
