@@ -126,10 +126,6 @@ export default function Drawer({ open, onClose, user, darkTheme, onToggleDark })
             <LuLogOut {...ICON_PROPS} />
             <span className="drawer__row-label">Log out</span>
           </button>
-          <div className="drawer__meta">
-            <span className="drawer__meta-dot" />
-            <span>Connected · v1.0.0</span>
-          </div>
         </footer>
       </div>
     </div>
