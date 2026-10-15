@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { LuBot, LuX } from "react-icons/lu";
+import { LuTriangleAlert, LuBot, LuX } from "react-icons/lu";
+
 import MarketLoader from "../../components/app/trade/MarketLoader";
 import CategoryTabs from "../../components/app/trade/CategoryTabs";
 import Chart from "../../components/app/trade/Chart";
@@ -17,6 +18,7 @@ import { useLiveMarket } from "../../components/app/market/useLiveMarket";
 import { useMarkets } from "../../lib/useMarkets";
 import { profitOf } from "../../lib/tradeEngine";
 import { emit } from "../../lib/events";
+import { getApiError } from "../../lib/apiError";
 
 const BOT_PRESETS = {
   all:       { count: 10, stake: 5 },
@@ -30,10 +32,11 @@ const ZOOM_MAX = 320;
 const ZOOM_STEP = 1.4;
 const RESULT_FLASH_MS = 1600;
 const MANUAL_MS_DEFAULT = 60_000;
+const MIN_STAKE = 1;
 
 export default function Trade() {
   const { store, botResult, clearBotResult } = useOutletContext();
-  const { markets, loading: marketsLoading } = useMarkets();
+  const { markets, loading: marketsLoading, error: marketsError } = useMarkets();
 
   const [activeId, setActiveId] = useState(null);
   const activeMarket = markets.find((m) => m.id === activeId)
@@ -73,6 +76,9 @@ export default function Trade() {
   const [manualMs, setManualMs] = useState(MANUAL_MS_DEFAULT);
   const [secondsLeft, setSecondsLeft] = useState(null);
 
+  const [tradeError, setTradeError] = useState(null);
+  const [configError, setConfigError] = useState(null);
+
   const resultTimer = useRef(null);
   const countdownTimer = useRef(null);
 
@@ -89,16 +95,31 @@ export default function Trade() {
   const zoomOut = () => { if (canZoomOut) setWindowSize((w) => Math.min(ZOOM_MAX, Math.round(w * ZOOM_STEP))); };
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+
     (async () => {
+      setConfigError(null);
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE || ""}/config`
-        ).then((r) => r.json());
-        if (!cancelled && res?.manualTradeMs) setManualMs(res.manualTradeMs);
-      } catch {}
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE || ""}/config`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Config request failed with status ${response.status}`);
+        }
+
+        const config = await response.json();
+        if (!controller.signal.aborted && Number.isFinite(config?.manualTradeMs)) {
+          setManualMs(config.manualTradeMs);
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        setConfigError(getApiError(error, "Could not load trade settings. The default duration will be used."));
+      }
     })();
-    return () => { cancelled = true; };
+
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -108,10 +129,38 @@ export default function Trade() {
     };
   }, []);
 
+  const clearCountdown = () => {
+    if (countdownTimer.current) {
+      clearInterval(countdownTimer.current);
+      countdownTimer.current = null;
+    }
+    setSecondsLeft(null);
+  };
+
+  const validateManualTrade = () => {
+    if (!activeMarket) return "Select a market before placing a trade.";
+    if (!Number.isFinite(stake) || stake < MIN_STAKE) {
+      return `Enter a stake of at least $${MIN_STAKE.toFixed(2)}.`;
+    }
+    if (store.balance != null && stake > Number(store.balance)) {
+      return "Your balance is too low for this stake.";
+    }
+    return null;
+  };
+
   const handleManualPlace = async (side) => {
     if (!activeMarket || activeSide) return;
+
+    const validationError = validateManualTrade();
+    if (validationError) {
+      setTradeError(validationError);
+      return;
+    }
+
+    setTradeError(null);
     setActiveSide(side);
     setRunState("starting");
+
     try {
       const position = await store.placeTrade({
         contract: side,
@@ -119,11 +168,17 @@ export default function Trade() {
         market: activeMarket.name,
         marketId: activeMarket.id,
       });
-      setActivePositionId(position?.id ?? null);
+
+      if (!position?.id) {
+        throw new Error("The trade was accepted but no position was returned.");
+      }
+
+      setActivePositionId(position.id);
       setRunState("running");
 
-      const total = Math.round(manualMs / 1000);
+      const total = Math.max(1, Math.round(manualMs / 1000));
       setSecondsLeft(total);
+
       if (countdownTimer.current) clearInterval(countdownTimer.current);
       countdownTimer.current = setInterval(() => {
         setSecondsLeft((s) => {
@@ -135,30 +190,32 @@ export default function Trade() {
           return s - 1;
         });
       }, 1000);
-    } catch (e) {
+    } catch (error) {
       setActiveSide(null);
+      setActivePositionId(null);
       setRunState("idle");
-      alert(e.message || "Trade failed");
+      clearCountdown();
+      setTradeError(getApiError(error, "Your trade could not be placed."));
     }
   };
 
   const handleManualStop = async () => {
+    setTradeError(null);
+
     if (!activePositionId) {
       setActiveSide(null);
       setRunState("idle");
+      clearCountdown();
       return;
     }
 
     emit("trade:stopping", { id: activePositionId });
-    if (countdownTimer.current) {
-      clearInterval(countdownTimer.current);
-      countdownTimer.current = null;
-    }
-    setSecondsLeft(null);
+    clearCountdown();
   };
 
   useEffect(() => {
     if (!activePositionId) return;
+
     const settled = store.closed.find((c) => c.id === activePositionId);
     if (!settled) return;
 
@@ -169,12 +226,7 @@ export default function Trade() {
     setActivePositionId(null);
     setActiveSide(null);
     setRunState("idle");
-    setSecondsLeft(null);
-
-    if (countdownTimer.current) {
-      clearInterval(countdownTimer.current);
-      countdownTimer.current = null;
-    }
+    clearCountdown();
 
     emit("trade:stopped", { id: settled.id });
 
@@ -184,18 +236,22 @@ export default function Trade() {
 
   useEffect(() => {
     if (!botResult) return;
+
     const preset = BOT_PRESETS[botResult.category] ?? BOT_PRESETS.evenodd;
     setCategory(botResult.category ?? "evenodd");
     setMode("auto");
     setAutoCount(preset.count);
     setStake(preset.stake);
+
     if (botResult.market?.id) setActiveId(botResult.market.id);
+
     setBotBanner({
       market: botResult.market,
       signal: botResult.signal,
       confidence: botResult.confidence,
       preset,
     });
+
     clearBotResult?.();
   }, [botResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -206,6 +262,28 @@ export default function Trade() {
   };
 
   const handleAutoStart = () => {
+    setTradeError(null);
+
+    if (!activeMarket) {
+      setTradeError("Select a market before starting auto-trade.");
+      return;
+    }
+
+    if (!Number.isFinite(stake) || stake < MIN_STAKE) {
+      setTradeError(`Enter an auto-trade stake of at least $${MIN_STAKE.toFixed(2)}.`);
+      return;
+    }
+
+    if (!Number.isFinite(autoCount) || autoCount < 1) {
+      setTradeError("Set at least one auto-trade.");
+      return;
+    }
+
+    if (store.balance != null && stake > Number(store.balance)) {
+      setTradeError("Your balance is too low for this auto-trade stake.");
+      return;
+    }
+
     auto.start({
       count: autoCount,
       stake,
@@ -213,15 +291,62 @@ export default function Trade() {
       stopLoss: stop,
       market: botBanner?.market?.name ?? activeMarket?.name ?? "Volatility 10",
     });
+
+    if (auto.error) {
+      setTradeError(getApiError(auto.error, "Auto-trade could not be started."));
+    }
   };
 
-  if (marketsLoading || !activeMarket) {
+  const showMarketLoader = marketsLoading || !activeMarket;
+
+  if (showMarketLoader && marketsError) {
+    return (
+      <div className="trade">
+        <div className="trade-error" role="alert">
+          <LuTriangleAlert />
+          <div>
+            <strong>Markets could not load</strong>
+            <span>{getApiError(marketsError, "Check your connection and try again.")}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showMarketLoader) {
     return <MarketLoader />;
   }
 
   return (
     <div className="trade">
       <CategoryTabs value={category} onChange={setCategory} />
+
+      {(tradeError || configError || marketsError || auto.error) && (
+        <div className="trade-error" role="alert">
+          <LuTriangleAlert />
+          <div>
+            <strong>
+              {tradeError ? "Trade problem" : marketsError ? "Market problem" : "Notice"}
+            </strong>
+            <span>
+              {getApiError(
+                tradeError || marketsError || auto.error || configError,
+                "Something went wrong. Try again."
+              )}
+            </span>
+          </div>
+          <button
+            className="trade-error__dismiss"
+            onClick={() => {
+              setTradeError(null);
+              setConfigError(null);
+            }}
+            aria-label="Dismiss error"
+          >
+            <LuX />
+          </button>
+        </div>
+      )}
 
       <div className="trade__chart-wrap">
         <Chart
@@ -241,7 +366,10 @@ export default function Trade() {
               m.id === activeMarket.id ? { ...m, price, change } : m
             )}
             current={{ ...activeMarket, price, change }}
-            onChange={(m) => setActiveId(m.id)}
+            onChange={(m) => {
+              setTradeError(null);
+              setActiveId(m.id);
+            }}
           />
         </div>
       </div>
