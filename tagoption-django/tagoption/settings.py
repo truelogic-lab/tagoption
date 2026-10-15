@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "markets",
     "fx",
     "ops",
+    "payments",
     "trading",
     "wallet",
 ]

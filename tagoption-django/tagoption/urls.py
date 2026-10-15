@@ -15,4 +15,5 @@ urlpatterns = [
     path("", include("trading.urls")),
     path("", include("markets.urls")),
     path("", include("fx.urls")),
+    path("", include("payments.urls")),
 ]
