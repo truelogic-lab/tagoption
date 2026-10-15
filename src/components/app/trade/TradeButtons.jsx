@@ -19,6 +19,7 @@ export default function TradeButtons({
 }) {
   const isStarting = runState === "starting";
   const isRunning  = runState === "running";
+  const isStopping = runState === "stopping";
 
   const renderBtn = (side) => {
     const isThis  = activeSide === side;
@@ -26,19 +27,25 @@ export default function TradeButtons({
     const colour  = side === "Even" ? "green" : "red";
     const dotClass = side === "Even" ? "actions__dot--green" : "actions__dot--red";
 
-    if (isThis && (isStarting || isRunning)) {
+    if (isThis && (isStarting || isRunning || isStopping)) {
       return (
         <button
           key={side}
           className={`actions__btn actions__btn--${colour} is-stop`}
-          onClick={isStarting ? undefined : onStop}
-          disabled={isStarting}
+          onClick={isStarting || isStopping ? undefined : onStop}
+          disabled={isStarting || isStopping}
         >
-          {isStarting ? (
+          {isStarting && (
             <span className="actions__name">
               <LuRefreshCw className="actions__spin" /> Starting…
             </span>
-          ) : (
+          )}
+          {isStopping && (
+            <span className="actions__name">
+              <LuRefreshCw className="actions__spin" /> Stopping…
+            </span>
+          )}
+          {isRunning && (
             <>
               <span className="actions__name"><LuSquare /> STOP</span>
               <span className="actions__countdown">{fmtCountdown(secondsLeft)}</span>
