@@ -3,10 +3,11 @@ import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
   LuMenu, LuX, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
   LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuCoins, LuBanknote,
-  LuSettings2,
+  LuSettings2, LuSlidersHorizontal,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
+import { useSite } from "../../lib/SiteContext";
 import AdminMetrics from "./AdminMetrics";
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
   { to: "/admin/withdrawals",  label: "Withdrawals",  icon: LuBanknote },
   { to: "/admin/transactions", label: "Transactions", icon: LuDollarSign },
   { to: "/admin/config",       label: "Config",       icon: LuSettings2 },
+  { to: "/admin/settings",     label: "Settings",     icon: LuSlidersHorizontal },
   { to: "/admin/audit",        label: "Audit log",    icon: LuListChecks },
 ];
 
@@ -28,12 +30,14 @@ const TITLES = {
   "/admin/withdrawals":  "Withdrawals",
   "/admin/transactions": "Transactions",
   "/admin/config":       "Config",
+  "/admin/settings":     "Settings",
   "/admin/audit":        "Audit log",
 };
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const site = useSite();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const s = getSession();
@@ -64,7 +68,7 @@ export default function AdminLayout() {
         <div className="adm__brand">
           <span className="adm__brand-badge"><LuShieldCheck /></span>
           <div className="adm__brand-text">
-            <strong>TagOption</strong>
+            <strong>{site.name}</strong>
             <em>Admin Console</em>
           </div>
         </div>

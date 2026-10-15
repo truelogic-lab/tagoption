@@ -50,6 +50,10 @@ export const adminApi = {
   config: () => http.get("/admin/config"),
   setConfig: (payload) => http.post("/admin/config", payload),
 
+  /* ---------- Site branding ---------- */
+  siteConfig: () => http.get("/admin/site-config"),
+  setSiteConfig: (payload) => http.post("/admin/site-config", payload),
+
   /* ---------- Search / audit ---------- */
   search: (q) => http.get(`/admin/search${qs({ q })}`),
   audit: () => http.get("/admin/audit"),

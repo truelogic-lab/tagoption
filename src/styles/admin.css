@@ -2044,3 +2044,45 @@
   border: 1px solid rgba(255, 45, 85, 0.28);
   color: var(--red);
 }
+
+/* Settings — logo preview */
+.adm-settings__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.adm-settings__preview-box {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px dashed var(--border);
+  min-height: 80px;
+}
+.adm-settings__preview-box img {
+  max-height: 48px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Settings — logo preview */
+.adm-settings__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.adm-settings__preview-box {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px dashed var(--border);
+  min-height: 80px;
+}
+.adm-settings__preview-box img {
+  max-height: 48px;
+  max-width: 100%;
+  object-fit: contain;
+}

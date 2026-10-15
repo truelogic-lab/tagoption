@@ -4,10 +4,12 @@ import {
   LuMail, LuLock, LuEye, LuEyeOff, LuUser, LuArrowRight, LuTriangleAlert, LuCheck,
 } from "react-icons/lu";
 import { signIn, signUp } from "../lib/auth";
+import { useSite } from "../lib/SiteContext";
 
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
+  const site = useSite();
   const from = location.state?.from || "/trade";
 
   const [mode, setMode] = useState("login");
@@ -77,8 +79,8 @@ export default function Auth() {
     <div className="auth">
       <div className="auth__panel">
         <Link to="/" className="auth__brand">
-          <span className="auth__brand-badge">T</span>
-          <span className="auth__brand-text">TAGOPTION</span>
+          <span className="auth__brand-badge">{(site.name?.[0] || "T").toUpperCase()}</span>
+          <span className="auth__brand-text">{site.name.toUpperCase()}</span>
         </Link>
 
         <div className="auth__head">
@@ -202,7 +204,7 @@ export default function Auth() {
           </button>
 
           <p className="auth__foot">
-            {isLogin ? "New to TagOption? " : "Already have an account? "}
+            {isLogin ? `New to ${site.name}? ` : "Already have an account? "}
             <button
               type="button"
               className="auth__inline-link"
@@ -222,7 +224,7 @@ export default function Auth() {
 
       <aside className="auth__aside">
         <div className="auth__aside-inner">
-          <span className="auth__aside-tag">TagOption</span>
+          <span className="auth__aside-tag">{site.name}</span>
           <h2 className="auth__aside-title">
             Trade volatility indices with clarity.
           </h2>
