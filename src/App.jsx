@@ -35,7 +35,7 @@ import UserDetail from "./pages/admin/UserDetail";
 import Trades from "./pages/admin/Trades";
 import Transactions from "./pages/admin/Transactions";
 import Audit from "./pages/admin/Audit";
-import Markets from "./pages/admin/Markets";
+import AdminMarkets from "./pages/admin/Markets";
 import Withdrawals from "./pages/admin/Withdrawals";
 import Config from "./pages/admin/Config";
 
@@ -70,7 +70,7 @@ export default function App() {
           <Route path="users/:id" element={<UserDetail />} />
           <Route path="trades" element={<Trades />} />
           <Route path="transactions" element={<Transactions />} />
-          <Route path="markets" element={<Markets />} />
+          <Route path="markets" element={<AdminMarkets />} />
           <Route path="withdrawals" element={<Withdrawals />} />
           <Route path="config" element={<Config />} />
           <Route path="audit" element={<Audit />} />
