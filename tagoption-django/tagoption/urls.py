@@ -14,4 +14,5 @@ urlpatterns = [
     path("", include("wallet.urls")),
     path("", include("trading.urls")),
     path("", include("markets.urls")),
+    path("", include("fx.urls")),
 ]
