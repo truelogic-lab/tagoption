@@ -1,15 +1,48 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { LuArrowRight, LuSparkles } from "react-icons/lu";
 import Reveal from "../ui/Reveal";
 import Typewriter from "../ui/Typewriter";
+import { useScrollProgress } from "../../lib/useScrollProgress";
 import heroImg from "../../assets/hero.png";
 
+/**
+ * The illustration rolls in from the left on first paint, then rolls back
+ * out to the left as the user scrolls — tied 1:1 to scroll position so it
+ * feels physical, not animated.
+ *
+ * On mount: `entered` goes false → true, which transitions the CSS
+ * `translateX` from -110% to the scroll-driven value. The two compose:
+ *   transform: translateX(calc(var(--enter-x) + var(--scroll-x)))
+ */
+const ROLL_RANGE_PX = 700;   // how far the user scrolls to fully hide it
+
 export default function Hero() {
+  const [entered, setEntered] = useState(false);
+  const progress = useScrollProgress(ROLL_RANGE_PX);
+
+  // Trigger the entry transition on the next frame so the CSS transition
+  // from -110% has something to interpolate against.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const enterX = entered ? 0 : -110;                 // percent
+  const scrollX = -progress * 110;                   // percent
+
   return (
-    <section className="hero">
+    <section className={`hero ${progress > 0 ? "is-scrolling" : ""}`}>
       <div className="hero__bg" aria-hidden="true">
-        <img src={heroImg} alt="" className="hero__bg-image" />
+        <img
+          src={heroImg}
+          alt=""
+          className="hero__bg-image"
+          style={{
+            "--enter-x": `${enterX}%`,
+            "--scroll-x": `${scrollX}%`,
+          }}
+        />
         <span className="hero__bg-fade" />
       </div>
 

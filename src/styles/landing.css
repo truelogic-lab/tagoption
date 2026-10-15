@@ -854,3 +854,65 @@
   }
   .hero__title-lead { font-size: 0.68em; }
 }
+
+/* -------------------------------------------------------------
+   Hero background — scroll-linked roll
+
+   The image rolls in from the left on first paint and rolls back
+   to the left as the user scrolls. The scroll component has to
+   be instantaneous (no CSS transition) or it feels laggy. Only
+   the entry transition is time-based.
+   ------------------------------------------------------------- */
+
+.hero__bg-image {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  width: 62%;
+  max-width: 860px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.85;
+  transform: translate3d(
+    calc(var(--enter-x, 0%) + var(--scroll-x, 0%)),
+    -50%,
+    0
+  );
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* Disable the transition once scroll begins so the scroll-linked
+   component tracks the user 1:1 rather than easing toward it. */
+.hero:not(:hover) .hero__bg-image {
+  /* keep the entry transition only on initial render — see JS:
+     once progress > 0 the CSS class is toggled below */
+}
+
+/* When the user has scrolled at all, kill the transition. */
+.hero.is-scrolling .hero__bg-image {
+  transition: none;
+}
+
+@media (max-width: 900px) {
+  .hero__bg-image {
+    /* Mobile keeps the static-below-copy layout; the roll animation
+       is desktop-only so the small-screen layout doesn't jitter. */
+    position: static;
+    transform: none;
+    transition: none;
+    width: 90%;
+    max-width: 480px;
+  }
+  .hero.is-scrolling .hero__bg-image { transition: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__bg-image {
+    transform: translate3d(0, -50%, 0);
+    transition: none;
+  }
+  @media (max-width: 900px) {
+    .hero__bg-image { transform: none; }
+  }
+}
