@@ -112,7 +112,6 @@ export default function Trade() {
       return;
     }
 
-    // Signal the Positions page that this trade is stopping right now
     emit("trade:stopping", { id: activePositionId });
 
     try {
@@ -177,7 +176,6 @@ export default function Trade() {
     });
   };
 
-  /* ---------- loading state ---------- */
   if (marketsLoading || !activeMarket) {
     return <MarketLoader />;
   }
