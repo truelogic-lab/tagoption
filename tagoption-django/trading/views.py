@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import new_id
+from accounts.notifications import Notification
 from wallet.models import Balance, Transaction
 
 from .models import Trade
@@ -15,6 +16,7 @@ from .settlement import (
     effective_win_rate,
     from_cents,
     profit_cents,
+    roll_outcome,
     to_cents,
 )
 
@@ -29,6 +31,53 @@ def _log_transaction(user, type_, amount_cents, reference=None, method=None, sta
         reference=reference,
         status=status_,
     )
+
+
+def _settle_locked(trade, result):
+    """
+    Apply the outcome to a locked trade and its owner's balance.
+
+    Caller must hold the transaction lock on `trade`. Result must already be
+    decided by the server (roll_outcome) — this function never trusts client
+    input to decide whether the user won.
+    """
+    won = result == "won"
+    balance = Balance.objects.select_for_update().get(user=trade.user)
+
+    stake_cents = trade.stake_cents
+    profit_cents_value = trade.profit_cents
+
+    balance.escrow_cents -= stake_cents
+    credit_cents = 0
+
+    if won:
+        credit_cents = stake_cents + profit_cents_value
+        balance.balance_cents += credit_cents
+        balance.platform_cents -= profit_cents_value
+    else:
+        balance.platform_cents += stake_cents
+
+    balance.save()
+
+    trade.status = Trade.STATUS_WON if won else Trade.STATUS_LOST
+    trade.closed_at = timezone.now()
+    trade.save()
+
+    _log_transaction(trade.user, "trade-settle", credit_cents, reference=trade.id)
+
+    Notification.objects.create(
+        user=trade.user,
+        type="trade",
+        title=f"Won ${profit_cents_value / 100:.2f}" if won else f"Lost ${stake_cents / 100:.2f}",
+        body=(
+            f"{trade.contract} on {trade.market} settled in your favour"
+            if won else
+            f"{trade.contract} on {trade.market} did not settle your way"
+        ),
+        reference=f"trade:{trade.id}",
+    )
+
+    return credit_cents
 
 
 @api_view(["GET", "POST"])
@@ -60,9 +109,10 @@ def _place(request):
     profit = profit_cents(stake_cents, DEFAULT_PAYOUT_MULT)
 
     with db_transaction.atomic():
-        balance = Balance.objects.select_for_update().filter(user=request.user).first()
-        if balance is None:
-            balance = Balance.objects.create(user=request.user)
+        # get_or_create + select_for_update in the same atomic block guarantees
+        # the row exists and is locked before we read or mutate it.
+        Balance.objects.get_or_create(user=request.user)
+        balance = Balance.objects.select_for_update().get(user=request.user)
 
         if balance.balance_cents < stake_cents:
             return Response({"error": "Insufficient balance"}, status=400)
@@ -73,7 +123,6 @@ def _place(request):
         balance.save()
 
         trade = Trade.objects.create(
-            id=new_id("p"),
             user=request.user,
             market=market,
             contract=contract,
@@ -96,7 +145,8 @@ def _place(request):
             "payout": from_cents(trade.profit_cents),
             "status": "open",
             "auto": False,
-        }
+        },
+        status=201,
     )
 
 
@@ -115,10 +165,10 @@ def _list(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def settle(request, trade_id):
-    result = request.data.get("result")
-    if result not in ("won", "lost"):
-        return Response({"error": "Invalid result"}, status=400)
-
+    """
+    Manual STOP. Server rolls the outcome; the client cannot influence it.
+    Polling picks up the final state — no push event on this backend.
+    """
     with db_transaction.atomic():
         try:
             trade = Trade.objects.select_for_update().get(id=trade_id, user=request.user)
@@ -128,27 +178,10 @@ def settle(request, trade_id):
         if trade.status != Trade.STATUS_OPEN:
             return Response({"error": "Already settled"}, status=409)
 
-        balance = Balance.objects.select_for_update().get(user=request.user)
-        stake_cents = trade.stake_cents
-        profit_cents_value = trade.profit_cents
+        win_rate, _ = effective_win_rate(request.user)
+        result = roll_outcome(win_rate)
 
-        balance.escrow_cents -= stake_cents
-        credit_cents = 0
-
-        if result == "won":
-            credit_cents = stake_cents + profit_cents_value
-            balance.balance_cents += credit_cents
-            balance.platform_cents -= profit_cents_value
-        else:
-            balance.platform_cents += stake_cents
-
-        balance.save()
-
-        trade.status = Trade.STATUS_WON if result == "won" else Trade.STATUS_LOST
-        trade.closed_at = timezone.now()
-        trade.save()
-
-        _log_transaction(request.user, "trade-settle", credit_cents, reference=trade.id)
+        credit_cents = _settle_locked(trade, result)
 
     return Response(
         {
@@ -158,6 +191,7 @@ def settle(request, trade_id):
             "stake": from_cents(trade.stake_cents),
             "payout": from_cents(trade.profit_cents),
             "result": result,
+            "credit": from_cents(credit_cents),
         }
     )
 
@@ -207,4 +241,3 @@ def auto_status(request):
     if not run:
         return Response({"running": False, "progress": None})
     return Response(run)
-

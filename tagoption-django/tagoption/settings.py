@@ -1,14 +1,15 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-insecure-change-me-in-production-32+bytes")
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -58,16 +59,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "tagoption.wsgi.application"
 ASGI_APPLICATION = "tagoption.asgi.application"
 
-if os.getenv("DATABASE_URL"):
-    import dj_database_url
-    DATABASES = {"default": dj_database_url.config(conn_max_age=600, ssl_require=False)}
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+# No sqlite fallback. If DATABASE_URL is unset the service must crash on boot,
+# not silently write to a file that vanishes on the next deploy.
+import dj_database_url
+
+DATABASES = {
+    "default": dj_database_url.config(
+        conn_max_age=600,
+        ssl_require=True,
+    )
+}
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -75,27 +76,31 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 6}},
 ]
 
+# bcrypt first so hashes imported from the Fastify backend verify on login.
+# PBKDF2 stays as fallback for any hash Django itself created under the old config.
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+]
+
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Etc/UTC"
+TIME_ZONE = "UTC"
 USE_I18N = True
-USE_TZ = False
+USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.getenv(
-        "CSRF_TRUSTED_ORIGINS",
-        "https://tagoptionfx.vercel.app"
-    ).split(",") if o.strip()
+    o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
 
 if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -121,10 +126,7 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in os.getenv(
-        "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173"
-    ).split(",") if o.strip()
+    o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
 
