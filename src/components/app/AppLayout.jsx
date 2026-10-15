@@ -3,7 +3,6 @@ import { Outlet, useNavigate } from "react-router-dom";
 import AppTopBar from "./AppTopBar";
 import AppBottomNav from "./AppBottomNav";
 import Drawer from "./Drawer";
-import WalletModal from "./modals/WalletModal";
 import InsufficientBalance from "./modals/InsufficientBalance";
 import EntryScanner from "./modals/EntryScanner";
 import NotificationsPanel from "./NotificationsPanel";
@@ -17,7 +16,6 @@ import { usePayoutMultiplier } from "../../lib/usePayoutMultiplier";
 export default function AppLayout() {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [wallet, setWallet] = useState(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [insufficient, setInsufficient] = useState(false);
   const [botResult, setBotResult] = useState(null);
@@ -83,7 +81,7 @@ export default function AppLayout() {
       <AppTopBar
         onMenu={() => setDrawerOpen(true)}
         balance={balance}
-        onDeposit={() => setWallet("deposit")}
+        onDeposit={() => navigate("/deposit")}
         onBell={() => { setNotifOpen(true); notif.refresh(); }}
         unreadCount={notif.unreadCount}
         user={sessionUser}
@@ -93,7 +91,6 @@ export default function AppLayout() {
           context={{
             store, botResult, clearBotResult,
             onPlaceTrade: handleManualPlace,
-            onOpenWallet: setWallet,
             onOpenScanner: () => setScannerOpen(true),
           }}
         />
@@ -106,16 +103,10 @@ export default function AppLayout() {
         darkTheme={isDark}
         onToggleDark={toggleTheme}
       />
-      <WalletModal
-        open={wallet === "deposit"}
-        balance={balance}
-        onClose={() => setWallet(null)}
-        onCompleted={() => store.refresh()}
-      />
       <InsufficientBalance
         open={insufficient}
         onClose={() => setInsufficient(false)}
-        onDeposit={() => { setInsufficient(false); setWallet("deposit"); }}
+        onDeposit={() => { setInsufficient(false); navigate("/deposit"); }}
       />
       <EntryScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onLoadBot={handleLoadBot} />
       <NotificationsPanel
