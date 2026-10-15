@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
+from .throttles import LoginThrottle, SignupThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
@@ -17,14 +17,6 @@ from .serializers import (
 )
 
 User = get_user_model()
-
-
-class LoginThrottle(AnonRateThrottle):
-    scope = "auth_login"
-
-
-class SignupThrottle(AnonRateThrottle):
-    scope = "auth_signup"
 
 
 def _issue_tokens(user):
