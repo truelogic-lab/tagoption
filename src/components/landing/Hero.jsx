@@ -34,9 +34,7 @@ export default function Hero() {
 
           <Reveal delay={120}>
             <p className="hero__subtitle">
-              Explore volatility indices, follow live market movements,
-              and use intuitive trading tools designed to help you make
-              informed decisions.
+              Explore 100+ global trading assets with fast execution and potential returns of up to 95%. Get started with a minimum deposit of just $1.
             </p>
           </Reveal>
 
