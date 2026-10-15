@@ -1529,3 +1529,42 @@
   border: 1px solid rgba(255, 45, 85, 0.28);
   color: var(--red);
 }
+
+/* Authentication form helper text */
+.auth__field-hint {
+  display: block;
+  margin-top: 7px;
+  color: var(--text-3, #7b8494);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth__input input::placeholder {
+  color: var(--text-3, #8991a0);
+  opacity: 0.8;
+}
+
+.auth__input input {
+  min-width: 0;
+}
+
+.auth__input:focus-within {
+  border-color: var(--red, #e11d48);
+}
+
+.auth__input.is-error {
+  border-color: #dc3545;
+}
+
+.auth__field-error {
+  display: block;
+  margin-top: 6px;
+  color: #dc3545;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.auth__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
