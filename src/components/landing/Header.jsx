@@ -70,17 +70,11 @@ export default function Header() {
                 <Link to="/trade" className="header__login">
                   <LuLayoutDashboard /> Dashboard
                 </Link>
-                <Link to="/trade" className="btn btn-primary header__cta">
-                  Open Trade
-                </Link>
               </>
             ) : (
               <>
                 <Link to="/auth" className="header__login">
                   <LuUser /> Login
-                </Link>
-                <Link to="/auth" className="btn btn-primary header__cta">
-                  Start Trading
                 </Link>
               </>
             )}
