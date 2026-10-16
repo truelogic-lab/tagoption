@@ -14,6 +14,7 @@ from trading.models import Trade
 from wallet.models import Balance, Transaction, Withdrawal
 
 from .audit import record
+from .overview_extras import previous_and_current, seven_day_trend
 from .permissions import require_admin
 from .serializers import (
     AdminUserSerializer,
@@ -575,6 +576,9 @@ def overview(request):
         "transactions": tx,
         "winRate": win_rate,
         "edge": edge,
+        # Period-over-period deltas and a 7-day sparkline series.
+        "periods": previous_and_current(),
+        "trend": seven_day_trend(),
     })
 
 
