@@ -295,3 +295,59 @@
   .table__row > *:nth-child(3),
   .table__row > *:nth-child(4) { display: none; }
 }
+
+/* -------------------------------------------------------------
+   Breadcrumb bar — top of every public page under PageShell.
+   Gives users a Home link and a current-page indicator without
+   relying on the header nav, which only carries a couple items.
+   ------------------------------------------------------------- */
+
+.page__crumbs {
+  padding: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.page__crumbs-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.page__crumbs-list li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.page__crumbs-list a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+.page__crumbs-list a:hover {
+  color: var(--blue);
+}
+
+.page__crumbs-list svg {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.page__crumbs-list li[aria-current="page"] {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60vw;
+}
+
+@media (max-width: 520px) {
+  .page__crumbs { padding: 10px 0 0; font-size: 12px; }
+  .page__crumbs-list { gap: 6px; }
+  .page__crumbs-list li[aria-current="page"] { max-width: 55vw; }
+}
