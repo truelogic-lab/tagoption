@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
-  LuMenu, LuX, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
+  LuMenu, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
   LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuCoins, LuBanknote,
   LuSettings2, LuSlidersHorizontal,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
+import AdminDrawer from "./AdminDrawer";
 import { useSite } from "../../lib/SiteContext";
 import AdminMetrics from "./AdminMetrics";
-import BrandMark from "../ui/BrandMark";
 
 const NAV = [
   { to: "/admin",              label: "Dashboard",    icon: LuLayoutDashboard, end: true },
@@ -116,53 +116,12 @@ export default function AdminLayout() {
         <span className="adm__avatar">{initial}</span>
       </header>
 
-      {menuOpen && (
-        <div className="adm__drawer" onClick={() => setMenuOpen(false)}>
-          <div className="adm__drawer-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="adm__drawer-top">
-              <button className="adm__drawer-close" onClick={() => setMenuOpen(false)}>
-                <LuX />
-              </button>
-              <span>Menu</span>
-            </div>
-
-            <div className="adm__drawer-user">
-              <div className="adm__drawer-avatar">{initial}</div>
-              <div>
-                <strong>{admin.name || "Administrator"}</strong>
-                <span>{admin.email}</span>
-              </div>
-            </div>
-
-            <nav className="adm__drawer-nav">
-              {NAV.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  end={n.end}
-                  className={({ isActive }) =>
-                    `adm__nav-item ${isActive ? "is-active" : ""}`
-                  }
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <n.icon /> <span>{n.label}</span>
-                </NavLink>
-              ))}
-              <div className="adm__divider" />
-              <NavLink
-                to="/trade"
-                className="adm__nav-item"
-                onClick={() => setMenuOpen(false)}
-              >
-                <LuArrowLeft /> <span>Back to site</span>
-              </NavLink>
-              <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
-                <LuLogOut /> <span>Log out</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      )}
+      <AdminDrawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        admin={admin}
+        onLogout={logout}
+      />
 
       <main className="adm__main">
         <AdminMetrics />

@@ -2284,3 +2284,232 @@
   border: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+/* =============================================================
+   Admin navigation drawer (mobile)
+   ============================================================= */
+
+.adm-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.52);
+  animation: adm-drawer-fade 0.15s ease-out;
+}
+@keyframes adm-drawer-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.adm-drawer__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  width: 78vw;
+  max-width: 360px;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  animation: adm-drawer-slide 0.18s ease-out;
+}
+@keyframes adm-drawer-slide {
+  from { transform: translateX(-12px); opacity: 0.7; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* On tablets and up, use the spec dimensions. */
+@media (min-width: 600px) {
+  .adm-drawer__panel {
+    width: 66vw;
+    max-width: 460px;
+  }
+}
+
+/* ---------- Head ---------- */
+.adm-drawer__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+@media (min-width: 600px) {
+  .adm-drawer__head { padding: 22px 24px; }
+}
+
+.adm-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.adm-drawer__close:hover { background: var(--hover-bg); }
+.adm-drawer__close:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.adm-drawer__title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+@media (min-width: 600px) {
+  .adm-drawer__title { font-size: 20px; }
+}
+
+/* ---------- User block ---------- */
+.adm-drawer__user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+@media (min-width: 600px) {
+  .adm-drawer__user { padding: 24px 28px; gap: 18px; }
+}
+
+.adm-drawer__avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #315fef, #9854f5);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+@media (min-width: 600px) {
+  .adm-drawer__avatar { width: 64px; height: 64px; font-size: 26px; }
+}
+
+.adm-drawer__user-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.adm-drawer__user-body strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 600px) {
+  .adm-drawer__user-body strong { font-size: 19px; }
+}
+.adm-drawer__user-body span {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 600px) {
+  .adm-drawer__user-body span { font-size: 15px; }
+}
+
+/* ---------- Nav ---------- */
+.adm-drawer__nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+@media (min-width: 600px) {
+  .adm-drawer__nav { padding: 16px 18px 0; }
+}
+
+.adm-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  min-height: 50px;
+  border-radius: 12px;
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.adm-drawer__item svg { flex-shrink: 0; color: var(--text-3); }
+.adm-drawer__item:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+.adm-drawer__item:hover svg { color: var(--text-2); }
+.adm-drawer__item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.adm-drawer__item.is-active {
+  background: var(--blue);
+  color: #fff;
+}
+.adm-drawer__item.is-active svg { color: #fff; }
+.adm-drawer__item.is-active:hover { background: var(--blue); }
+
+@media (min-width: 600px) {
+  .adm-drawer__item {
+    gap: 18px;
+    padding: 0 18px;
+    min-height: 60px;
+    font-size: 17px;
+  }
+}
+
+/* ---------- Foot ---------- */
+.adm-drawer__foot {
+  flex-shrink: 0;
+  padding: 12px 12px 18px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+@media (min-width: 600px) {
+  .adm-drawer__foot { padding: 16px 18px 22px; }
+}
+
+.adm-drawer__item--danger { color: var(--red); }
+.adm-drawer__item--danger svg { color: var(--red); }
+.adm-drawer__item--danger:hover {
+  background: rgba(255, 45, 85, 0.08);
+  color: var(--red);
+}
+.adm-drawer__item--danger:hover svg { color: var(--red); }
+
+/* The old inline drawer is no longer rendered — hide it if a stale build
+   ever serves it, but don't remove the rules yet in case other pages use
+   the same class names. */
+.adm__drawer { display: none; }
