@@ -1277,46 +1277,6 @@
    P&L chart
    ============================================================= */
 
-.pnl { display: flex; flex-direction: column; gap: 10px; }
-.pnl__chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 120px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
-}
-.pnl__bar {
-  flex: 1;
-  min-width: 4px;
-  border-radius: 2px 2px 0 0;
-  min-height: 2px;
-  background: var(--green);
-  transition: opacity 0.15s;
-}
-.pnl__bar.is-neg { background: var(--danger); }
-.pnl__bar:hover { opacity: 0.75; }
-.pnl__labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10.5px;
-  color: var(--text-3);
-}
-.pnl__total {
-  font-size: 13px;
-  color: var(--text-2);
-}
-.pnl__total strong {
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-.pnl__total .is-pos { color: var(--green); }
-.pnl__total .is-neg { color: var(--danger); }
-.pnl-empty {
-  padding: 24px;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--text-3);
 }
 
 @media (max-width: 900px) {
@@ -1376,26 +1336,6 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
-.adm-kpi {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-.adm-kpi__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-sm);
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.adm-kpi__icon--blue   { background: rgba(37, 99, 235, 0.12);  color: var(--blue); }
 .adm-kpi__icon--purple { background: rgba(168, 85, 247, 0.12); color: var(--purple); }
 .adm-kpi__icon--green  { background: rgba(34, 197, 94, 0.12);  color: var(--green); }
 .adm-kpi__icon--amber  { background: rgba(234, 179, 8, 0.14);  color: var(--yellow); }
@@ -1866,96 +1806,6 @@
    Admin metric bar — pinned at the top of every admin page
    ============================================================= */
 
-.adm-metrics {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 12px 20px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  flex-wrap: wrap;
-}
-
-.adm-metrics__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.adm-metrics__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--r-sm);
-  font-size: 15px;
-  flex-shrink: 0;
-}
-.adm-metrics__icon--blue   { background: rgba(37, 99, 235, 0.12);  color: var(--blue); }
-.adm-metrics__icon--amber  { background: rgba(234, 179, 8, 0.14);  color: var(--yellow); }
-.adm-metrics__icon--green  { background: rgba(34, 197, 94, 0.12);  color: var(--green); }
-.adm-metrics__icon--red    { background: rgba(255, 45, 85, 0.12);  color: var(--red); }
-
-.adm-metrics__label {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.adm-metrics__value {
-  display: block;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  margin-top: 1px;
-}
-.adm-metrics__value.is-pos { color: var(--green); }
-.adm-metrics__value.is-neg { color: var(--red); }
-
-.adm-metrics__refresh {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r-sm);
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-2);
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-.adm-metrics__refresh:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--border-2);
-}
-.adm-metrics__refresh:disabled { opacity: 0.5; cursor: wait; }
-.adm-metrics__refresh .is-spinning { animation: adm-spin 0.9s linear infinite; }
-
-@keyframes adm-spin { to { transform: rotate(360deg); } }
-
-.adm-metrics__error {
-  font-size: 11px;
-  color: var(--red);
-}
-
-@media (max-width: 560px) {
-  .adm-metrics { gap: 14px; padding: 10px 14px; }
-  .adm-metrics__item { gap: 8px; }
-  .adm-metrics__icon { width: 28px; height: 28px; font-size: 13px; }
-  .adm-metrics__label { font-size: 9.5px; }
-  .adm-metrics__value { font-size: 13.5px; }
-}
-
 /* =============================================================
    Markets, Withdrawals, Config
    ============================================================= */
@@ -2067,30 +1917,6 @@
 }
 
 /* Settings — logo preview */
-.adm-settings__preview {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.adm-settings__preview-box {
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  border-radius: var(--r-sm);
-  background: var(--bg-2);
-  border: 1px dashed var(--border);
-  min-height: 80px;
-}
-.adm-settings__preview-box img {
-  max-height: 48px;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-/* =============================================================
-   Admin theme lock — the console is always light, independent of
-   the user app's dark-mode preference. Values mirror the light
-   block in tokens.css so the rest of the design system stays
    consistent inside the admin subtree.
    ============================================================= */
 
@@ -2203,11 +2029,6 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-}
-.brand-mark__img {
-  height: 28px;
-  max-width: 140px;
-  object-fit: contain;
 }
 .brand-mark__badge {
   display: inline-flex;
