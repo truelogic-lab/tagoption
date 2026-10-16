@@ -1,7 +1,7 @@
 /* =============================================================
    TagOption — Admin Console
-   Light-only palette. Scoped to .adm so nothing leaks into the
-   trading app. One block per concern, no duplicates.
+   Light-only. Scoped to .adm so nothing leaks into the trading
+   app. One rule per selector. No dead code.
    ============================================================= */
 
 /* ---------- 1. Palette ---------- */
@@ -20,16 +20,13 @@
   color-scheme: light;
   background: var(--adm-bg);
   color: var(--adm-navy);
-}
 
-/* ---------- 2. Shell ---------- */
-.adm {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
 }
 
-/* ---------- 3. Sidebar ---------- */
+/* ---------- 2. Sidebar ---------- */
 .adm__sidebar {
   display: flex;
   flex-direction: column;
@@ -87,7 +84,6 @@
   gap: 2px;
   flex: 1;
 }
-
 .adm__nav-item {
   display: flex;
   align-items: center;
@@ -105,10 +101,7 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 .adm__nav-item svg { flex-shrink: 0; font-size: 17px; }
-.adm__nav-item:hover {
-  background: #F2F5FA;
-  color: var(--adm-navy);
-}
+.adm__nav-item:hover { background: #F2F5FA; color: var(--adm-navy); }
 .adm__nav-item.is-active {
   background: rgba(40, 99, 233, 0.08);
   color: var(--adm-blue);
@@ -130,13 +123,7 @@
   color: var(--adm-neg);
 }
 
-.adm__divider {
-  height: 1px;
-  background: var(--adm-border);
-  margin: 8px 0;
-}
-
-/* ---------- 4. Topbar ---------- */
+/* ---------- 3. Topbar (mobile only) ---------- */
 .adm__top {
   display: none;
   align-items: center;
@@ -149,7 +136,6 @@
   top: 0;
   z-index: 20;
 }
-
 .adm__top-title {
   font-size: 15px;
   font-weight: 700;
@@ -158,7 +144,6 @@
   white-space: nowrap;
   flex: 1;
 }
-
 .adm__burger {
   display: inline-flex;
   align-items: center;
@@ -188,120 +173,14 @@
   flex-shrink: 0;
 }
 
-.adm__profile { position: relative; flex-shrink: 0; }
-
-.adm__profile-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 4px;
-  border-radius: 999px;
-  border: 1px solid var(--adm-border);
-  background: var(--adm-card);
-  color: var(--adm-navy);
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.adm__profile-trigger:hover { border-color: #D0D7E2; background: #FAFBFD; }
-.adm__profile-trigger svg { color: var(--adm-text); }
-
-.adm__profile-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--adm-blue) 0%, var(--adm-purple) 100%);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.adm__profile-name {
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.adm__profile-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 240px;
-  padding: 6px;
-  background: var(--adm-card);
-  border: 1px solid var(--adm-border);
-  border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: 30;
-}
-
-.adm__profile-menu-head {
-  padding: 10px 12px 12px;
-  border-bottom: 1px solid var(--adm-border);
-  margin-bottom: 6px;
-}
-.adm__profile-menu-head strong {
-  display: block;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--adm-navy);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.adm__profile-menu-head span {
-  display: block;
-  margin-top: 2px;
-  font-size: 11.5px;
-  color: var(--adm-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.adm__profile-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--adm-navy);
-  text-decoration: none;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease;
-}
-.adm__profile-menu-item svg { color: var(--adm-text); }
-.adm__profile-menu-item:hover { background: #F2F5FA; }
-.adm__profile-menu-item:hover svg { color: var(--adm-navy); }
-
-.adm__profile-menu-item--danger { color: var(--adm-neg); }
-.adm__profile-menu-item--danger svg { color: var(--adm-neg); }
-.adm__profile-menu-item--danger:hover {
-  background: rgba(217, 72, 95, 0.08);
-  color: var(--adm-neg);
-}
-
-/* ---------- 5. Main ---------- */
+/* ---------- 4. Main ---------- */
 .adm__main {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* ---------- 6. Global search ---------- */
+/* ---------- 5. Global search ---------- */
 .gs { position: relative; width: 100%; }
 .gs__input {
   display: flex;
@@ -313,7 +192,10 @@
   border: 1px solid transparent;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.gs__input:focus-within { border-color: var(--adm-blue); background: var(--adm-card); }
+.gs__input:focus-within {
+  border-color: var(--adm-blue);
+  background: var(--adm-card);
+}
 .gs__input svg { color: var(--adm-text); font-size: 15px; flex-shrink: 0; }
 .gs__input input {
   flex: 1;
@@ -392,17 +274,18 @@
 }
 .gs__row span { font-size: 11.5px; color: var(--adm-text); }
 
-/* ---------- 7. Page wrapper ---------- */
+/* ---------- 6. Page wrapper ---------- */
 .adm-page {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* ---------- 8. Hero ---------- */
+/* ---------- 7. Hero ---------- */
 .adm-hero {
   display: flex;
   align-items: flex-end;
@@ -431,7 +314,7 @@
   text-align: right;
 }
 
-/* ---------- 9. KPI grid ---------- */
+/* ---------- 8. KPI ---------- */
 .adm-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -495,16 +378,21 @@
 .adm-kpi__hint { font-size: 11px; color: var(--adm-text); }
 .adm-kpi__spark { margin-top: 4px; }
 
-/* ---------- 10. Sparkline ---------- */
+/* ---------- 9. Sparkline ---------- */
 .adm-spark { display: block; }
 .adm-spark--blue   { color: var(--adm-blue); }
 .adm-spark--purple { color: var(--adm-purple); }
 .adm-spark--green  { color: var(--adm-pos); }
 .adm-spark--amber  { color: var(--adm-warn); }
 .adm-spark__area { fill: currentColor; opacity: 0.14; }
-.adm-spark__line { stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.adm-spark__line {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
-/* ---------- 11. Card ---------- */
+/* ---------- 10. Card ---------- */
 .adm-card {
   padding: 18px;
   border-radius: 16px;
@@ -541,14 +429,14 @@
 }
 .adm-card__link:hover { color: var(--adm-navy); border-color: #D0D7E2; }
 
-/* ---------- 12. Grid ---------- */
+/* ---------- 11. Grid ---------- */
 .adm-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
-/* ---------- 13. Stats rows ---------- */
+/* ---------- 12. Stats ---------- */
 .adm-stats { display: flex; flex-direction: column; }
 .adm-stat {
   display: flex;
@@ -565,7 +453,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 14. Donut ---------- */
+/* ---------- 13. Donut ---------- */
 .adm-donut {
   position: relative;
   display: grid;
@@ -623,10 +511,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 15. Line chart ---------- */
+/* ---------- 14. Line chart ---------- */
 .adm-chart { color: var(--adm-pos); }
 .adm-chart.is-neg { color: var(--adm-neg); }
-.adm-chart__svg { width: 100%; height: auto; display: block; aspect-ratio: 720 / 220; }
+.adm-chart__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 720 / 220;
+}
 .adm-chart__axis {
   display: flex;
   justify-content: space-between;
@@ -657,7 +550,7 @@
   color: var(--adm-text);
 }
 
-/* ---------- 16. Range selector ---------- */
+/* ---------- 15. Range selector ---------- */
 .adm-range {
   display: inline-flex;
   gap: 2px;
@@ -684,7 +577,7 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
-/* ---------- 17. Activity feed ---------- */
+/* ---------- 16. Activity feed ---------- */
 .adm-feed { display: flex; flex-direction: column; }
 .adm-feed__row {
   display: flex;
@@ -703,8 +596,8 @@
   font-size: 14px;
   flex-shrink: 0;
 }
-.adm-feed__icon.is-pos { background: rgba(21, 153, 87, 0.12);  color: var(--adm-pos); }
-.adm-feed__icon.is-neg { background: rgba(217, 72, 95, 0.12);  color: var(--adm-neg); }
+.adm-feed__icon.is-pos { background: rgba(21, 153, 87, 0.12); color: var(--adm-pos); }
+.adm-feed__icon.is-neg { background: rgba(217, 72, 95, 0.12); color: var(--adm-neg); }
 .adm-feed__body { flex: 1; min-width: 0; }
 .adm-feed__body strong {
   display: block;
@@ -730,7 +623,7 @@
 .adm-feed__amt.is-pos { color: var(--adm-pos); }
 .adm-feed__amt.is-neg { color: var(--adm-neg); }
 
-/* ---------- 18. Quick actions ---------- */
+/* ---------- 17. Quick actions ---------- */
 .adm-quick {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -779,7 +672,7 @@
 }
 .adm-quick__caret { color: var(--adm-text); font-size: 14px; flex-shrink: 0; }
 
-/* ---------- 19. Search bar ---------- */
+/* ---------- 18. Search bar ---------- */
 .adm-searchbar {
   display: flex;
   align-items: center;
@@ -811,7 +704,7 @@
   cursor: pointer;
 }
 
-/* ---------- 20. Filter chips ---------- */
+/* ---------- 19. Chips ---------- */
 .adm-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .adm-chip {
   padding: 7px 14px;
@@ -832,10 +725,10 @@
   color: #fff;
 }
 
-/* ---------- 21. Rows ---------- */
+/* ---------- 20. Row lists ---------- */
 .adm-rows { display: flex; flex-direction: column; gap: 10px; }
 
-/* ---------- 22. User row ---------- */
+/* ---------- 21. User row ---------- */
 .adm-user {
   display: flex;
   align-items: center;
@@ -901,7 +794,7 @@
 }
 .adm-user__flag { color: var(--adm-warn); font-size: 15px; }
 
-/* ---------- 23. Trade / transaction / audit cards ---------- */
+/* ---------- 22. Trade / transaction / audit ---------- */
 .adm-trade,
 .adm-tx,
 .adm-audit {
@@ -943,7 +836,11 @@
 .adm-trade__status.is-won  { background: rgba(21, 153, 87, 0.12); color: var(--adm-pos); }
 .adm-trade__status.is-lost { background: rgba(217, 72, 95, 0.12); color: var(--adm-neg); }
 
-.adm-tx__amount { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.adm-tx__amount {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
 .adm-tx__amount.is-pos { color: var(--adm-pos); }
 .adm-tx__amount.is-neg { color: var(--adm-neg); }
 
@@ -971,7 +868,7 @@
   margin-top: 12px;
 }
 
-/* ---------- 24. Field ---------- */
+/* ---------- 23. Field ---------- */
 .adm-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .adm-field__label {
   font-size: 10.5px;
@@ -989,7 +886,7 @@
   text-overflow: ellipsis;
 }
 
-/* ---------- 25. Buttons ---------- */
+/* ---------- 24. Buttons ---------- */
 .adm-btn {
   display: inline-flex;
   align-items: center;
@@ -1020,7 +917,7 @@
 }
 .adm-btn--danger:hover:not(:disabled) { background: rgba(217, 72, 95, 0.16); }
 
-/* ---------- 26. States ---------- */
+/* ---------- 25. States ---------- */
 .adm-state,
 .adm-empty {
   padding: 32px 20px;
@@ -1032,7 +929,7 @@
   border: 1px solid var(--adm-border);
 }
 
-/* ---------- 27. Markets ---------- */
+/* ---------- 26. Markets ---------- */
 .adm-market {
   display: flex;
   align-items: center;
@@ -1077,7 +974,7 @@
 .adm-market__actions { display: flex; gap: 6px; flex-shrink: 0; }
 .adm-market__actions .adm-btn--sm { padding: 7px 10px; font-size: 11.5px; }
 
-/* ---------- 28. Config / messages ---------- */
+/* ---------- 27. Config / messages ---------- */
 .adm-config__meta {
   padding: 12px 14px;
   border-radius: 8px;
@@ -1103,7 +1000,7 @@
   color: var(--adm-neg);
 }
 
-/* ---------- 29. Settings / upload ---------- */
+/* ---------- 28. Settings / upload ---------- */
 .adm-settings { display: flex; flex-direction: column; gap: 16px; }
 .adm-settings__preview { display: flex; flex-direction: column; gap: 6px; }
 .adm-settings__preview-box {
@@ -1125,7 +1022,6 @@
   justify-content: flex-end;
   padding-top: 4px;
 }
-
 .adm-upload {
   display: flex;
   align-items: center;
@@ -1182,50 +1078,12 @@
   margin: 0;
 }
 
-/* ---------- 30. BrandMark ---------- */
-.brand-mark { display: inline-flex; align-items: center; gap: 10px; }
-.brand-mark__img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center;
-  background: var(--adm-card);
-  border: 1px solid var(--adm-border);
-  flex-shrink: 0;
-}
-.brand-mark__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--adm-blue);
-  color: #fff;
-  font-weight: 800;
-  font-size: 15px;
-}
-.brand-mark__text {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
-  color: var(--adm-navy);
-}
-.brand-mark--header .brand-mark__text { font-size: 15px; letter-spacing: 1.4px; }
-.brand-mark--header .brand-mark__badge { width: 32px; height: 32px; border-radius: 9px; font-size: 15px; }
-.brand-mark--footer .brand-mark__text { font-size: 15px; letter-spacing: 1.2px; color: var(--adm-navy); }
-.brand-mark--footer .brand-mark__badge { width: 34px; height: 34px; border-radius: 9px; font-size: 16px; }
-.brand-mark--auth .brand-mark__text { font-size: 15px; letter-spacing: 1.2px; color: var(--adm-navy); }
-.brand-mark--auth .brand-mark__badge { width: 34px; height: 34px; border-radius: 9px; font-size: 16px; }
-
-/* ---------- 31. User detail page ---------- */
+/* ---------- 29. User detail ---------- */
 .ud-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 4px;
 }
 .ud-back {
   display: inline-flex;
@@ -1239,7 +1097,6 @@
 }
 .ud-back:hover { color: var(--adm-navy); }
 .ud-head__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
 .ud-profile {
   display: flex;
   align-items: center;
@@ -1292,7 +1149,6 @@
 .ud-tag--ok { color: var(--adm-pos); border-color: rgba(21, 153, 87, 0.35); }
 .ud-tag--warn { color: var(--adm-warn); border-color: rgba(232, 163, 35, 0.35); }
 .ud-tag--danger { color: var(--adm-neg); border-color: rgba(217, 72, 95, 0.35); }
-
 .ud-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1325,7 +1181,6 @@
 }
 .ud-pos { color: var(--adm-pos); }
 .ud-neg { color: var(--adm-neg); }
-
 .ud-section {
   padding: 18px;
   border-radius: 16px;
@@ -1392,7 +1247,7 @@
   text-transform: capitalize;
 }
 
-/* ---------- 32. Admin drawer (mobile nav) ---------- */
+/* ---------- 30. Admin drawer ---------- */
 .adm-drawer {
   position: fixed;
   inset: 0;
@@ -1423,7 +1278,6 @@
   from { transform: translateX(-12px); opacity: 0.7; }
   to   { transform: translateX(0);     opacity: 1; }
 }
-
 .adm-drawer__head {
   display: flex;
   align-items: center;
@@ -1456,7 +1310,6 @@
   letter-spacing: -0.2px;
   color: var(--adm-navy);
 }
-
 .adm-drawer__user {
   display: flex;
   align-items: center;
@@ -1497,7 +1350,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .adm-drawer__nav {
   flex: 1 1 auto;
   overflow-y: auto;
@@ -1536,7 +1388,6 @@
 }
 .adm-drawer__item.is-active svg { color: var(--adm-blue); }
 .adm-drawer__item.is-active:hover { background: rgba(40, 99, 233, 0.14); }
-
 .adm-drawer__foot {
   flex-shrink: 0;
   padding: 12px 12px 18px;
@@ -1554,20 +1405,13 @@
 }
 .adm-drawer__item--danger:hover svg { color: var(--adm-neg); }
 
-/* ---------- 33. Responsive ---------- */
+/* ---------- 31. Responsive ---------- */
 @media (max-width: 900px) {
-  .adm {
-    grid-template-columns: 1fr;
-  }
+  .adm { grid-template-columns: 1fr; }
   .adm__sidebar { display: none; }
   .adm__top { display: flex; }
-
   .adm-page { padding: 20px 16px 40px; gap: 16px; }
-  .adm-hero {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+  .adm-hero { flex-direction: column; align-items: flex-start; gap: 8px; }
   .adm-hero__date { text-align: left; }
   .adm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .adm-grid { grid-template-columns: 1fr; }
@@ -1600,9 +1444,6 @@
   .adm-searchbar { flex-wrap: wrap; }
   .adm-donut-wrap { padding: 4px 0; }
   .adm-chart__foot strong { font-size: 14px; }
-  .adm__profile-name { display: none; }
-  .adm__profile-trigger { padding: 4px; }
-  .adm__profile-trigger svg:last-child { display: none; }
 }
 
 @media (min-width: 901px) {
