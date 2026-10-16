@@ -30,7 +30,7 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
   const scannerAudioRef = useRef(null);
 
   const startWithSound = React.useCallback(() => {
-    scannerAudioRef.current = playFile("scanner", { volume: 0.4 });
+    scannerAudioRef.current = playFile("scanner", { loop: true, volume: 0.4 });
     start();
   }, [start]);
 
@@ -41,6 +41,12 @@ export default function EntryScanner({ open, onClose, onLoadBot }) {
       scannerAudioRef.current = null;
     }
   };
+
+  // Stop the loop the moment the scan finishes. `running` flips false when
+  // the scanner picks a result or errors out.
+  React.useEffect(() => {
+    if (!running) stopScannerAudio();
+  }, [running]);
 
   if (!open) return null;
 
