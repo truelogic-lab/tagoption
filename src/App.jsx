@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import RequireAuth from "./components/guards/RequireAuth";
 import RequireAdmin from "./components/guards/RequireAdmin";
 import AppLayout from "./components/app/AppLayout";
+import ScrollToTop from "./components/layout/ScrollToTop";
 import Trade from "./pages/app/Trade";
 import Positions from "./pages/app/Positions";
 import Account from "./pages/app/Account";
@@ -43,6 +44,7 @@ import AdminSettings from "./pages/admin/Settings";
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* ---------- Public ---------- */}
         <Route path="/" element={<Home />} />
