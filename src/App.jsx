@@ -28,12 +28,15 @@ import History from "./pages/app/History";
 import Refer from "./pages/app/Refer";
 import PaymentCallback from "./pages/app/PaymentCallback";
 
+/* Admin shell */
+import AdminLayout from "./components/admin/AdminLayout";
+
 /*
- * Admin shell imports are commented out until the rebuild completes.
- * Each page will be restored in its own commit; leave this file alone
- * until every admin page exists again, then restore the admin block.
+ * The admin page routes are wired one at a time as the rebuild lands.
+ * Each uncommented route below corresponds to a page file that exists
+ * in src/pages/admin/. If a page is missing, its route is commented
+ * and /admin shows only the shell with an empty outlet.
  */
-// import AdminLayout from "./components/admin/AdminLayout";
 // import Overview from "./pages/admin/Overview";
 // import Users from "./pages/admin/Users";
 // import UserDetail from "./pages/admin/UserDetail";
@@ -63,16 +66,18 @@ export default function App() {
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* ---------- Admin ---------- */}
-        {/* Restored after the rebuild. For now, redirect /admin to /trade. */}
+        {/* ---------- Admin shell ---------- */}
         <Route
           path="/admin"
           element={
             <RequireAdmin>
-              <Navigate to="/trade" replace />
+              <AdminLayout />
             </RequireAdmin>
           }
-        />
+        >
+          {/* Child routes are added as each page is rebuilt. Until then,
+              /admin renders only the shell with an empty outlet. */}
+        </Route>
 
         {/* ---------- Authed app ---------- */}
         <Route
