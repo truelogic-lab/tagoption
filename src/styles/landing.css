@@ -1684,3 +1684,64 @@
     grid-column: auto;
   }
 }
+
+/* =============================================================
+   Cinematic hero — override isolation
+   The base .hero__bg-image rules were written for the split-layout
+   version and stack transform/opacity on top of the cinematic
+   animation, fighting it. These resets neutralize the base rules
+   for elements inside .hero--cinematic only.
+   ============================================================= */
+
+.hero--cinematic .hero__bg-image {
+  opacity: 0;                                    /* animation sets the final 1 */
+  transform: none;                                /* kill the base translate3d */
+  mask-image: none;
+  -webkit-mask-image: none;
+  filter: none;
+  top: auto;
+  right: auto;
+  max-width: none;
+  object-fit: contain;
+  animation: hero-cinematic-roll 1.8s cubic-bezier(0.18, 0.78, 0.22, 1) 0.15s forwards;
+}
+
+@media (max-width: 900px) {
+  .hero--cinematic .hero__bg-image {
+    opacity: 0;
+    transform: none;
+    filter: none;
+    animation: hero-mobile-roll 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero--cinematic .hero__bg-image {
+    opacity: 0;
+    transform: none;
+    filter: none;
+    animation: hero-phone-roll 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  }
+}
+
+/* =============================================================
+   Brand mark — logo and badge
+   The uploaded logo is clipped to a circle. If a logo is present
+   but fails to load, an onError in the component falls back to
+   the initial badge, so a broken image never renders.
+   ============================================================= */
+
+.brand-mark__img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.brand-mark--header .brand-mark__img { width: 32px; height: 32px; }
+.brand-mark--footer .brand-mark__img { width: 34px; height: 34px; }
+.brand-mark--auth   .brand-mark__img { width: 34px; height: 34px; }
