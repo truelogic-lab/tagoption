@@ -1,51 +1,32 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  LuFacebook, LuTwitter, LuInstagram, LuLinkedin, LuSend,
-} from "react-icons/lu";
 import Reveal from "../ui/Reveal";
-import { useSite } from "../../lib/SiteContext";
 import BrandMark from "../ui/BrandMark";
+import { useSite } from "../../lib/SiteContext";
 
+/**
+ * Footer. Only links that resolve to a real page. The previous version had
+ * a Company column where four of five entries pointed at /company, and five
+ * social icons with href="#" — both removed until there are real targets.
+ */
 const columns = [
   {
-    title: "Markets",
+    title: "Platform",
     links: [
-      { label: "Volatility Indices", to: "/online-trading" },
-      { label: "Boom & Crash",       to: "/online-trading" },
-      { label: "Step Index",         to: "/online-trading" },
-      { label: "Range Break",        to: "/online-trading" },
-      { label: "Jump Index",         to: "/online-trading" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About Us", to: "/company" },
-      { label: "Careers",  to: "/company" },
-      { label: "Blog",     to: "/company" },
-      { label: "Press",    to: "/company" },
-      { label: "Contact",  to: "/company" },
+      { label: "Markets", to: "/markets" },
+      { label: "Company", to: "/company" },
     ],
   },
   {
     title: "Support",
     links: [
-      { label: "Help Center",          to: "/help" },
-      { label: "Terms of Service",     to: "/terms" },
-      { label: "Privacy Policy",       to: "/privacy" },
-      { label: "Responsible Trading",  to: "/responsible" },
-      { label: "Contact Support",      to: "/live-chat" },
+      { label: "Help Center",         to: "/help" },
+      { label: "Terms of Service",    to: "/terms" },
+      { label: "Privacy Policy",      to: "/privacy" },
+      { label: "Responsible Trading", to: "/responsible" },
+      { label: "Contact Support",     to: "/live-chat" },
     ],
   },
-];
-
-const socials = [
-  { Icon: LuFacebook,  label: "Facebook" },
-  { Icon: LuTwitter,   label: "Twitter" },
-  { Icon: LuInstagram, label: "Instagram" },
-  { Icon: LuLinkedin,  label: "LinkedIn" },
-  { Icon: LuSend,      label: "Telegram" },
 ];
 
 export default function Footer() {
@@ -54,7 +35,7 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="container">
-        <Reveal className="footer__grid">
+        <Reveal className="footer__grid footer__grid--two">
           <div className="footer__brand">
             <div className="footer__logo">
               <BrandMark variant="footer" />
@@ -63,11 +44,6 @@ export default function Footer() {
               A modern trading experience focused on market access, useful tools,
               and transparent information.
             </p>
-            <div className="footer__socials">
-              {socials.map(({ Icon, label }) => (
-                <a href="#" key={label} aria-label={label}><Icon /></a>
-              ))}
-            </div>
           </div>
 
           {columns.map((col) => (
@@ -75,7 +51,9 @@ export default function Footer() {
               <h4 className="footer__title">{col.title}</h4>
               <ul>
                 {col.links.map((l) => (
-                  <li key={l.label}><Link to={l.to}>{l.label}</Link></li>
+                  <li key={l.label}>
+                    <Link to={l.to}>{l.label}</Link>
+                  </li>
                 ))}
               </ul>
             </div>

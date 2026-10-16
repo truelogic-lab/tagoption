@@ -1647,3 +1647,41 @@
     will-change: auto;
   }
 }
+
+/* -------------------------------------------------------------
+   Header/footer cleanup — mobile menu is now a flat link list,
+   footer is three columns (brand + two link columns).
+   ------------------------------------------------------------- */
+
+.mobile__link {
+  display: block;
+  padding: 18px 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.mobile__link:hover { color: var(--red); }
+.mobile__link:last-child { border-bottom: 0; }
+
+.footer__grid--two {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .footer__grid--two {
+    grid-template-columns: 1fr 1fr;
+  }
+  .footer__grid--two .footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .footer__grid--two {
+    grid-template-columns: 1fr;
+  }
+  .footer__grid--two .footer__brand {
+    grid-column: auto;
+  }
+}
