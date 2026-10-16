@@ -8,7 +8,6 @@ import {
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
 import AdminDrawer from "./AdminDrawer";
-import AdminMetrics from "./AdminMetrics";
 import { useSite } from "../../lib/SiteContext";
 
 const NAV = [
@@ -189,7 +188,6 @@ export default function AdminLayout() {
       />
 
       <main className="adm__main">
-        <AdminMetrics />
         <Outlet />
       </main>
     </div>
