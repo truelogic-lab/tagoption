@@ -30,23 +30,16 @@ import PaymentCallback from "./pages/app/PaymentCallback";
 
 /* Admin shell */
 import AdminLayout from "./components/admin/AdminLayout";
-
-/*
- * The admin page routes are wired one at a time as the rebuild lands.
- * Each uncommented route below corresponds to a page file that exists
- * in src/pages/admin/. If a page is missing, its route is commented
- * and /admin shows only the shell with an empty outlet.
- */
 import Overview from "./pages/admin/Overview";
 import Users from "./pages/admin/Users";
 import UserDetail from "./pages/admin/UserDetail";
 import Trades from "./pages/admin/Trades";
 import Transactions from "./pages/admin/Transactions";
-import AdminMarkets from "./pages/admin/Markets";
 import Withdrawals from "./pages/admin/Withdrawals";
+import AdminMarkets from "./pages/admin/Markets";
 import Config from "./pages/admin/Config";
 import AdminSettings from "./pages/admin/Settings";
-// import Audit from "./pages/admin/Audit";
+import Audit from "./pages/admin/Audit";
 
 export default function App() {
   return (
@@ -66,7 +59,7 @@ export default function App() {
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* ---------- Admin shell ---------- */}
+        {/* ---------- Admin ---------- */}
         <Route
           path="/admin"
           element={
@@ -84,6 +77,7 @@ export default function App() {
           <Route path="markets" element={<AdminMarkets />} />
           <Route path="config" element={<Config />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="audit" element={<Audit />} />
         </Route>
 
         {/* ---------- Authed app ---------- */}
