@@ -28,18 +28,22 @@ import History from "./pages/app/History";
 import Refer from "./pages/app/Refer";
 import PaymentCallback from "./pages/app/PaymentCallback";
 
-/* Admin shell */
-import AdminLayout from "./components/admin/AdminLayout";
-import Overview from "./pages/admin/Overview";
-import Users from "./pages/admin/Users";
-import UserDetail from "./pages/admin/UserDetail";
-import Trades from "./pages/admin/Trades";
-import Transactions from "./pages/admin/Transactions";
-import Audit from "./pages/admin/Audit";
-import AdminMarkets from "./pages/admin/Markets";
-import Withdrawals from "./pages/admin/Withdrawals";
-import Config from "./pages/admin/Config";
-import AdminSettings from "./pages/admin/Settings";
+/*
+ * Admin shell imports are commented out until the rebuild completes.
+ * Each page will be restored in its own commit; leave this file alone
+ * until every admin page exists again, then restore the admin block.
+ */
+// import AdminLayout from "./components/admin/AdminLayout";
+// import Overview from "./pages/admin/Overview";
+// import Users from "./pages/admin/Users";
+// import UserDetail from "./pages/admin/UserDetail";
+// import Trades from "./pages/admin/Trades";
+// import Transactions from "./pages/admin/Transactions";
+// import AdminMarkets from "./pages/admin/Markets";
+// import Withdrawals from "./pages/admin/Withdrawals";
+// import Config from "./pages/admin/Config";
+// import AdminSettings from "./pages/admin/Settings";
+// import Audit from "./pages/admin/Audit";
 
 export default function App() {
   return (
@@ -59,28 +63,18 @@ export default function App() {
         <Route path="/live-chat" element={<LiveChat />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* ---------- Admin (own shell, admin required) ---------- */}
+        {/* ---------- Admin ---------- */}
+        {/* Restored after the rebuild. For now, redirect /admin to /trade. */}
         <Route
           path="/admin"
           element={
             <RequireAdmin>
-              <AdminLayout />
+              <Navigate to="/trade" replace />
             </RequireAdmin>
           }
-        >
-          <Route index element={<Overview />} />
-          <Route path="users" element={<Users />} />
-          <Route path="users/:id" element={<UserDetail />} />
-          <Route path="trades" element={<Trades />} />
-          <Route path="transactions" element={<Transactions />} />
-          <Route path="markets" element={<AdminMarkets />} />
-          <Route path="withdrawals" element={<Withdrawals />} />
-          <Route path="config" element={<Config />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="audit" element={<Audit />} />
-        </Route>
+        />
 
-        {/* ---------- Authed app (trader shell) ---------- */}
+        {/* ---------- Authed app ---------- */}
         <Route
           element={
             <RequireAuth>
