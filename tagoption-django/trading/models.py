@@ -54,6 +54,9 @@ class AutoRun(models.Model):
     market = models.CharField(max_length=80)
     pnl_cents = models.BigIntegerField(default=0)
     error = models.TextField(null=True, blank=True)
-    started_at = models.DateTimeField(auto_now_add=True)
+
+    # Explicit, not auto_now_add — start_auto overwrites this on every run so
+    # the UI can show "this run started at", not "this user's first run ever".
+    started_at = models.DateTimeField(default=None, null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     heartbeat_at = models.DateTimeField(auto_now=True)

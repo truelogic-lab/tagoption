@@ -2,11 +2,9 @@
 Server-side auto-trade runner. One active run per user, stored in AutoRun.
 The loop runs in a background thread started by the start endpoint.
 """
-import random
 import threading
 import time
 import uuid
-from datetime import timedelta
 
 from django.db import transaction as db_transaction
 from django.utils import timezone
@@ -114,21 +112,32 @@ def _settle_trade(trade, result):
         return {"credit": credit_cents, "profit": profit_cents, "stake": stake_cents}
 
 
+def _is_cancelled(run_pk):
+    """Cheap check the loop runs between trades. Returns True if the run
+    should stop for any reason — cancelled, stopped externally, or the row
+    disappeared."""
+    try:
+        row = AutoRun.objects.only("cancel", "running").get(pk=run_pk)
+    except AutoRun.DoesNotExist:
+        return True
+    return bool(row.cancel) or not bool(row.running)
+
+
 def _run_loop(run_pk):
     try:
         while True:
+            if _is_cancelled(run_pk):
+                return
+
             try:
                 run = AutoRun.objects.get(pk=run_pk)
             except AutoRun.DoesNotExist:
                 return
 
-            if run.cancel or not run.running:
-                return
             if run.done >= run.count:
                 break
 
             user = run.user
-            stake = run.stake_cents / 100
             stake_cents = run.stake_cents
             win_rate, _ = effective_win_rate(user)
             profit_cents = int(round(stake_cents * float(effective_payout_mult())))
@@ -146,6 +155,8 @@ def _run_loop(run_pk):
 
             time.sleep(SETTLE_SECONDS)
 
+            # Always settle the trade that was already opened — otherwise it
+            # sits in escrow until the reaper picks it up 60 seconds later.
             result = roll_outcome(win_rate)
             settled = _settle_trade(trade, result)
 
@@ -177,6 +188,12 @@ def _run_loop(run_pk):
                     running=False, ended_at=timezone.now()
                 )
                 break
+
+            # Check for cancellation again — the settle above blocked for
+            # SETTLE_SECONDS and the user may have hit Stop during it.
+            if _is_cancelled(run_pk):
+                AutoRun.objects.filter(pk=run_pk).update(ended_at=timezone.now())
+                return
 
             time.sleep(INTER_TRADE_SECONDS)
 
@@ -214,11 +231,13 @@ def start_auto(user, count, stake, target_profit, stop_loss, market):
         age = (timezone.now() - existing.heartbeat_at).total_seconds()
         if age < STALE_SECONDS:
             raise RuntimeError("Auto trade already running")
+        # Truly stale — the thread is gone, the row was never cleaned up.
         existing.running = False
         existing.ended_at = timezone.now()
-        existing.save()
+        existing.save(update_fields=["running", "ended_at"])
 
     run_id = new_run_id()
+    now = timezone.now()
 
     AutoRun.objects.update_or_create(
         user=user,
@@ -236,6 +255,7 @@ def start_auto(user, count, stake, target_profit, stop_loss, market):
             "market": market,
             "pnl_cents": 0,
             "error": None,
+            "started_at": now,
             "ended_at": None,
         },
     )
@@ -247,11 +267,18 @@ def start_auto(user, count, stake, target_profit, stop_loss, market):
 
 
 def stop_auto(user):
+    """
+    Request a stop. Both flags are written in one save so GET /status
+    immediately reflects the change — the running thread honours `cancel`
+    on its next check.
+    """
     run = AutoRun.objects.filter(user=user, running=True).first()
     if not run:
         return False
     run.cancel = True
-    run.save()
+    run.running = False
+    run.ended_at = timezone.now()
+    run.save(update_fields=["cancel", "running", "ended_at"])
     return True
 
 
