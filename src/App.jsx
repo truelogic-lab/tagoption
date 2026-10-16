@@ -39,7 +39,7 @@ import AdminLayout from "./components/admin/AdminLayout";
  */
 import Overview from "./pages/admin/Overview";
 import Users from "./pages/admin/Users";
-// import UserDetail from "./pages/admin/UserDetail";
+import UserDetail from "./pages/admin/UserDetail";
 // import Trades from "./pages/admin/Trades";
 // import Transactions from "./pages/admin/Transactions";
 // import AdminMarkets from "./pages/admin/Markets";
@@ -77,6 +77,7 @@ export default function App() {
         >
           <Route index element={<Overview />} />
           <Route path="users" element={<Users />} />
+          <Route path="users/:id" element={<UserDetail />} />
         </Route>
 
         {/* ---------- Authed app ---------- */}
