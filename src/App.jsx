@@ -37,7 +37,7 @@ import AdminLayout from "./components/admin/AdminLayout";
  * in src/pages/admin/. If a page is missing, its route is commented
  * and /admin shows only the shell with an empty outlet.
  */
-// import Overview from "./pages/admin/Overview";
+import Overview from "./pages/admin/Overview";
 // import Users from "./pages/admin/Users";
 // import UserDetail from "./pages/admin/UserDetail";
 // import Trades from "./pages/admin/Trades";
@@ -75,8 +75,7 @@ export default function App() {
             </RequireAdmin>
           }
         >
-          {/* Child routes are added as each page is rebuilt. Until then,
-              /admin renders only the shell with an empty outlet. */}
+          <Route index element={<Overview />} />
         </Route>
 
         {/* ---------- Authed app ---------- */}
