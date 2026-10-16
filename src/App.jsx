@@ -38,7 +38,7 @@ import AdminLayout from "./components/admin/AdminLayout";
  * and /admin shows only the shell with an empty outlet.
  */
 import Overview from "./pages/admin/Overview";
-// import Users from "./pages/admin/Users";
+import Users from "./pages/admin/Users";
 // import UserDetail from "./pages/admin/UserDetail";
 // import Trades from "./pages/admin/Trades";
 // import Transactions from "./pages/admin/Transactions";
@@ -76,6 +76,7 @@ export default function App() {
           }
         >
           <Route index element={<Overview />} />
+          <Route path="users" element={<Users />} />
         </Route>
 
         {/* ---------- Authed app ---------- */}
