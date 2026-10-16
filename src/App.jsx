@@ -44,7 +44,7 @@ import Trades from "./pages/admin/Trades";
 import Transactions from "./pages/admin/Transactions";
 import AdminMarkets from "./pages/admin/Markets";
 import Withdrawals from "./pages/admin/Withdrawals";
-// import Config from "./pages/admin/Config";
+import Config from "./pages/admin/Config";
 // import AdminSettings from "./pages/admin/Settings";
 // import Audit from "./pages/admin/Audit";
 
@@ -82,6 +82,7 @@ export default function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="withdrawals" element={<Withdrawals />} />
           <Route path="markets" element={<AdminMarkets />} />
+          <Route path="config" element={<Config />} />
         </Route>
 
         {/* ---------- Authed app ---------- */}
