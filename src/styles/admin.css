@@ -2513,3 +2513,187 @@
    ever serves it, but don't remove the rules yet in case other pages use
    the same class names. */
 .adm__drawer { display: none; }
+
+/* =============================================================
+   Admin palette — scoped to .adm. The trading app keeps its
+   existing tokens; the console has its own cooler, denser set.
+   ============================================================= */
+
+.adm {
+  --adm-blue:   #2863E9;
+  --adm-navy:   #172033;
+  --adm-text:   #8993A2;
+  --adm-bg:     #F6F8FC;
+  --adm-card:   #FFFFFF;
+  --adm-border: #E7EBF1;
+  --adm-pos:    #159957;
+  --adm-warn:   #E8A323;
+  --adm-neg:    #D9485F;
+  --adm-purple: #8254E8;
+
+  background: var(--adm-bg);
+  color: var(--adm-navy);
+}
+
+/* The dark-mode block further down overrides these with a scoped set
+   the admin console ignores — admin is always light, per the earlier
+   fix. Nothing to change here; existing .adm rules just win. */
+
+/* =============================================================
+   Admin topbar — profile menu and search
+   ============================================================= */
+
+.adm__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  height: 60px;
+  background: var(--adm-card, #fff);
+  border-bottom: 1px solid var(--adm-border, #E7EBF1);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.adm__top-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-navy, #172033);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.adm__top-search {
+  flex: 1 1 auto;
+  max-width: 480px;
+  margin-left: auto;
+}
+
+.adm__profile {
+  position: relative;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.adm__profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--adm-border, #E7EBF1);
+  background: var(--adm-card, #fff);
+  color: var(--adm-navy, #172033);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.adm__profile-trigger:hover {
+  border-color: #D0D7E2;
+  background: #FAFBFD;
+}
+.adm__profile-trigger svg { color: var(--adm-text, #8993A2); }
+
+.adm__profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #315FEF, #9854F5);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm__profile-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm__profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  padding: 6px;
+  background: var(--adm-card, #fff);
+  border: 1px solid var(--adm-border, #E7EBF1);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+}
+
+.adm__profile-menu-head {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--adm-border, #E7EBF1);
+  margin-bottom: 6px;
+}
+.adm__profile-menu-head strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--adm-navy, #172033);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm__profile-menu-head span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--adm-text, #8993A2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm__profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--adm-navy, #172033);
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.adm__profile-menu-item svg { color: var(--adm-text, #8993A2); }
+.adm__profile-menu-item:hover {
+  background: #F2F5FA;
+}
+.adm__profile-menu-item:hover svg { color: var(--adm-navy, #172033); }
+
+.adm__profile-menu-item--danger { color: var(--adm-neg, #D9485F); }
+.adm__profile-menu-item--danger svg { color: var(--adm-neg, #D9485F); }
+.adm__profile-menu-item--danger:hover {
+  background: rgba(217, 72, 95, 0.08);
+  color: var(--adm-neg, #D9485F);
+}
+.adm__profile-menu-item--danger:hover svg { color: var(--adm-neg, #D9485F); }
+
+@media (max-width: 720px) {
+  .adm__top { padding: 0 12px; gap: 8px; }
+  .adm__top-search { display: none; }
+  .adm__profile-name { display: none; }
+  .adm__profile-trigger { padding: 4px; }
+  .adm__profile-trigger svg:last-child { display: none; }
+}
+
+@media (min-width: 721px) {
+  .adm__top-search { display: block; }
+}

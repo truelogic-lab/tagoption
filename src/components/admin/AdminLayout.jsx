@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
   LuMenu, LuShieldCheck, LuLayoutDashboard, LuUsers, LuActivity,
   LuDollarSign, LuListChecks, LuArrowLeft, LuLogOut, LuCoins, LuBanknote,
-  LuSettings2, LuSlidersHorizontal,
+  LuSettings2, LuSlidersHorizontal, LuChevronDown, LuUser,
 } from "react-icons/lu";
 import { clearSession, getSession } from "../../lib/auth";
 import GlobalSearch from "./GlobalSearch";
 import AdminDrawer from "./AdminDrawer";
-import { useSite } from "../../lib/SiteContext";
 import AdminMetrics from "./AdminMetrics";
+import { useSite } from "../../lib/SiteContext";
 
 const NAV = [
   { to: "/admin",              label: "Dashboard",    icon: LuLayoutDashboard, end: true },
@@ -40,6 +40,8 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const site = useSite();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
 
   const s = getSession();
   const admin = { name: s?.user?.name ?? "", email: s?.user?.email ?? "" };
@@ -62,6 +64,21 @@ export default function AdminLayout() {
     } catch {}
     navigate("/auth");
   };
+
+  // Close the profile menu when tapping outside it.
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("touchstart", onDoc);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+    };
+  }, []);
 
   return (
     <div className="adm">
@@ -94,7 +111,7 @@ export default function AdminLayout() {
         </nav>
 
         <div className="adm__side-foot">
-          <NavLink to="/trade" className="adm__nav-item">
+          <NavLink to="/" className="adm__nav-item">
             <LuArrowLeft /> <span>Back to site</span>
           </NavLink>
           <button className="adm__nav-item adm__nav-item--danger" onClick={logout}>
@@ -111,9 +128,57 @@ export default function AdminLayout() {
         >
           <LuMenu />
         </button>
+
         <span className="adm__top-title">{title}</span>
-        <GlobalSearch />
-        <span className="adm__avatar">{initial}</span>
+
+        <div className="adm__top-search">
+          <GlobalSearch />
+        </div>
+
+        <div className="adm__profile" ref={profileRef}>
+          <button
+            className="adm__profile-trigger"
+            onClick={() => setProfileOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={profileOpen}
+          >
+            <span className="adm__profile-avatar">{initial}</span>
+            <span className="adm__profile-name">
+              {admin.name || "Administrator"}
+            </span>
+            <LuChevronDown size={14} strokeWidth={2} />
+          </button>
+
+          {profileOpen && (
+            <div className="adm__profile-menu" role="menu">
+              <div className="adm__profile-menu-head">
+                <strong>{admin.name || "Administrator"}</strong>
+                <span>{admin.email}</span>
+              </div>
+              <NavLink
+                to="/admin/settings"
+                className="adm__profile-menu-item"
+                onClick={() => setProfileOpen(false)}
+              >
+                <LuSettings2 size={16} strokeWidth={2} /> Settings
+              </NavLink>
+              <NavLink
+                to="/account"
+                className="adm__profile-menu-item"
+                onClick={() => setProfileOpen(false)}
+              >
+                <LuUser size={16} strokeWidth={2} /> Your account
+              </NavLink>
+              <button
+                type="button"
+                className="adm__profile-menu-item adm__profile-menu-item--danger"
+                onClick={logout}
+              >
+                <LuLogOut size={16} strokeWidth={2} /> Log out
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <AdminDrawer
